@@ -1,0 +1,33 @@
+# ==========================================
+# CẤU HÌNH CƠ SỞ DỮ LIỆU (MYSQL)
+# ==========================================
+MYSQL_HOST=localhost
+MYSQL_PORT=3306
+MYSQL_DB=ludoan_db
+MYSQL_DATABASE=ludoan_db
+MYSQL_USER=quynh_user
+MYSQL_PASSWORD=MatKhau@123
+
+# Định dạng dự phòng cho các module đọc DB_*
+DB_HOST=localhost
+DB_PORT=3306
+DB_NAME=ludoan_db
+DB_USER=quynh_user
+DB_PASSWORD=MatKhau@123
+
+# Chuỗi kết nối SQLAlchemy (đã mã hóa ký tự @ thành %40 chuẩn URL)
+DATABASE_URL=mysql+pymysql://quynh_user:MatKhau%40123@localhost:3306/ludoan_db
+
+# ==========================================
+# CẤU HÌNH BẢO MẬT & XÁC THỰC JWT
+# ==========================================
+JWT_SECRET_KEY=bi_mat_an_toan_lu_doan_21_2026_khoa_jwt_rat_dai_va_bao_mat
+SECRET_KEY=bi_mat_an_toan_lu_doan_21_2026_khoa_jwt_rat_dai_va_bao_mat
+ALGORITHM=HS256
+ACCESS_TOKEN_EXPIRE_MINUTES=1440
+
+# ==========================================
+# CẤU HÌNH TẢI LÊN TẬP TIN & DUNG LƯỢNG
+# ==========================================
+MAX_UPLOAD_MB=50
+UPLOAD_DIR=storage/uploads

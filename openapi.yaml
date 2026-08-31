@@ -1,0 +1,5912 @@
+# ==========================================================
+#  HOP DONG API - Quynh Web  |  phien ban: 1.9.1
+#  Sinh luc: 2026-08-30 23:16:08  |  62 path, 100 operation
+#  Lich su thay doi: openapi.CHANGELOG.md (cung thu muc)
+#  File nay sinh tu backend - KHONG sua tay.
+# ==========================================================
+openapi: 3.1.0
+info:
+  title: Quynh Web API
+  description: Cổng thông tin điện tử nội bộ Lữ đoàn Thông tin 21. Xem lịch sử thay
+    đổi ở openapi.CHANGELOG.md.
+  version: 1.9.1
+paths:
+  /:
+    get:
+      tags:
+      - root
+      summary: Read Root
+      operationId: read_root__get
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema: {}
+  /items:
+    post:
+      tags:
+      - items
+      summary: Create Item
+      operationId: create_item_items_post
+      security:
+      - HTTPBearer: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ItemCreate'
+      responses:
+        '201':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ItemOut'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+    get:
+      tags:
+      - items
+      summary: List Items
+      operationId: list_items_items_get
+      security:
+      - HTTPBearer: []
+      parameters:
+      - name: skip
+        in: query
+        required: false
+        schema:
+          type: integer
+          default: 0
+          title: Skip
+      - name: limit
+        in: query
+        required: false
+        schema:
+          type: integer
+          default: 100
+          title: Limit
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ItemOut'
+                title: Response List Items Items Get
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /items/{item_id}:
+    get:
+      tags:
+      - items
+      summary: Get Item
+      operationId: get_item_items__item_id__get
+      security:
+      - HTTPBearer: []
+      parameters:
+      - name: item_id
+        in: path
+        required: true
+        schema:
+          type: integer
+          title: Item Id
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ItemOut'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+    put:
+      tags:
+      - items
+      summary: Update Item
+      operationId: update_item_items__item_id__put
+      security:
+      - HTTPBearer: []
+      parameters:
+      - name: item_id
+        in: path
+        required: true
+        schema:
+          type: integer
+          title: Item Id
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ItemCreate'
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ItemOut'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+    delete:
+      tags:
+      - items
+      summary: Delete Item
+      operationId: delete_item_items__item_id__delete
+      security:
+      - HTTPBearer: []
+      parameters:
+      - name: item_id
+        in: path
+        required: true
+        schema:
+          type: integer
+          title: Item Id
+      responses:
+        '204':
+          description: Successful Response
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /units/:
+    post:
+      tags:
+      - units
+      summary: Create Unit
+      operationId: create_unit_units__post
+      security:
+      - HTTPBearer: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UnitCreate'
+      responses:
+        '201':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UnitOut'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+    get:
+      tags:
+      - units
+      summary: List Units
+      operationId: list_units_units__get
+      security:
+      - HTTPBearer: []
+      parameters:
+      - name: skip
+        in: query
+        required: false
+        schema:
+          type: integer
+          default: 0
+          title: Skip
+      - name: limit
+        in: query
+        required: false
+        schema:
+          type: integer
+          default: 200
+          title: Limit
+      - name: kind
+        in: query
+        required: false
+        schema:
+          anyOf:
+          - enum:
+            - phong_ban
+            - tieu_doan
+            - dai_doi
+            - tram
+            - bch_lu_doan
+            - cap_uy
+            type: string
+          - type: 'null'
+          title: Kind
+      - name: active
+        in: query
+        required: false
+        schema:
+          anyOf:
+          - type: boolean
+          - type: 'null'
+          title: Active
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/UnitOut'
+                title: Response List Units Units  Get
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /units/{unit_id}:
+    get:
+      tags:
+      - units
+      summary: Get Unit
+      operationId: get_unit_units__unit_id__get
+      security:
+      - HTTPBearer: []
+      parameters:
+      - name: unit_id
+        in: path
+        required: true
+        schema:
+          type: integer
+          title: Unit Id
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UnitOut'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+    put:
+      tags:
+      - units
+      summary: Update Unit
+      operationId: update_unit_units__unit_id__put
+      security:
+      - HTTPBearer: []
+      parameters:
+      - name: unit_id
+        in: path
+        required: true
+        schema:
+          type: integer
+          title: Unit Id
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UnitCreate'
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UnitOut'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+    delete:
+      tags:
+      - units
+      summary: Delete Unit
+      operationId: delete_unit_units__unit_id__delete
+      security:
+      - HTTPBearer: []
+      parameters:
+      - name: unit_id
+        in: path
+        required: true
+        schema:
+          type: integer
+          title: Unit Id
+      responses:
+        '204':
+          description: Successful Response
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /users/:
+    post:
+      tags:
+      - users
+      summary: Create User
+      operationId: create_user_users__post
+      security:
+      - HTTPBearer: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserCreate'
+      responses:
+        '201':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserOut'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+    get:
+      tags:
+      - users
+      summary: List Users
+      operationId: list_users_users__get
+      security:
+      - HTTPBearer: []
+      parameters:
+      - name: skip
+        in: query
+        required: false
+        schema:
+          type: integer
+          default: 0
+          title: Skip
+      - name: limit
+        in: query
+        required: false
+        schema:
+          type: integer
+          default: 100
+          title: Limit
+      - name: active
+        in: query
+        required: false
+        schema:
+          anyOf:
+          - type: boolean
+          - type: 'null'
+          title: Active
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/UserOut'
+                title: Response List Users Users  Get
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /users/register:
+    post:
+      tags:
+      - users
+      summary: Register
+      description: Tu dang ky tai khoan tu giao dien ngoai. Tao role=soldier, chua
+        kich hoat.
+      operationId: register_users_register_post
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RegisterRequest'
+        required: true
+      responses:
+        '201':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserOut'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /users/{user_id}:
+    get:
+      tags:
+      - users
+      summary: Get User
+      operationId: get_user_users__user_id__get
+      security:
+      - HTTPBearer: []
+      parameters:
+      - name: user_id
+        in: path
+        required: true
+        schema:
+          type: integer
+          title: User Id
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserOut'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /users/{user_id}/activate:
+    post:
+      tags:
+      - users
+      summary: Activate User
+      operationId: activate_user_users__user_id__activate_post
+      security:
+      - HTTPBearer: []
+      parameters:
+      - name: user_id
+        in: path
+        required: true
+        schema:
+          type: integer
+          title: User Id
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserOut'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /users/{user_id}/deactivate:
+    post:
+      tags:
+      - users
+      summary: Deactivate User
+      operationId: deactivate_user_users__user_id__deactivate_post
+      security:
+      - HTTPBearer: []
+      parameters:
+      - name: user_id
+        in: path
+        required: true
+        schema:
+          type: integer
+          title: User Id
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserOut'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /users/{user_id}/clearance:
+    patch:
+      tags:
+      - users
+      summary: Set Clearance
+      operationId: set_clearance_users__user_id__clearance_patch
+      security:
+      - HTTPBearer: []
+      parameters:
+      - name: user_id
+        in: path
+        required: true
+        schema:
+          type: integer
+          title: User Id
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ClearanceUpdate'
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserOut'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /users/{user_id}/role:
+    patch:
+      tags:
+      - users
+      summary: Set Role
+      operationId: set_role_users__user_id__role_patch
+      security:
+      - HTTPBearer: []
+      parameters:
+      - name: user_id
+        in: path
+        required: true
+        schema:
+          type: integer
+          title: User Id
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RoleUpdate'
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserOut'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /users/{user_id}/unit:
+    patch:
+      tags:
+      - users
+      summary: Set Unit
+      operationId: set_unit_users__user_id__unit_patch
+      security:
+      - HTTPBearer: []
+      parameters:
+      - name: user_id
+        in: path
+        required: true
+        schema:
+          type: integer
+          title: User Id
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UnitAssignUpdate'
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserOut'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /users/{user_id}/channel-access:
+    patch:
+      tags:
+      - users
+      summary: Set Channel Access
+      operationId: set_channel_access_users__user_id__channel_access_patch
+      security:
+      - HTTPBearer: []
+      parameters:
+      - name: user_id
+        in: path
+        required: true
+        schema:
+          type: integer
+          title: User Id
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ChannelAccessUpdate'
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserOut'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /users/{user_id}/reset-password:
+    post:
+      tags:
+      - users
+      summary: Reset Password
+      operationId: reset_password_users__user_id__reset_password_post
+      security:
+      - HTTPBearer: []
+      parameters:
+      - name: user_id
+        in: path
+        required: true
+        schema:
+          type: integer
+          title: User Id
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ResetPasswordRequest'
+      responses:
+        '204':
+          description: Successful Response
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /users/login:
+    post:
+      tags:
+      - users
+      summary: Login
+      operationId: login_users_login_post
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+        required: true
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Token'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /profile/me:
+    get:
+      tags:
+      - profile
+      summary: Get My Profile
+      operationId: get_my_profile_profile_me_get
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserOut'
+      security:
+      - HTTPBearer: []
+    put:
+      tags:
+      - profile
+      summary: Update My Profile
+      operationId: update_my_profile_profile_me_put
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ProfileUpdate'
+        required: true
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserOut'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+      security:
+      - HTTPBearer: []
+  /profile/change-password:
+    post:
+      tags:
+      - profile
+      summary: Change My Password
+      operationId: change_my_password_profile_change_password_post
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PasswordChange'
+        required: true
+      responses:
+        '204':
+          description: Successful Response
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+      security:
+      - HTTPBearer: []
+  /posts:
+    post:
+      tags:
+      - posts
+      summary: Create Post
+      operationId: create_post_posts_post
+      security:
+      - HTTPBearer: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PostCreate'
+      responses:
+        '201':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PostOut'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+    get:
+      tags:
+      - posts
+      summary: List Posts
+      operationId: list_posts_posts_get
+      security:
+      - HTTPBearer: []
+      parameters:
+      - name: skip
+        in: query
+        required: false
+        schema:
+          type: integer
+          default: 0
+          title: Skip
+      - name: limit
+        in: query
+        required: false
+        schema:
+          type: integer
+          default: 100
+          title: Limit
+      - name: category
+        in: query
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Category
+      - name: classification
+        in: query
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Classification
+      - name: status_filter
+        in: query
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Status Filter
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/PostOut'
+                title: Response List Posts Posts Get
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /posts/{post_id}:
+    get:
+      tags:
+      - posts
+      summary: Get Post
+      operationId: get_post_posts__post_id__get
+      security:
+      - HTTPBearer: []
+      parameters:
+      - name: post_id
+        in: path
+        required: true
+        schema:
+          type: integer
+          title: Post Id
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PostOut'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+    put:
+      tags:
+      - posts
+      summary: Update Post
+      operationId: update_post_posts__post_id__put
+      security:
+      - HTTPBearer: []
+      parameters:
+      - name: post_id
+        in: path
+        required: true
+        schema:
+          type: integer
+          title: Post Id
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PostCreate'
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PostOut'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+    delete:
+      tags:
+      - posts
+      summary: Delete Post
+      operationId: delete_post_posts__post_id__delete
+      security:
+      - HTTPBearer: []
+      parameters:
+      - name: post_id
+        in: path
+        required: true
+        schema:
+          type: integer
+          title: Post Id
+      responses:
+        '204':
+          description: Successful Response
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /posts/{post_id}/review:
+    post:
+      tags:
+      - posts
+      summary: Review Post
+      operationId: review_post_posts__post_id__review_post
+      security:
+      - HTTPBearer: []
+      parameters:
+      - name: post_id
+        in: path
+        required: true
+        schema:
+          type: integer
+          title: Post Id
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PostReview'
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PostOut'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /posts/{post_id}/thumbnail:
+    post:
+      tags:
+      - posts
+      summary: Upload Thumbnail
+      operationId: upload_thumbnail_posts__post_id__thumbnail_post
+      security:
+      - HTTPBearer: []
+      parameters:
+      - name: post_id
+        in: path
+        required: true
+        schema:
+          type: integer
+          title: Post Id
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Body_upload_thumbnail_posts__post_id__thumbnail_post'
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PostOut'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /education-materials:
+    post:
+      tags:
+      - education-materials
+      summary: Create Material
+      operationId: create_material_education_materials_post
+      security:
+      - HTTPBearer: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EducationMaterialCreate'
+      responses:
+        '201':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EducationMaterialOut'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+    get:
+      tags:
+      - education-materials
+      summary: List Materials
+      operationId: list_materials_education_materials_get
+      security:
+      - HTTPBearer: []
+      parameters:
+      - name: skip
+        in: query
+        required: false
+        schema:
+          type: integer
+          default: 0
+          title: Skip
+      - name: limit
+        in: query
+        required: false
+        schema:
+          type: integer
+          default: 100
+          title: Limit
+      - name: category
+        in: query
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Category
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/EducationMaterialOut'
+                title: Response List Materials Education Materials Get
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /education-materials/{material_id}:
+    get:
+      tags:
+      - education-materials
+      summary: Get Material
+      operationId: get_material_education_materials__material_id__get
+      security:
+      - HTTPBearer: []
+      parameters:
+      - name: material_id
+        in: path
+        required: true
+        schema:
+          type: integer
+          title: Material Id
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EducationMaterialOut'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+    put:
+      tags:
+      - education-materials
+      summary: Update Material
+      operationId: update_material_education_materials__material_id__put
+      security:
+      - HTTPBearer: []
+      parameters:
+      - name: material_id
+        in: path
+        required: true
+        schema:
+          type: integer
+          title: Material Id
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EducationMaterialCreate'
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EducationMaterialOut'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+    delete:
+      tags:
+      - education-materials
+      summary: Delete Material
+      operationId: delete_material_education_materials__material_id__delete
+      security:
+      - HTTPBearer: []
+      parameters:
+      - name: material_id
+        in: path
+        required: true
+        schema:
+          type: integer
+          title: Material Id
+      responses:
+        '204':
+          description: Successful Response
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /directives:
+    post:
+      tags:
+      - directives
+      summary: Create Directive
+      operationId: create_directive_directives_post
+      security:
+      - HTTPBearer: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DirectiveCreate'
+      responses:
+        '201':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DirectiveOut'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+    get:
+      tags:
+      - directives
+      summary: List Directives
+      operationId: list_directives_directives_get
+      security:
+      - HTTPBearer: []
+      parameters:
+      - name: skip
+        in: query
+        required: false
+        schema:
+          type: integer
+          default: 0
+          title: Skip
+      - name: limit
+        in: query
+        required: false
+        schema:
+          type: integer
+          default: 100
+          title: Limit
+      - name: status_filter
+        in: query
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Status Filter
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/DirectiveOut'
+                title: Response List Directives Directives Get
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /directives/{directive_id}:
+    get:
+      tags:
+      - directives
+      summary: Get Directive
+      operationId: get_directive_directives__directive_id__get
+      security:
+      - HTTPBearer: []
+      parameters:
+      - name: directive_id
+        in: path
+        required: true
+        schema:
+          type: integer
+          title: Directive Id
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DirectiveOut'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+    put:
+      tags:
+      - directives
+      summary: Update Directive
+      operationId: update_directive_directives__directive_id__put
+      security:
+      - HTTPBearer: []
+      parameters:
+      - name: directive_id
+        in: path
+        required: true
+        schema:
+          type: integer
+          title: Directive Id
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DirectiveCreate'
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DirectiveOut'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+    delete:
+      tags:
+      - directives
+      summary: Delete Directive
+      operationId: delete_directive_directives__directive_id__delete
+      security:
+      - HTTPBearer: []
+      parameters:
+      - name: directive_id
+        in: path
+        required: true
+        schema:
+          type: integer
+          title: Directive Id
+      responses:
+        '204':
+          description: Successful Response
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /directives/{directive_id}/acknowledge:
+    post:
+      tags:
+      - directives
+      summary: Acknowledge Directive
+      operationId: acknowledge_directive_directives__directive_id__acknowledge_post
+      security:
+      - HTTPBearer: []
+      parameters:
+      - name: directive_id
+        in: path
+        required: true
+        schema:
+          type: integer
+          title: Directive Id
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DirectiveOut'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /directives/{directive_id}/acknowledgements:
+    get:
+      tags:
+      - directives
+      summary: Get Acknowledgement Report
+      operationId: get_acknowledgement_report_directives__directive_id__acknowledgements_get
+      security:
+      - HTTPBearer: []
+      parameters:
+      - name: directive_id
+        in: path
+        required: true
+        schema:
+          type: integer
+          title: Directive Id
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DirectiveAckReport'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /directive-threads:
+    get:
+      tags:
+      - directive-threads
+      summary: List Threads
+      operationId: list_threads_directive_threads_get
+      security:
+      - HTTPBearer: []
+      parameters:
+      - name: unit_id
+        in: query
+        required: false
+        schema:
+          anyOf:
+          - type: integer
+          - type: 'null'
+          title: Unit Id
+      - name: skip
+        in: query
+        required: false
+        schema:
+          type: integer
+          default: 0
+          title: Skip
+      - name: limit
+        in: query
+        required: false
+        schema:
+          type: integer
+          default: 100
+          title: Limit
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/DirectiveThreadOut'
+                title: Response List Threads Directive Threads Get
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+    post:
+      tags:
+      - directive-threads
+      summary: Create Thread
+      operationId: create_thread_directive_threads_post
+      security:
+      - HTTPBearer: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DirectiveThreadCreate'
+      responses:
+        '201':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DirectiveThreadOut'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /directive-threads/{thread_id}:
+    get:
+      tags:
+      - directive-threads
+      summary: Get Thread
+      operationId: get_thread_directive_threads__thread_id__get
+      security:
+      - HTTPBearer: []
+      parameters:
+      - name: thread_id
+        in: path
+        required: true
+        schema:
+          type: integer
+          title: Thread Id
+      - name: skip
+        in: query
+        required: false
+        schema:
+          type: integer
+          default: 0
+          title: Skip
+      - name: limit
+        in: query
+        required: false
+        schema:
+          type: integer
+          default: 200
+          title: Limit
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DirectiveThreadDetailOut'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /directive-threads/{thread_id}/messages:
+    post:
+      tags:
+      - directive-threads
+      summary: Post Message
+      operationId: post_message_directive_threads__thread_id__messages_post
+      security:
+      - HTTPBearer: []
+      parameters:
+      - name: thread_id
+        in: path
+        required: true
+        schema:
+          type: integer
+          title: Thread Id
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Body_post_message_directive_threads__thread_id__messages_post'
+      responses:
+        '201':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DirectiveMessageOut'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /directive-threads/{thread_id}/close:
+    patch:
+      tags:
+      - directive-threads
+      summary: Close Thread
+      operationId: close_thread_directive_threads__thread_id__close_patch
+      security:
+      - HTTPBearer: []
+      parameters:
+      - name: thread_id
+        in: path
+        required: true
+        schema:
+          type: integer
+          title: Thread Id
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ThreadCloseUpdate'
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DirectiveThreadOut'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /directive-assignments:
+    get:
+      tags:
+      - directive-assignments
+      summary: List Assignments
+      operationId: list_assignments_directive_assignments_get
+      security:
+      - HTTPBearer: []
+      parameters:
+      - name: status_filter
+        in: query
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Status Filter
+      - name: directive_id
+        in: query
+        required: false
+        schema:
+          anyOf:
+          - type: integer
+          - type: 'null'
+          title: Directive Id
+      - name: skip
+        in: query
+        required: false
+        schema:
+          type: integer
+          default: 0
+          title: Skip
+      - name: limit
+        in: query
+        required: false
+        schema:
+          type: integer
+          default: 100
+          title: Limit
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/DirectiveAssignmentOut'
+                title: Response List Assignments Directive Assignments Get
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+    post:
+      tags:
+      - directive-assignments
+      summary: Create Assignment
+      operationId: create_assignment_directive_assignments_post
+      security:
+      - HTTPBearer: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DirectiveAssignmentCreate'
+      responses:
+        '201':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DirectiveAssignmentDetailOut'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /directive-assignments/{assignment_id}:
+    get:
+      tags:
+      - directive-assignments
+      summary: Get Assignment
+      operationId: get_assignment_directive_assignments__assignment_id__get
+      security:
+      - HTTPBearer: []
+      parameters:
+      - name: assignment_id
+        in: path
+        required: true
+        schema:
+          type: integer
+          title: Assignment Id
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DirectiveAssignmentDetailOut'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+    put:
+      tags:
+      - directive-assignments
+      summary: Update Assignment
+      operationId: update_assignment_directive_assignments__assignment_id__put
+      security:
+      - HTTPBearer: []
+      parameters:
+      - name: assignment_id
+        in: path
+        required: true
+        schema:
+          type: integer
+          title: Assignment Id
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DirectiveAssignmentUpdate'
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DirectiveAssignmentDetailOut'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+    delete:
+      tags:
+      - directive-assignments
+      summary: Delete Assignment
+      operationId: delete_assignment_directive_assignments__assignment_id__delete
+      security:
+      - HTTPBearer: []
+      parameters:
+      - name: assignment_id
+        in: path
+        required: true
+        schema:
+          type: integer
+          title: Assignment Id
+      responses:
+        '204':
+          description: Successful Response
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /directive-assignments/{assignment_id}/targets:
+    post:
+      tags:
+      - directive-assignments
+      summary: Add Targets
+      operationId: add_targets_directive_assignments__assignment_id__targets_post
+      security:
+      - HTTPBearer: []
+      parameters:
+      - name: assignment_id
+        in: path
+        required: true
+        schema:
+          type: integer
+          title: Assignment Id
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: array
+              items:
+                $ref: '#/components/schemas/TargetCreate'
+              title: Targets
+      responses:
+        '201':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DirectiveAssignmentDetailOut'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /directive-assignments/{assignment_id}/targets/{target_id}:
+    delete:
+      tags:
+      - directive-assignments
+      summary: Remove Target
+      operationId: remove_target_directive_assignments__assignment_id__targets__target_id__delete
+      security:
+      - HTTPBearer: []
+      parameters:
+      - name: assignment_id
+        in: path
+        required: true
+        schema:
+          type: integer
+          title: Assignment Id
+      - name: target_id
+        in: path
+        required: true
+        schema:
+          type: integer
+          title: Target Id
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DirectiveAssignmentDetailOut'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /directive-assignments/{assignment_id}/targets/{target_id}/submit:
+    post:
+      tags:
+      - directive-assignments
+      summary: Submit Report
+      operationId: submit_report_directive_assignments__assignment_id__targets__target_id__submit_post
+      security:
+      - HTTPBearer: []
+      parameters:
+      - name: assignment_id
+        in: path
+        required: true
+        schema:
+          type: integer
+          title: Assignment Id
+      - name: target_id
+        in: path
+        required: true
+        schema:
+          type: integer
+          title: Target Id
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Body_submit_report_directive_assignments__assignment_id__targets__target_id__submit_post'
+      responses:
+        '201':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TargetDetailOut'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /directive-assignments/{assignment_id}/targets/{target_id}/review:
+    post:
+      tags:
+      - directive-assignments
+      summary: Review Target
+      operationId: review_target_directive_assignments__assignment_id__targets__target_id__review_post
+      security:
+      - HTTPBearer: []
+      parameters:
+      - name: assignment_id
+        in: path
+        required: true
+        schema:
+          type: integer
+          title: Assignment Id
+      - name: target_id
+        in: path
+        required: true
+        schema:
+          type: integer
+          title: Target Id
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ReviewRequest'
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TargetDetailOut'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /command-threads:
+    get:
+      tags:
+      - command-threads
+      summary: List Threads
+      operationId: list_threads_command_threads_get
+      security:
+      - HTTPBearer: []
+      parameters:
+      - name: skip
+        in: query
+        required: false
+        schema:
+          type: integer
+          default: 0
+          title: Skip
+      - name: limit
+        in: query
+        required: false
+        schema:
+          type: integer
+          default: 100
+          title: Limit
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/CommandThreadOut'
+                title: Response List Threads Command Threads Get
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+    post:
+      tags:
+      - command-threads
+      summary: Create Thread
+      operationId: create_thread_command_threads_post
+      security:
+      - HTTPBearer: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CommandThreadCreate'
+      responses:
+        '201':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CommandThreadOut'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /command-threads/{thread_id}:
+    get:
+      tags:
+      - command-threads
+      summary: Get Thread
+      operationId: get_thread_command_threads__thread_id__get
+      security:
+      - HTTPBearer: []
+      parameters:
+      - name: thread_id
+        in: path
+        required: true
+        schema:
+          type: integer
+          title: Thread Id
+      - name: skip
+        in: query
+        required: false
+        schema:
+          type: integer
+          default: 0
+          title: Skip
+      - name: limit
+        in: query
+        required: false
+        schema:
+          type: integer
+          default: 200
+          title: Limit
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CommandThreadDetailOut'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /command-threads/{thread_id}/messages:
+    post:
+      tags:
+      - command-threads
+      summary: Post Message
+      operationId: post_message_command_threads__thread_id__messages_post
+      security:
+      - HTTPBearer: []
+      parameters:
+      - name: thread_id
+        in: path
+        required: true
+        schema:
+          type: integer
+          title: Thread Id
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Body_post_message_command_threads__thread_id__messages_post'
+      responses:
+        '201':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CommandMessageOut'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /command-threads/{thread_id}/close:
+    patch:
+      tags:
+      - command-threads
+      summary: Close Thread
+      operationId: close_thread_command_threads__thread_id__close_patch
+      security:
+      - HTTPBearer: []
+      parameters:
+      - name: thread_id
+        in: path
+        required: true
+        schema:
+          type: integer
+          title: Thread Id
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CommandThreadCloseUpdate'
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CommandThreadOut'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /official-dispatches:
+    get:
+      tags:
+      - official-dispatches
+      summary: List Dispatches
+      operationId: list_dispatches_official_dispatches_get
+      security:
+      - HTTPBearer: []
+      parameters:
+      - name: direction
+        in: query
+        required: false
+        schema:
+          anyOf:
+          - enum:
+            - di
+            - den
+            type: string
+          - type: 'null'
+          title: Direction
+      - name: status_filter
+        in: query
+        required: false
+        schema:
+          anyOf:
+          - enum:
+            - moi
+            - dang_xu_ly
+            - da_xu_ly
+            - luu_tru
+            type: string
+          - type: 'null'
+          title: Status Filter
+      - name: skip
+        in: query
+        required: false
+        schema:
+          type: integer
+          default: 0
+          title: Skip
+      - name: limit
+        in: query
+        required: false
+        schema:
+          type: integer
+          default: 100
+          title: Limit
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/OfficialDispatchOut'
+                title: Response List Dispatches Official Dispatches Get
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+    post:
+      tags:
+      - official-dispatches
+      summary: Create Dispatch
+      operationId: create_dispatch_official_dispatches_post
+      security:
+      - HTTPBearer: []
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Body_create_dispatch_official_dispatches_post'
+      responses:
+        '201':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OfficialDispatchDetailOut'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /official-dispatches/{dispatch_id}:
+    get:
+      tags:
+      - official-dispatches
+      summary: Get Dispatch
+      operationId: get_dispatch_official_dispatches__dispatch_id__get
+      security:
+      - HTTPBearer: []
+      parameters:
+      - name: dispatch_id
+        in: path
+        required: true
+        schema:
+          type: integer
+          title: Dispatch Id
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OfficialDispatchDetailOut'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+    put:
+      tags:
+      - official-dispatches
+      summary: Update Dispatch
+      operationId: update_dispatch_official_dispatches__dispatch_id__put
+      security:
+      - HTTPBearer: []
+      parameters:
+      - name: dispatch_id
+        in: path
+        required: true
+        schema:
+          type: integer
+          title: Dispatch Id
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Body_update_dispatch_official_dispatches__dispatch_id__put'
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OfficialDispatchDetailOut'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+    delete:
+      tags:
+      - official-dispatches
+      summary: Delete Dispatch
+      operationId: delete_dispatch_official_dispatches__dispatch_id__delete
+      security:
+      - HTTPBearer: []
+      parameters:
+      - name: dispatch_id
+        in: path
+        required: true
+        schema:
+          type: integer
+          title: Dispatch Id
+      responses:
+        '204':
+          description: Successful Response
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /official-dispatches/{dispatch_id}/download:
+    get:
+      tags:
+      - official-dispatches
+      summary: Download Dispatch
+      operationId: download_dispatch_official_dispatches__dispatch_id__download_get
+      security:
+      - HTTPBearer: []
+      parameters:
+      - name: dispatch_id
+        in: path
+        required: true
+        schema:
+          type: integer
+          title: Dispatch Id
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema: {}
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /official-dispatches/{dispatch_id}/acknowledge:
+    post:
+      tags:
+      - official-dispatches
+      summary: Acknowledge Dispatch
+      operationId: acknowledge_dispatch_official_dispatches__dispatch_id__acknowledge_post
+      security:
+      - HTTPBearer: []
+      parameters:
+      - name: dispatch_id
+        in: path
+        required: true
+        schema:
+          type: integer
+          title: Dispatch Id
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AcknowledgeRequest'
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OfficialDispatchDetailOut'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /command-meetings:
+    get:
+      tags:
+      - command-meetings
+      summary: List Meetings
+      operationId: list_meetings_command_meetings_get
+      security:
+      - HTTPBearer: []
+      parameters:
+      - name: status_filter
+        in: query
+        required: false
+        schema:
+          anyOf:
+          - enum:
+            - sap_dien_ra
+            - dang_dien_ra
+            - da_ket_thuc
+            - da_huy
+            type: string
+          - type: 'null'
+          title: Status Filter
+      - name: date_from
+        in: query
+        required: false
+        schema:
+          anyOf:
+          - type: string
+            format: date-time
+          - type: 'null'
+          title: Date From
+      - name: date_to
+        in: query
+        required: false
+        schema:
+          anyOf:
+          - type: string
+            format: date-time
+          - type: 'null'
+          title: Date To
+      - name: skip
+        in: query
+        required: false
+        schema:
+          type: integer
+          default: 0
+          title: Skip
+      - name: limit
+        in: query
+        required: false
+        schema:
+          type: integer
+          default: 100
+          title: Limit
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/CommandMeetingOut'
+                title: Response List Meetings Command Meetings Get
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+    post:
+      tags:
+      - command-meetings
+      summary: Create Meeting
+      operationId: create_meeting_command_meetings_post
+      security:
+      - HTTPBearer: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CommandMeetingCreate'
+      responses:
+        '201':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CommandMeetingDetailOut'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /command-meetings/{meeting_id}:
+    get:
+      tags:
+      - command-meetings
+      summary: Get Meeting
+      operationId: get_meeting_command_meetings__meeting_id__get
+      security:
+      - HTTPBearer: []
+      parameters:
+      - name: meeting_id
+        in: path
+        required: true
+        schema:
+          type: integer
+          title: Meeting Id
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CommandMeetingDetailOut'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+    put:
+      tags:
+      - command-meetings
+      summary: Update Meeting
+      operationId: update_meeting_command_meetings__meeting_id__put
+      security:
+      - HTTPBearer: []
+      parameters:
+      - name: meeting_id
+        in: path
+        required: true
+        schema:
+          type: integer
+          title: Meeting Id
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CommandMeetingUpdate'
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CommandMeetingDetailOut'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+    delete:
+      tags:
+      - command-meetings
+      summary: Delete Meeting
+      operationId: delete_meeting_command_meetings__meeting_id__delete
+      security:
+      - HTTPBearer: []
+      parameters:
+      - name: meeting_id
+        in: path
+        required: true
+        schema:
+          type: integer
+          title: Meeting Id
+      responses:
+        '204':
+          description: Successful Response
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /command-meetings/{meeting_id}/minutes:
+    post:
+      tags:
+      - command-meetings
+      summary: Set Minutes
+      operationId: set_minutes_command_meetings__meeting_id__minutes_post
+      security:
+      - HTTPBearer: []
+      parameters:
+      - name: meeting_id
+        in: path
+        required: true
+        schema:
+          type: integer
+          title: Meeting Id
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MinutesRequest'
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CommandMeetingDetailOut'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /command-meetings/{meeting_id}/attachment:
+    post:
+      tags:
+      - command-meetings
+      summary: Upload Attachment
+      operationId: upload_attachment_command_meetings__meeting_id__attachment_post
+      security:
+      - HTTPBearer: []
+      parameters:
+      - name: meeting_id
+        in: path
+        required: true
+        schema:
+          type: integer
+          title: Meeting Id
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Body_upload_attachment_command_meetings__meeting_id__attachment_post'
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CommandMeetingDetailOut'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /command-meetings/{meeting_id}/download:
+    get:
+      tags:
+      - command-meetings
+      summary: Download Attachment
+      operationId: download_attachment_command_meetings__meeting_id__download_get
+      security:
+      - HTTPBearer: []
+      parameters:
+      - name: meeting_id
+        in: path
+        required: true
+        schema:
+          type: integer
+          title: Meeting Id
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema: {}
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /command-meetings/{meeting_id}/attendees:
+    post:
+      tags:
+      - command-meetings
+      summary: Invite Attendees
+      operationId: invite_attendees_command_meetings__meeting_id__attendees_post
+      security:
+      - HTTPBearer: []
+      parameters:
+      - name: meeting_id
+        in: path
+        required: true
+        schema:
+          type: integer
+          title: Meeting Id
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/InviteRequest'
+      responses:
+        '201':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CommandMeetingDetailOut'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /command-meetings/{meeting_id}/attendees/{user_id}:
+    delete:
+      tags:
+      - command-meetings
+      summary: Remove Attendee
+      operationId: remove_attendee_command_meetings__meeting_id__attendees__user_id__delete
+      security:
+      - HTTPBearer: []
+      parameters:
+      - name: meeting_id
+        in: path
+        required: true
+        schema:
+          type: integer
+          title: Meeting Id
+      - name: user_id
+        in: path
+        required: true
+        schema:
+          type: integer
+          title: User Id
+      responses:
+        '204':
+          description: Successful Response
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+    patch:
+      tags:
+      - command-meetings
+      summary: Update Attendance
+      operationId: update_attendance_command_meetings__meeting_id__attendees__user_id__patch
+      security:
+      - HTTPBearer: []
+      parameters:
+      - name: meeting_id
+        in: path
+        required: true
+        schema:
+          type: integer
+          title: Meeting Id
+      - name: user_id
+        in: path
+        required: true
+        schema:
+          type: integer
+          title: User Id
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AttendanceUpdate'
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AttendeeOut'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /announcements:
+    post:
+      tags:
+      - announcements
+      summary: Create Announcement
+      operationId: create_announcement_announcements_post
+      security:
+      - HTTPBearer: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AnnouncementCreate'
+      responses:
+        '201':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AnnouncementOut'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+    get:
+      tags:
+      - announcements
+      summary: List Announcements
+      operationId: list_announcements_announcements_get
+      security:
+      - HTTPBearer: []
+      parameters:
+      - name: skip
+        in: query
+        required: false
+        schema:
+          type: integer
+          default: 0
+          title: Skip
+      - name: limit
+        in: query
+        required: false
+        schema:
+          type: integer
+          default: 100
+          title: Limit
+      - name: priority
+        in: query
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Priority
+      - name: pinned_only
+        in: query
+        required: false
+        schema:
+          type: boolean
+          default: false
+          title: Pinned Only
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/AnnouncementOut'
+                title: Response List Announcements Announcements Get
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /announcements/{ann_id}:
+    get:
+      tags:
+      - announcements
+      summary: Get Announcement
+      operationId: get_announcement_announcements__ann_id__get
+      security:
+      - HTTPBearer: []
+      parameters:
+      - name: ann_id
+        in: path
+        required: true
+        schema:
+          type: integer
+          title: Ann Id
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AnnouncementOut'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+    put:
+      tags:
+      - announcements
+      summary: Update Announcement
+      operationId: update_announcement_announcements__ann_id__put
+      security:
+      - HTTPBearer: []
+      parameters:
+      - name: ann_id
+        in: path
+        required: true
+        schema:
+          type: integer
+          title: Ann Id
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AnnouncementCreate'
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AnnouncementOut'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+    delete:
+      tags:
+      - announcements
+      summary: Delete Announcement
+      operationId: delete_announcement_announcements__ann_id__delete
+      security:
+      - HTTPBearer: []
+      parameters:
+      - name: ann_id
+        in: path
+        required: true
+        schema:
+          type: integer
+          title: Ann Id
+      responses:
+        '204':
+          description: Successful Response
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /duty-schedules:
+    post:
+      tags:
+      - duty-schedules
+      summary: Create Duty
+      operationId: create_duty_duty_schedules_post
+      security:
+      - HTTPBearer: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DutyScheduleCreate'
+      responses:
+        '201':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DutyScheduleOut'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+    get:
+      tags:
+      - duty-schedules
+      summary: List Duties
+      operationId: list_duties_duty_schedules_get
+      security:
+      - HTTPBearer: []
+      parameters:
+      - name: skip
+        in: query
+        required: false
+        schema:
+          type: integer
+          default: 0
+          title: Skip
+      - name: limit
+        in: query
+        required: false
+        schema:
+          type: integer
+          default: 100
+          title: Limit
+      - name: date_from
+        in: query
+        required: false
+        schema:
+          anyOf:
+          - type: string
+            format: date
+          - type: 'null'
+          title: Date From
+      - name: date_to
+        in: query
+        required: false
+        schema:
+          anyOf:
+          - type: string
+            format: date
+          - type: 'null'
+          title: Date To
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/DutyScheduleOut'
+                title: Response List Duties Duty Schedules Get
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /duty-schedules/{duty_id}:
+    get:
+      tags:
+      - duty-schedules
+      summary: Get Duty
+      operationId: get_duty_duty_schedules__duty_id__get
+      security:
+      - HTTPBearer: []
+      parameters:
+      - name: duty_id
+        in: path
+        required: true
+        schema:
+          type: integer
+          title: Duty Id
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DutyScheduleOut'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+    put:
+      tags:
+      - duty-schedules
+      summary: Update Duty
+      operationId: update_duty_duty_schedules__duty_id__put
+      security:
+      - HTTPBearer: []
+      parameters:
+      - name: duty_id
+        in: path
+        required: true
+        schema:
+          type: integer
+          title: Duty Id
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DutyScheduleCreate'
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DutyScheduleOut'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+    delete:
+      tags:
+      - duty-schedules
+      summary: Delete Duty
+      operationId: delete_duty_duty_schedules__duty_id__delete
+      security:
+      - HTTPBearer: []
+      parameters:
+      - name: duty_id
+        in: path
+        required: true
+        schema:
+          type: integer
+          title: Duty Id
+      responses:
+        '204':
+          description: Successful Response
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /documents:
+    post:
+      tags:
+      - documents
+      summary: Upload Document
+      operationId: upload_document_documents_post
+      security:
+      - HTTPBearer: []
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Body_upload_document_documents_post'
+      responses:
+        '201':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DocumentOut'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+    get:
+      tags:
+      - documents
+      summary: List Documents
+      operationId: list_documents_documents_get
+      security:
+      - HTTPBearer: []
+      parameters:
+      - name: skip
+        in: query
+        required: false
+        schema:
+          type: integer
+          default: 0
+          title: Skip
+      - name: limit
+        in: query
+        required: false
+        schema:
+          type: integer
+          default: 100
+          title: Limit
+      - name: category
+        in: query
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Category
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/DocumentOut'
+                title: Response List Documents Documents Get
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /documents/{doc_id}:
+    get:
+      tags:
+      - documents
+      summary: Get Document
+      operationId: get_document_documents__doc_id__get
+      security:
+      - HTTPBearer: []
+      parameters:
+      - name: doc_id
+        in: path
+        required: true
+        schema:
+          type: integer
+          title: Doc Id
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DocumentOut'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+    put:
+      tags:
+      - documents
+      summary: Update Document
+      operationId: update_document_documents__doc_id__put
+      security:
+      - HTTPBearer: []
+      parameters:
+      - name: doc_id
+        in: path
+        required: true
+        schema:
+          type: integer
+          title: Doc Id
+      requestBody:
+        required: true
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Body_update_document_documents__doc_id__put'
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DocumentOut'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+    delete:
+      tags:
+      - documents
+      summary: Delete Document
+      operationId: delete_document_documents__doc_id__delete
+      security:
+      - HTTPBearer: []
+      parameters:
+      - name: doc_id
+        in: path
+        required: true
+        schema:
+          type: integer
+          title: Doc Id
+      responses:
+        '204':
+          description: Successful Response
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /documents/{doc_id}/download:
+    get:
+      tags:
+      - documents
+      summary: Download Document
+      operationId: download_document_documents__doc_id__download_get
+      security:
+      - HTTPBearer: []
+      parameters:
+      - name: doc_id
+        in: path
+        required: true
+        schema:
+          type: integer
+          title: Doc Id
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema: {}
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /home/public:
+    get:
+      tags:
+      - home
+      summary: Get Public Home
+      description: Trang cong khai cho khach chua dang nhap - khong can JWT.
+      operationId: get_public_home_home_public_get
+      parameters:
+      - name: limit
+        in: query
+        required: false
+        schema:
+          type: integer
+          maximum: 20
+          minimum: 1
+          default: 6
+          title: Limit
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PublicHomeOut'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /home/summary:
+    get:
+      tags:
+      - home
+      summary: Get Home Summary
+      operationId: get_home_summary_home_summary_get
+      security:
+      - HTTPBearer: []
+      parameters:
+      - name: limit
+        in: query
+        required: false
+        schema:
+          type: integer
+          maximum: 20
+          minimum: 1
+          default: 5
+          title: Limit
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HomeSummaryOut'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+components:
+  schemas:
+    AcknowledgeRequest:
+      properties:
+        response_note:
+          anyOf:
+          - type: string
+            maxLength: 500
+          - type: 'null'
+          title: Response Note
+      type: object
+      title: AcknowledgeRequest
+    AnnouncementCreate:
+      properties:
+        title:
+          type: string
+          maxLength: 255
+          title: Title
+        content:
+          type: string
+          title: Content
+        priority:
+          type: string
+          enum:
+          - thap
+          - binh_thuong
+          - cao
+          - khan
+          title: Priority
+          default: binh_thuong
+        is_pinned:
+          type: boolean
+          title: Is Pinned
+          default: false
+        is_public:
+          type: boolean
+          title: Is Public
+          default: false
+        starts_at:
+          anyOf:
+          - type: string
+            format: date-time
+          - type: 'null'
+          title: Starts At
+        ends_at:
+          anyOf:
+          - type: string
+            format: date-time
+          - type: 'null'
+          title: Ends At
+      type: object
+      required:
+      - title
+      - content
+      title: AnnouncementCreate
+    AnnouncementOut:
+      properties:
+        id:
+          type: integer
+          title: Id
+        title:
+          type: string
+          title: Title
+        content:
+          type: string
+          title: Content
+        priority:
+          type: string
+          enum:
+          - thap
+          - binh_thuong
+          - cao
+          - khan
+          title: Priority
+        is_pinned:
+          type: boolean
+          title: Is Pinned
+        is_public:
+          type: boolean
+          title: Is Public
+        starts_at:
+          anyOf:
+          - type: string
+            format: date-time
+          - type: 'null'
+          title: Starts At
+        ends_at:
+          anyOf:
+          - type: string
+            format: date-time
+          - type: 'null'
+          title: Ends At
+        author_id:
+          type: integer
+          title: Author Id
+        author_full_name:
+          type: string
+          title: Author Full Name
+        created_at:
+          type: string
+          format: date-time
+          title: Created At
+      type: object
+      required:
+      - id
+      - title
+      - content
+      - priority
+      - is_pinned
+      - is_public
+      - starts_at
+      - ends_at
+      - author_id
+      - author_full_name
+      - created_at
+      title: AnnouncementOut
+    AttendanceUpdate:
+      properties:
+        attendance:
+          anyOf:
+          - type: string
+            enum:
+            - co_mat
+            - vang_mat
+            - chua_diem_danh
+          - type: 'null'
+          title: Attendance
+        absence_reason:
+          anyOf:
+          - type: string
+            maxLength: 500
+          - type: 'null'
+          title: Absence Reason
+        contribution_note:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Contribution Note
+      type: object
+      title: AttendanceUpdate
+    AttendeeOut:
+      properties:
+        id:
+          type: integer
+          title: Id
+        meeting_id:
+          type: integer
+          title: Meeting Id
+        user_id:
+          type: integer
+          title: User Id
+        full_name:
+          type: string
+          title: Full Name
+        unit_id:
+          anyOf:
+          - type: integer
+          - type: 'null'
+          title: Unit Id
+        unit_name:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Unit Name
+        attendance:
+          type: string
+          enum:
+          - co_mat
+          - vang_mat
+          - chua_diem_danh
+          title: Attendance
+        absence_reason:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Absence Reason
+        contribution_note:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Contribution Note
+      type: object
+      required:
+      - id
+      - meeting_id
+      - user_id
+      - full_name
+      - unit_id
+      - unit_name
+      - attendance
+      - absence_reason
+      - contribution_note
+      title: AttendeeOut
+    Body_create_dispatch_official_dispatches_post:
+      properties:
+        file:
+          anyOf:
+          - type: string
+            contentMediaType: application/octet-stream
+          - type: 'null'
+          title: File
+        direction:
+          type: string
+          enum:
+          - di
+          - den
+          title: Direction
+        dispatch_number:
+          type: string
+          maxLength: 80
+          title: Dispatch Number
+        summary:
+          type: string
+          maxLength: 500
+          title: Summary
+        issuing_org:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Issuing Org
+        receiving_org:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Receiving Org
+        issued_date:
+          anyOf:
+          - type: string
+            format: date
+          - type: 'null'
+          title: Issued Date
+        received_date:
+          anyOf:
+          - type: string
+            format: date
+          - type: 'null'
+          title: Received Date
+        status:
+          type: string
+          enum:
+          - moi
+          - dang_xu_ly
+          - da_xu_ly
+          - luu_tru
+          title: Status
+          default: moi
+        note:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Note
+      type: object
+      required:
+      - direction
+      - dispatch_number
+      - summary
+      title: Body_create_dispatch_official_dispatches_post
+    Body_post_message_command_threads__thread_id__messages_post:
+      properties:
+        body:
+          type: string
+          title: Body
+          default: ''
+        file:
+          anyOf:
+          - type: string
+            contentMediaType: application/octet-stream
+          - type: 'null'
+          title: File
+      type: object
+      title: Body_post_message_command_threads__thread_id__messages_post
+    Body_post_message_directive_threads__thread_id__messages_post:
+      properties:
+        body:
+          type: string
+          title: Body
+          default: ''
+        file:
+          anyOf:
+          - type: string
+            contentMediaType: application/octet-stream
+          - type: 'null'
+          title: File
+      type: object
+      title: Body_post_message_directive_threads__thread_id__messages_post
+    Body_submit_report_directive_assignments__assignment_id__targets__target_id__submit_post:
+      properties:
+        content:
+          type: string
+          title: Content
+        file:
+          anyOf:
+          - type: string
+            contentMediaType: application/octet-stream
+          - type: 'null'
+          title: File
+      type: object
+      required:
+      - content
+      title: Body_submit_report_directive_assignments__assignment_id__targets__target_id__submit_post
+    Body_update_dispatch_official_dispatches__dispatch_id__put:
+      properties:
+        file:
+          anyOf:
+          - type: string
+            contentMediaType: application/octet-stream
+          - type: 'null'
+          title: File
+        direction:
+          type: string
+          enum:
+          - di
+          - den
+          title: Direction
+        dispatch_number:
+          type: string
+          maxLength: 80
+          title: Dispatch Number
+        summary:
+          type: string
+          maxLength: 500
+          title: Summary
+        issuing_org:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Issuing Org
+        receiving_org:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Receiving Org
+        issued_date:
+          anyOf:
+          - type: string
+            format: date
+          - type: 'null'
+          title: Issued Date
+        received_date:
+          anyOf:
+          - type: string
+            format: date
+          - type: 'null'
+          title: Received Date
+        status:
+          type: string
+          enum:
+          - moi
+          - dang_xu_ly
+          - da_xu_ly
+          - luu_tru
+          title: Status
+          default: moi
+        note:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Note
+      type: object
+      required:
+      - direction
+      - dispatch_number
+      - summary
+      title: Body_update_dispatch_official_dispatches__dispatch_id__put
+    Body_update_document_documents__doc_id__put:
+      properties:
+        title:
+          type: string
+          maxLength: 255
+          title: Title
+        category:
+          type: string
+          title: Category
+        description:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Description
+        classification:
+          type: string
+          title: Classification
+          default: noi_bo
+      type: object
+      required:
+      - title
+      - category
+      title: Body_update_document_documents__doc_id__put
+    Body_upload_attachment_command_meetings__meeting_id__attachment_post:
+      properties:
+        file:
+          type: string
+          contentMediaType: application/octet-stream
+          title: File
+      type: object
+      required:
+      - file
+      title: Body_upload_attachment_command_meetings__meeting_id__attachment_post
+    Body_upload_document_documents_post:
+      properties:
+        title:
+          type: string
+          maxLength: 255
+          title: Title
+        category:
+          type: string
+          title: Category
+        description:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Description
+        classification:
+          type: string
+          title: Classification
+          default: noi_bo
+        file:
+          type: string
+          contentMediaType: application/octet-stream
+          title: File
+      type: object
+      required:
+      - title
+      - category
+      - file
+      title: Body_upload_document_documents_post
+    Body_upload_thumbnail_posts__post_id__thumbnail_post:
+      properties:
+        file:
+          type: string
+          contentMediaType: application/octet-stream
+          title: File
+      type: object
+      required:
+      - file
+      title: Body_upload_thumbnail_posts__post_id__thumbnail_post
+    ChannelAccessUpdate:
+      properties:
+        directive_channel_access:
+          anyOf:
+          - type: boolean
+          - type: 'null'
+          title: Directive Channel Access
+        command_channel_access:
+          anyOf:
+          - type: boolean
+          - type: 'null'
+          title: Command Channel Access
+      type: object
+      title: ChannelAccessUpdate
+    ClearanceUpdate:
+      properties:
+        clearance:
+          type: boolean
+          title: Clearance
+      type: object
+      required:
+      - clearance
+      title: ClearanceUpdate
+    CommandMeetingCreate:
+      properties:
+        title:
+          type: string
+          maxLength: 255
+          minLength: 1
+          title: Title
+        start_time:
+          type: string
+          format: date-time
+          title: Start Time
+        end_time:
+          anyOf:
+          - type: string
+            format: date-time
+          - type: 'null'
+          title: End Time
+        location:
+          anyOf:
+          - type: string
+            maxLength: 255
+          - type: 'null'
+          title: Location
+        meeting_link:
+          anyOf:
+          - type: string
+            maxLength: 500
+          - type: 'null'
+          title: Meeting Link
+        agenda:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Agenda
+        attendee_user_ids:
+          items:
+            type: integer
+          type: array
+          title: Attendee User Ids
+      type: object
+      required:
+      - title
+      - start_time
+      title: CommandMeetingCreate
+    CommandMeetingDetailOut:
+      properties:
+        id:
+          type: integer
+          title: Id
+        title:
+          type: string
+          title: Title
+        start_time:
+          type: string
+          format: date-time
+          title: Start Time
+        end_time:
+          anyOf:
+          - type: string
+            format: date-time
+          - type: 'null'
+          title: End Time
+        location:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Location
+        meeting_link:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Meeting Link
+        agenda:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Agenda
+        minutes:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Minutes
+        attachment_url:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Attachment Url
+        attachment_name:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Attachment Name
+        status:
+          type: string
+          enum:
+          - sap_dien_ra
+          - dang_dien_ra
+          - da_ket_thuc
+          - da_huy
+          title: Status
+        classification:
+          type: string
+          title: Classification
+        created_by_id:
+          type: integer
+          title: Created By Id
+        created_by_full_name:
+          type: string
+          title: Created By Full Name
+        created_at:
+          type: string
+          format: date-time
+          title: Created At
+        attendee_count:
+          type: integer
+          title: Attendee Count
+        present_count:
+          type: integer
+          title: Present Count
+        my_attendance:
+          anyOf:
+          - type: string
+            enum:
+            - co_mat
+            - vang_mat
+            - chua_diem_danh
+          - type: 'null'
+          title: My Attendance
+        attendees:
+          items:
+            $ref: '#/components/schemas/AttendeeOut'
+          type: array
+          title: Attendees
+      type: object
+      required:
+      - id
+      - title
+      - start_time
+      - end_time
+      - location
+      - meeting_link
+      - agenda
+      - minutes
+      - attachment_url
+      - attachment_name
+      - status
+      - classification
+      - created_by_id
+      - created_by_full_name
+      - created_at
+      - attendee_count
+      - present_count
+      - my_attendance
+      - attendees
+      title: CommandMeetingDetailOut
+    CommandMeetingOut:
+      properties:
+        id:
+          type: integer
+          title: Id
+        title:
+          type: string
+          title: Title
+        start_time:
+          type: string
+          format: date-time
+          title: Start Time
+        end_time:
+          anyOf:
+          - type: string
+            format: date-time
+          - type: 'null'
+          title: End Time
+        location:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Location
+        meeting_link:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Meeting Link
+        agenda:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Agenda
+        minutes:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Minutes
+        attachment_url:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Attachment Url
+        attachment_name:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Attachment Name
+        status:
+          type: string
+          enum:
+          - sap_dien_ra
+          - dang_dien_ra
+          - da_ket_thuc
+          - da_huy
+          title: Status
+        classification:
+          type: string
+          title: Classification
+        created_by_id:
+          type: integer
+          title: Created By Id
+        created_by_full_name:
+          type: string
+          title: Created By Full Name
+        created_at:
+          type: string
+          format: date-time
+          title: Created At
+        attendee_count:
+          type: integer
+          title: Attendee Count
+        present_count:
+          type: integer
+          title: Present Count
+        my_attendance:
+          anyOf:
+          - type: string
+            enum:
+            - co_mat
+            - vang_mat
+            - chua_diem_danh
+          - type: 'null'
+          title: My Attendance
+      type: object
+      required:
+      - id
+      - title
+      - start_time
+      - end_time
+      - location
+      - meeting_link
+      - agenda
+      - minutes
+      - attachment_url
+      - attachment_name
+      - status
+      - classification
+      - created_by_id
+      - created_by_full_name
+      - created_at
+      - attendee_count
+      - present_count
+      - my_attendance
+      title: CommandMeetingOut
+    CommandMeetingUpdate:
+      properties:
+        title:
+          type: string
+          maxLength: 255
+          minLength: 1
+          title: Title
+        start_time:
+          type: string
+          format: date-time
+          title: Start Time
+        end_time:
+          anyOf:
+          - type: string
+            format: date-time
+          - type: 'null'
+          title: End Time
+        location:
+          anyOf:
+          - type: string
+            maxLength: 255
+          - type: 'null'
+          title: Location
+        meeting_link:
+          anyOf:
+          - type: string
+            maxLength: 500
+          - type: 'null'
+          title: Meeting Link
+        agenda:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Agenda
+        status:
+          type: string
+          enum:
+          - sap_dien_ra
+          - dang_dien_ra
+          - da_ket_thuc
+          - da_huy
+          title: Status
+          default: sap_dien_ra
+      type: object
+      required:
+      - title
+      - start_time
+      title: CommandMeetingUpdate
+    CommandMessageOut:
+      properties:
+        id:
+          type: integer
+          title: Id
+        thread_id:
+          type: integer
+          title: Thread Id
+        sender_id:
+          type: integer
+          title: Sender Id
+        sender_full_name:
+          type: string
+          title: Sender Full Name
+        body:
+          type: string
+          title: Body
+        attachment_url:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Attachment Url
+        created_at:
+          type: string
+          format: date-time
+          title: Created At
+      type: object
+      required:
+      - id
+      - thread_id
+      - sender_id
+      - sender_full_name
+      - body
+      - attachment_url
+      - created_at
+      title: CommandMessageOut
+    CommandThreadCloseUpdate:
+      properties:
+        is_closed:
+          type: boolean
+          title: Is Closed
+      type: object
+      required:
+      - is_closed
+      title: CommandThreadCloseUpdate
+    CommandThreadCreate:
+      properties:
+        title:
+          type: string
+          maxLength: 255
+          minLength: 1
+          title: Title
+      type: object
+      required:
+      - title
+      title: CommandThreadCreate
+    CommandThreadDetailOut:
+      properties:
+        id:
+          type: integer
+          title: Id
+        title:
+          type: string
+          title: Title
+        classification:
+          type: string
+          title: Classification
+        created_by_id:
+          type: integer
+          title: Created By Id
+        created_by_full_name:
+          type: string
+          title: Created By Full Name
+        created_at:
+          type: string
+          format: date-time
+          title: Created At
+        last_message_at:
+          anyOf:
+          - type: string
+            format: date-time
+          - type: 'null'
+          title: Last Message At
+        is_closed:
+          type: boolean
+          title: Is Closed
+        message_count:
+          type: integer
+          title: Message Count
+        unread_count:
+          type: integer
+          title: Unread Count
+        messages:
+          items:
+            $ref: '#/components/schemas/CommandMessageOut'
+          type: array
+          title: Messages
+      type: object
+      required:
+      - id
+      - title
+      - classification
+      - created_by_id
+      - created_by_full_name
+      - created_at
+      - last_message_at
+      - is_closed
+      - message_count
+      - unread_count
+      - messages
+      title: CommandThreadDetailOut
+    CommandThreadOut:
+      properties:
+        id:
+          type: integer
+          title: Id
+        title:
+          type: string
+          title: Title
+        classification:
+          type: string
+          title: Classification
+        created_by_id:
+          type: integer
+          title: Created By Id
+        created_by_full_name:
+          type: string
+          title: Created By Full Name
+        created_at:
+          type: string
+          format: date-time
+          title: Created At
+        last_message_at:
+          anyOf:
+          - type: string
+            format: date-time
+          - type: 'null'
+          title: Last Message At
+        is_closed:
+          type: boolean
+          title: Is Closed
+        message_count:
+          type: integer
+          title: Message Count
+        unread_count:
+          type: integer
+          title: Unread Count
+      type: object
+      required:
+      - id
+      - title
+      - classification
+      - created_by_id
+      - created_by_full_name
+      - created_at
+      - last_message_at
+      - is_closed
+      - message_count
+      - unread_count
+      title: CommandThreadOut
+    DirectiveAckReport:
+      properties:
+        directive_id:
+          type: integer
+          title: Directive Id
+        recipient_count:
+          type: integer
+          title: Recipient Count
+        acknowledged_count:
+          type: integer
+          title: Acknowledged Count
+        acknowledged:
+          items:
+            $ref: '#/components/schemas/DirectiveAckUser'
+          type: array
+          title: Acknowledged
+        pending:
+          items:
+            $ref: '#/components/schemas/DirectiveAckUser'
+          type: array
+          title: Pending
+      type: object
+      required:
+      - directive_id
+      - recipient_count
+      - acknowledged_count
+      - acknowledged
+      - pending
+      title: DirectiveAckReport
+    DirectiveAckUser:
+      properties:
+        user_id:
+          type: integer
+          title: User Id
+        full_name:
+          type: string
+          title: Full Name
+        role:
+          type: string
+          title: Role
+        acknowledged_at:
+          anyOf:
+          - type: string
+            format: date-time
+          - type: 'null'
+          title: Acknowledged At
+      type: object
+      required:
+      - user_id
+      - full_name
+      - role
+      title: DirectiveAckUser
+    DirectiveAssignmentCreate:
+      properties:
+        directive_id:
+          anyOf:
+          - type: integer
+          - type: 'null'
+          title: Directive Id
+        title:
+          type: string
+          maxLength: 255
+          minLength: 1
+          title: Title
+        description:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Description
+        due_date:
+          anyOf:
+          - type: string
+            format: date
+          - type: 'null'
+          title: Due Date
+        targets:
+          items:
+            $ref: '#/components/schemas/TargetCreate'
+          type: array
+          title: Targets
+      type: object
+      required:
+      - title
+      title: DirectiveAssignmentCreate
+    DirectiveAssignmentDetailOut:
+      properties:
+        id:
+          type: integer
+          title: Id
+        directive_id:
+          anyOf:
+          - type: integer
+          - type: 'null'
+          title: Directive Id
+        directive_title:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Directive Title
+        title:
+          type: string
+          title: Title
+        description:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Description
+        due_date:
+          anyOf:
+          - type: string
+            format: date
+          - type: 'null'
+          title: Due Date
+        status:
+          type: string
+          enum:
+          - chua_giao
+          - dang_thuc_hien
+          - hoan_thanh
+          - qua_han
+          title: Status
+        created_by_id:
+          type: integer
+          title: Created By Id
+        created_by_full_name:
+          type: string
+          title: Created By Full Name
+        created_at:
+          type: string
+          format: date-time
+          title: Created At
+        target_count:
+          type: integer
+          title: Target Count
+        approved_count:
+          type: integer
+          title: Approved Count
+        pending_count:
+          type: integer
+          title: Pending Count
+        targets:
+          items:
+            $ref: '#/components/schemas/TargetDetailOut'
+          type: array
+          title: Targets
+      type: object
+      required:
+      - id
+      - directive_id
+      - directive_title
+      - title
+      - description
+      - due_date
+      - status
+      - created_by_id
+      - created_by_full_name
+      - created_at
+      - target_count
+      - approved_count
+      - pending_count
+      - targets
+      title: DirectiveAssignmentDetailOut
+    DirectiveAssignmentOut:
+      properties:
+        id:
+          type: integer
+          title: Id
+        directive_id:
+          anyOf:
+          - type: integer
+          - type: 'null'
+          title: Directive Id
+        directive_title:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Directive Title
+        title:
+          type: string
+          title: Title
+        description:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Description
+        due_date:
+          anyOf:
+          - type: string
+            format: date
+          - type: 'null'
+          title: Due Date
+        status:
+          type: string
+          enum:
+          - chua_giao
+          - dang_thuc_hien
+          - hoan_thanh
+          - qua_han
+          title: Status
+        created_by_id:
+          type: integer
+          title: Created By Id
+        created_by_full_name:
+          type: string
+          title: Created By Full Name
+        created_at:
+          type: string
+          format: date-time
+          title: Created At
+        target_count:
+          type: integer
+          title: Target Count
+        approved_count:
+          type: integer
+          title: Approved Count
+        pending_count:
+          type: integer
+          title: Pending Count
+      type: object
+      required:
+      - id
+      - directive_id
+      - directive_title
+      - title
+      - description
+      - due_date
+      - status
+      - created_by_id
+      - created_by_full_name
+      - created_at
+      - target_count
+      - approved_count
+      - pending_count
+      title: DirectiveAssignmentOut
+    DirectiveAssignmentUpdate:
+      properties:
+        title:
+          type: string
+          maxLength: 255
+          minLength: 1
+          title: Title
+        description:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Description
+        due_date:
+          anyOf:
+          - type: string
+            format: date
+          - type: 'null'
+          title: Due Date
+        directive_id:
+          anyOf:
+          - type: integer
+          - type: 'null'
+          title: Directive Id
+      type: object
+      required:
+      - title
+      title: DirectiveAssignmentUpdate
+    DirectiveCreate:
+      properties:
+        title:
+          type: string
+          maxLength: 255
+          title: Title
+        content:
+          type: string
+          title: Content
+        status:
+          type: string
+          enum:
+          - nhap
+          - da_ban_hanh
+          title: Status
+          default: nhap
+        classification:
+          type: string
+          enum:
+          - cong_khai
+          - noi_bo
+          - mat
+          title: Classification
+          default: noi_bo
+      type: object
+      required:
+      - title
+      - content
+      title: DirectiveCreate
+    DirectiveMessageOut:
+      properties:
+        id:
+          type: integer
+          title: Id
+        thread_id:
+          type: integer
+          title: Thread Id
+        sender_id:
+          type: integer
+          title: Sender Id
+        sender_full_name:
+          type: string
+          title: Sender Full Name
+        body:
+          type: string
+          title: Body
+        attachment_url:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Attachment Url
+        created_at:
+          type: string
+          format: date-time
+          title: Created At
+      type: object
+      required:
+      - id
+      - thread_id
+      - sender_id
+      - sender_full_name
+      - body
+      - attachment_url
+      - created_at
+      title: DirectiveMessageOut
+    DirectiveOut:
+      properties:
+        id:
+          type: integer
+          title: Id
+        title:
+          type: string
+          title: Title
+        content:
+          type: string
+          title: Content
+        status:
+          type: string
+          enum:
+          - nhap
+          - da_ban_hanh
+          title: Status
+        classification:
+          type: string
+          enum:
+          - cong_khai
+          - noi_bo
+          - mat
+          title: Classification
+        author_id:
+          type: integer
+          title: Author Id
+        author_full_name:
+          type: string
+          title: Author Full Name
+        created_at:
+          type: string
+          format: date-time
+          title: Created At
+        recipient_count:
+          type: integer
+          title: Recipient Count
+        acknowledged_count:
+          type: integer
+          title: Acknowledged Count
+        acknowledged_by_me:
+          type: boolean
+          title: Acknowledged By Me
+      type: object
+      required:
+      - id
+      - title
+      - content
+      - status
+      - classification
+      - author_id
+      - author_full_name
+      - created_at
+      - recipient_count
+      - acknowledged_count
+      - acknowledged_by_me
+      title: DirectiveOut
+    DirectiveThreadCreate:
+      properties:
+        unit_id:
+          anyOf:
+          - type: integer
+          - type: 'null'
+          title: Unit Id
+        title:
+          type: string
+          maxLength: 255
+          minLength: 1
+          title: Title
+      type: object
+      required:
+      - title
+      title: DirectiveThreadCreate
+    DirectiveThreadDetailOut:
+      properties:
+        id:
+          type: integer
+          title: Id
+        unit_id:
+          type: integer
+          title: Unit Id
+        unit_name:
+          type: string
+          title: Unit Name
+        title:
+          type: string
+          title: Title
+        created_by_id:
+          type: integer
+          title: Created By Id
+        created_by_full_name:
+          type: string
+          title: Created By Full Name
+        created_at:
+          type: string
+          format: date-time
+          title: Created At
+        last_message_at:
+          anyOf:
+          - type: string
+            format: date-time
+          - type: 'null'
+          title: Last Message At
+        is_closed:
+          type: boolean
+          title: Is Closed
+        message_count:
+          type: integer
+          title: Message Count
+        unread_count:
+          type: integer
+          title: Unread Count
+        messages:
+          items:
+            $ref: '#/components/schemas/DirectiveMessageOut'
+          type: array
+          title: Messages
+      type: object
+      required:
+      - id
+      - unit_id
+      - unit_name
+      - title
+      - created_by_id
+      - created_by_full_name
+      - created_at
+      - last_message_at
+      - is_closed
+      - message_count
+      - unread_count
+      - messages
+      title: DirectiveThreadDetailOut
+    DirectiveThreadOut:
+      properties:
+        id:
+          type: integer
+          title: Id
+        unit_id:
+          type: integer
+          title: Unit Id
+        unit_name:
+          type: string
+          title: Unit Name
+        title:
+          type: string
+          title: Title
+        created_by_id:
+          type: integer
+          title: Created By Id
+        created_by_full_name:
+          type: string
+          title: Created By Full Name
+        created_at:
+          type: string
+          format: date-time
+          title: Created At
+        last_message_at:
+          anyOf:
+          - type: string
+            format: date-time
+          - type: 'null'
+          title: Last Message At
+        is_closed:
+          type: boolean
+          title: Is Closed
+        message_count:
+          type: integer
+          title: Message Count
+        unread_count:
+          type: integer
+          title: Unread Count
+      type: object
+      required:
+      - id
+      - unit_id
+      - unit_name
+      - title
+      - created_by_id
+      - created_by_full_name
+      - created_at
+      - last_message_at
+      - is_closed
+      - message_count
+      - unread_count
+      title: DirectiveThreadOut
+    DispatchAckOut:
+      properties:
+        user_id:
+          type: integer
+          title: User Id
+        full_name:
+          type: string
+          title: Full Name
+        role:
+          type: string
+          title: Role
+        acknowledged_at:
+          anyOf:
+          - type: string
+            format: date-time
+          - type: 'null'
+          title: Acknowledged At
+        response_note:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Response Note
+      type: object
+      required:
+      - user_id
+      - full_name
+      - role
+      title: DispatchAckOut
+    DocumentOut:
+      properties:
+        id:
+          type: integer
+          title: Id
+        title:
+          type: string
+          title: Title
+        description:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Description
+        category:
+          type: string
+          enum:
+          - bieu_mau
+          - huong_dan
+          - quy_che_quy_dinh
+          - ke_hoach
+          - bao_cao
+          - van_ban_chi_dao
+          title: Category
+        file_url:
+          type: string
+          title: File Url
+        file_name:
+          type: string
+          title: File Name
+        file_size:
+          type: integer
+          title: File Size
+        content_type:
+          type: string
+          title: Content Type
+        classification:
+          type: string
+          enum:
+          - cong_khai
+          - noi_bo
+          - mat
+          title: Classification
+        uploaded_by_id:
+          type: integer
+          title: Uploaded By Id
+        uploaded_by_full_name:
+          type: string
+          title: Uploaded By Full Name
+        created_at:
+          type: string
+          format: date-time
+          title: Created At
+      type: object
+      required:
+      - id
+      - title
+      - description
+      - category
+      - file_url
+      - file_name
+      - file_size
+      - content_type
+      - classification
+      - uploaded_by_id
+      - uploaded_by_full_name
+      - created_at
+      title: DocumentOut
+    DutyScheduleCreate:
+      properties:
+        duty_date:
+          type: string
+          format: date
+          title: Duty Date
+        shift:
+          type: string
+          maxLength: 50
+          title: Shift
+        duty_officer:
+          type: string
+          maxLength: 100
+          title: Duty Officer
+        role_title:
+          type: string
+          maxLength: 100
+          title: Role Title
+        note:
+          anyOf:
+          - type: string
+            maxLength: 500
+          - type: 'null'
+          title: Note
+      type: object
+      required:
+      - duty_date
+      - shift
+      - duty_officer
+      - role_title
+      title: DutyScheduleCreate
+    DutyScheduleOut:
+      properties:
+        id:
+          type: integer
+          title: Id
+        duty_date:
+          type: string
+          format: date
+          title: Duty Date
+        shift:
+          type: string
+          title: Shift
+        duty_officer:
+          type: string
+          title: Duty Officer
+        role_title:
+          type: string
+          title: Role Title
+        note:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Note
+        author_id:
+          type: integer
+          title: Author Id
+        author_full_name:
+          type: string
+          title: Author Full Name
+        created_at:
+          type: string
+          format: date-time
+          title: Created At
+      type: object
+      required:
+      - id
+      - duty_date
+      - shift
+      - duty_officer
+      - role_title
+      - note
+      - author_id
+      - author_full_name
+      - created_at
+      title: DutyScheduleOut
+    EducationMaterialCreate:
+      properties:
+        title:
+          type: string
+          maxLength: 255
+          title: Title
+        category:
+          type: string
+          enum:
+          - hoc_tap_chinh_tri_quan_su
+          - tuyen_truyen
+          - phap_luat_bien_gioi
+          - lich_su_truyen_thong
+          title: Category
+        period_label:
+          anyOf:
+          - type: string
+            maxLength: 50
+          - type: 'null'
+          title: Period Label
+        content:
+          type: string
+          title: Content
+        attachment_url:
+          anyOf:
+          - type: string
+            maxLength: 500
+          - type: 'null'
+          title: Attachment Url
+      type: object
+      required:
+      - title
+      - category
+      - content
+      title: EducationMaterialCreate
+    EducationMaterialOut:
+      properties:
+        id:
+          type: integer
+          title: Id
+        title:
+          type: string
+          title: Title
+        category:
+          type: string
+          enum:
+          - hoc_tap_chinh_tri_quan_su
+          - tuyen_truyen
+          - phap_luat_bien_gioi
+          - lich_su_truyen_thong
+          title: Category
+        period_label:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Period Label
+        content:
+          type: string
+          title: Content
+        attachment_url:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Attachment Url
+        author_id:
+          type: integer
+          title: Author Id
+        author_full_name:
+          type: string
+          title: Author Full Name
+        created_at:
+          type: string
+          format: date-time
+          title: Created At
+      type: object
+      required:
+      - id
+      - title
+      - category
+      - period_label
+      - content
+      - attachment_url
+      - author_id
+      - author_full_name
+      - created_at
+      title: EducationMaterialOut
+    HTTPValidationError:
+      properties:
+        detail:
+          items:
+            $ref: '#/components/schemas/ValidationError'
+          type: array
+          title: Detail
+      type: object
+      title: HTTPValidationError
+    HomeSummaryOut:
+      properties:
+        latest_posts:
+          items:
+            $ref: '#/components/schemas/PostOut'
+          type: array
+          title: Latest Posts
+        latest_education_materials:
+          items:
+            $ref: '#/components/schemas/EducationMaterialOut'
+          type: array
+          title: Latest Education Materials
+        latest_directives:
+          items:
+            $ref: '#/components/schemas/DirectiveOut'
+          type: array
+          title: Latest Directives
+        latest_announcements:
+          items:
+            $ref: '#/components/schemas/AnnouncementOut'
+          type: array
+          title: Latest Announcements
+      type: object
+      required:
+      - latest_posts
+      - latest_education_materials
+      - latest_directives
+      - latest_announcements
+      title: HomeSummaryOut
+      description: Trang chu ben trong (da dang nhap) - da loc theo quyen cua user.
+    InviteRequest:
+      properties:
+        user_ids:
+          items:
+            type: integer
+          type: array
+          minItems: 1
+          title: User Ids
+      type: object
+      required:
+      - user_ids
+      title: InviteRequest
+    ItemCreate:
+      properties:
+        name:
+          type: string
+          maxLength: 255
+          title: Name
+        description:
+          anyOf:
+          - type: string
+            maxLength: 500
+          - type: 'null'
+          title: Description
+      type: object
+      required:
+      - name
+      title: ItemCreate
+    ItemOut:
+      properties:
+        name:
+          type: string
+          maxLength: 255
+          title: Name
+        description:
+          anyOf:
+          - type: string
+            maxLength: 500
+          - type: 'null'
+          title: Description
+        id:
+          type: integer
+          title: Id
+      type: object
+      required:
+      - name
+      - id
+      title: ItemOut
+    LoginRequest:
+      properties:
+        username:
+          type: string
+          title: Username
+        password:
+          type: string
+          title: Password
+      type: object
+      required:
+      - username
+      - password
+      title: LoginRequest
+    MinutesRequest:
+      properties:
+        minutes:
+          type: string
+          minLength: 1
+          title: Minutes
+        mark_finished:
+          type: boolean
+          title: Mark Finished
+          default: false
+      type: object
+      required:
+      - minutes
+      title: MinutesRequest
+    OfficialDispatchDetailOut:
+      properties:
+        id:
+          type: integer
+          title: Id
+        direction:
+          type: string
+          enum:
+          - di
+          - den
+          title: Direction
+        dispatch_number:
+          type: string
+          title: Dispatch Number
+        summary:
+          type: string
+          title: Summary
+        issuing_org:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Issuing Org
+        receiving_org:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Receiving Org
+        issued_date:
+          anyOf:
+          - type: string
+            format: date
+          - type: 'null'
+          title: Issued Date
+        received_date:
+          anyOf:
+          - type: string
+            format: date
+          - type: 'null'
+          title: Received Date
+        status:
+          type: string
+          enum:
+          - moi
+          - dang_xu_ly
+          - da_xu_ly
+          - luu_tru
+          title: Status
+        classification:
+          type: string
+          title: Classification
+        note:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Note
+        attachment_url:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Attachment Url
+        attachment_name:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Attachment Name
+        created_by_id:
+          type: integer
+          title: Created By Id
+        created_by_full_name:
+          type: string
+          title: Created By Full Name
+        created_at:
+          type: string
+          format: date-time
+          title: Created At
+        recipient_count:
+          type: integer
+          title: Recipient Count
+        acknowledged_count:
+          type: integer
+          title: Acknowledged Count
+        acknowledged_by_me:
+          type: boolean
+          title: Acknowledged By Me
+        acknowledged:
+          items:
+            $ref: '#/components/schemas/DispatchAckOut'
+          type: array
+          title: Acknowledged
+        pending:
+          items:
+            $ref: '#/components/schemas/DispatchAckOut'
+          type: array
+          title: Pending
+      type: object
+      required:
+      - id
+      - direction
+      - dispatch_number
+      - summary
+      - issuing_org
+      - receiving_org
+      - issued_date
+      - received_date
+      - status
+      - classification
+      - note
+      - attachment_url
+      - attachment_name
+      - created_by_id
+      - created_by_full_name
+      - created_at
+      - recipient_count
+      - acknowledged_count
+      - acknowledged_by_me
+      - acknowledged
+      - pending
+      title: OfficialDispatchDetailOut
+    OfficialDispatchOut:
+      properties:
+        id:
+          type: integer
+          title: Id
+        direction:
+          type: string
+          enum:
+          - di
+          - den
+          title: Direction
+        dispatch_number:
+          type: string
+          title: Dispatch Number
+        summary:
+          type: string
+          title: Summary
+        issuing_org:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Issuing Org
+        receiving_org:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Receiving Org
+        issued_date:
+          anyOf:
+          - type: string
+            format: date
+          - type: 'null'
+          title: Issued Date
+        received_date:
+          anyOf:
+          - type: string
+            format: date
+          - type: 'null'
+          title: Received Date
+        status:
+          type: string
+          enum:
+          - moi
+          - dang_xu_ly
+          - da_xu_ly
+          - luu_tru
+          title: Status
+        classification:
+          type: string
+          title: Classification
+        note:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Note
+        attachment_url:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Attachment Url
+        attachment_name:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Attachment Name
+        created_by_id:
+          type: integer
+          title: Created By Id
+        created_by_full_name:
+          type: string
+          title: Created By Full Name
+        created_at:
+          type: string
+          format: date-time
+          title: Created At
+        recipient_count:
+          type: integer
+          title: Recipient Count
+        acknowledged_count:
+          type: integer
+          title: Acknowledged Count
+        acknowledged_by_me:
+          type: boolean
+          title: Acknowledged By Me
+      type: object
+      required:
+      - id
+      - direction
+      - dispatch_number
+      - summary
+      - issuing_org
+      - receiving_org
+      - issued_date
+      - received_date
+      - status
+      - classification
+      - note
+      - attachment_url
+      - attachment_name
+      - created_by_id
+      - created_by_full_name
+      - created_at
+      - recipient_count
+      - acknowledged_count
+      - acknowledged_by_me
+      title: OfficialDispatchOut
+    PasswordChange:
+      properties:
+        current_password:
+          type: string
+          title: Current Password
+        new_password:
+          type: string
+          minLength: 1
+          title: New Password
+      type: object
+      required:
+      - current_password
+      - new_password
+      title: PasswordChange
+    PostCreate:
+      properties:
+        title:
+          type: string
+          maxLength: 255
+          title: Title
+        category:
+          type: string
+          enum:
+          - huan_luyen
+          - dan_van
+          - khen_thuong
+          - guong_nguoi_tot
+          title: Category
+        content:
+          type: string
+          title: Content
+        cover_image_url:
+          anyOf:
+          - type: string
+            maxLength: 500
+          - type: 'null'
+          title: Cover Image Url
+        classification:
+          type: string
+          enum:
+          - cong_khai
+          - noi_bo
+          - mat
+          title: Classification
+          default: noi_bo
+        is_featured:
+          type: boolean
+          title: Is Featured
+          default: false
+      type: object
+      required:
+      - title
+      - category
+      - content
+      title: PostCreate
+    PostOut:
+      properties:
+        id:
+          type: integer
+          title: Id
+        title:
+          type: string
+          title: Title
+        category:
+          type: string
+          enum:
+          - huan_luyen
+          - dan_van
+          - khen_thuong
+          - guong_nguoi_tot
+          title: Category
+        content:
+          type: string
+          title: Content
+        cover_image_url:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Cover Image Url
+        classification:
+          type: string
+          enum:
+          - cong_khai
+          - noi_bo
+          - mat
+          title: Classification
+        is_featured:
+          type: boolean
+          title: Is Featured
+        status:
+          type: string
+          enum:
+          - cho_duyet
+          - da_duyet
+          - tra_lai
+          title: Status
+        review_note:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Review Note
+        reviewed_by_id:
+          anyOf:
+          - type: integer
+          - type: 'null'
+          title: Reviewed By Id
+        reviewed_at:
+          anyOf:
+          - type: string
+            format: date-time
+          - type: 'null'
+          title: Reviewed At
+        author_id:
+          type: integer
+          title: Author Id
+        author_full_name:
+          type: string
+          title: Author Full Name
+        created_at:
+          type: string
+          format: date-time
+          title: Created At
+      type: object
+      required:
+      - id
+      - title
+      - category
+      - content
+      - cover_image_url
+      - classification
+      - is_featured
+      - status
+      - review_note
+      - reviewed_by_id
+      - reviewed_at
+      - author_id
+      - author_full_name
+      - created_at
+      title: PostOut
+    PostReview:
+      properties:
+        status:
+          type: string
+          enum:
+          - da_duyet
+          - tra_lai
+          title: Status
+        review_note:
+          anyOf:
+          - type: string
+            maxLength: 500
+          - type: 'null'
+          title: Review Note
+      type: object
+      required:
+      - status
+      title: PostReview
+    ProfileUpdate:
+      properties:
+        full_name:
+          type: string
+          maxLength: 100
+          title: Full Name
+      type: object
+      required:
+      - full_name
+      title: ProfileUpdate
+    PublicHomeOut:
+      properties:
+        featured_posts:
+          items:
+            $ref: '#/components/schemas/PostOut'
+          type: array
+          title: Featured Posts
+        public_announcements:
+          items:
+            $ref: '#/components/schemas/AnnouncementOut'
+          type: array
+          title: Public Announcements
+        public_documents:
+          items:
+            $ref: '#/components/schemas/DocumentOut'
+          type: array
+          title: Public Documents
+      type: object
+      required:
+      - featured_posts
+      - public_announcements
+      - public_documents
+      title: PublicHomeOut
+      description: Trang cong khai cho khach chua dang nhap - chi noi dung cong_khai
+        / is_public.
+    RegisterRequest:
+      properties:
+        username:
+          type: string
+          maxLength: 50
+          minLength: 3
+          title: Username
+        password:
+          type: string
+          minLength: 6
+          title: Password
+        full_name:
+          type: string
+          maxLength: 100
+          title: Full Name
+      type: object
+      required:
+      - username
+      - password
+      - full_name
+      title: RegisterRequest
+      description: Nguoi dung tu dang ky o giao dien ngoai. Luon tao role=soldier,
+        cho commander kich hoat.
+    ResetPasswordRequest:
+      properties:
+        new_password:
+          type: string
+          minLength: 1
+          title: New Password
+      type: object
+      required:
+      - new_password
+      title: ResetPasswordRequest
+    ReviewRequest:
+      properties:
+        result:
+          type: string
+          enum:
+          - da_duyet
+          - tra_lai
+          title: Result
+        review_note:
+          anyOf:
+          - type: string
+            maxLength: 500
+          - type: 'null'
+          title: Review Note
+      type: object
+      required:
+      - result
+      title: ReviewRequest
+    RoleUpdate:
+      properties:
+        role:
+          type: string
+          enum:
+          - soldier
+          - officer
+          - commander
+          - admin
+          title: Role
+      type: object
+      required:
+      - role
+      title: RoleUpdate
+    SubmissionOut:
+      properties:
+        id:
+          type: integer
+          title: Id
+        target_id:
+          type: integer
+          title: Target Id
+        content:
+          type: string
+          title: Content
+        attachment_url:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Attachment Url
+        submitted_by_id:
+          type: integer
+          title: Submitted By Id
+        submitted_by_full_name:
+          type: string
+          title: Submitted By Full Name
+        created_at:
+          type: string
+          format: date-time
+          title: Created At
+        review_result:
+          anyOf:
+          - type: string
+            enum:
+            - da_duyet
+            - tra_lai
+          - type: 'null'
+          title: Review Result
+        review_note:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Review Note
+        reviewed_by_id:
+          anyOf:
+          - type: integer
+          - type: 'null'
+          title: Reviewed By Id
+        reviewed_at:
+          anyOf:
+          - type: string
+            format: date-time
+          - type: 'null'
+          title: Reviewed At
+      type: object
+      required:
+      - id
+      - target_id
+      - content
+      - attachment_url
+      - submitted_by_id
+      - submitted_by_full_name
+      - created_at
+      - review_result
+      - review_note
+      - reviewed_by_id
+      - reviewed_at
+      title: SubmissionOut
+    TargetCreate:
+      properties:
+        unit_id:
+          type: integer
+          title: Unit Id
+        assignee_id:
+          anyOf:
+          - type: integer
+          - type: 'null'
+          title: Assignee Id
+      type: object
+      required:
+      - unit_id
+      title: TargetCreate
+    TargetDetailOut:
+      properties:
+        id:
+          type: integer
+          title: Id
+        assignment_id:
+          type: integer
+          title: Assignment Id
+        unit_id:
+          type: integer
+          title: Unit Id
+        unit_name:
+          type: string
+          title: Unit Name
+        assignee_id:
+          anyOf:
+          - type: integer
+          - type: 'null'
+          title: Assignee Id
+        assignee_full_name:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Assignee Full Name
+        status:
+          type: string
+          enum:
+          - chua_nop
+          - cho_duyet
+          - da_duyet
+          - tra_lai
+          title: Status
+        submitted_at:
+          anyOf:
+          - type: string
+            format: date-time
+          - type: 'null'
+          title: Submitted At
+        submission_count:
+          type: integer
+          title: Submission Count
+        submissions:
+          items:
+            $ref: '#/components/schemas/SubmissionOut'
+          type: array
+          title: Submissions
+      type: object
+      required:
+      - id
+      - assignment_id
+      - unit_id
+      - unit_name
+      - assignee_id
+      - assignee_full_name
+      - status
+      - submitted_at
+      - submission_count
+      - submissions
+      title: TargetDetailOut
+    ThreadCloseUpdate:
+      properties:
+        is_closed:
+          type: boolean
+          title: Is Closed
+      type: object
+      required:
+      - is_closed
+      title: ThreadCloseUpdate
+    Token:
+      properties:
+        access_token:
+          type: string
+          title: Access Token
+        token_type:
+          type: string
+          title: Token Type
+          default: bearer
+      type: object
+      required:
+      - access_token
+      title: Token
+    UnitAssignUpdate:
+      properties:
+        unit_id:
+          anyOf:
+          - type: integer
+          - type: 'null'
+          title: Unit Id
+      type: object
+      title: UnitAssignUpdate
+    UnitCreate:
+      properties:
+        name:
+          type: string
+          maxLength: 120
+          minLength: 2
+          title: Name
+        unit_kind:
+          type: string
+          enum:
+          - phong_ban
+          - tieu_doan
+          - dai_doi
+          - tram
+          - bch_lu_doan
+          - cap_uy
+          title: Unit Kind
+          default: phong_ban
+        description:
+          anyOf:
+          - type: string
+            maxLength: 255
+          - type: 'null'
+          title: Description
+        is_active:
+          type: boolean
+          title: Is Active
+          default: true
+      type: object
+      required:
+      - name
+      title: UnitCreate
+    UnitOut:
+      properties:
+        id:
+          type: integer
+          title: Id
+        name:
+          type: string
+          title: Name
+        unit_kind:
+          type: string
+          enum:
+          - phong_ban
+          - tieu_doan
+          - dai_doi
+          - tram
+          - bch_lu_doan
+          - cap_uy
+          title: Unit Kind
+        description:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Description
+        is_active:
+          type: boolean
+          title: Is Active
+        created_at:
+          type: string
+          format: date-time
+          title: Created At
+        user_count:
+          type: integer
+          title: User Count
+      type: object
+      required:
+      - id
+      - name
+      - unit_kind
+      - description
+      - is_active
+      - created_at
+      - user_count
+      title: UnitOut
+    UserCreate:
+      properties:
+        username:
+          type: string
+          maxLength: 50
+          title: Username
+        password:
+          type: string
+          minLength: 6
+          title: Password
+        full_name:
+          type: string
+          maxLength: 100
+          title: Full Name
+        role:
+          type: string
+          maxLength: 50
+          title: Role
+          default: soldier
+        unit_id:
+          anyOf:
+          - type: integer
+          - type: 'null'
+          title: Unit Id
+        directive_channel_access:
+          type: boolean
+          title: Directive Channel Access
+          default: false
+        command_channel_access:
+          type: boolean
+          title: Command Channel Access
+          default: false
+      type: object
+      required:
+      - username
+      - password
+      - full_name
+      title: UserCreate
+    UserOut:
+      properties:
+        id:
+          type: integer
+          title: Id
+        username:
+          type: string
+          title: Username
+        full_name:
+          type: string
+          title: Full Name
+        role:
+          type: string
+          title: Role
+        is_active:
+          type: boolean
+          title: Is Active
+        clearance:
+          type: boolean
+          title: Clearance
+        unit_id:
+          anyOf:
+          - type: integer
+          - type: 'null'
+          title: Unit Id
+        unit_name:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Unit Name
+        directive_channel_access:
+          type: boolean
+          title: Directive Channel Access
+        command_channel_access:
+          type: boolean
+          title: Command Channel Access
+        is_system:
+          type: boolean
+          title: Is System
+        must_change_password:
+          type: boolean
+          title: Must Change Password
+      type: object
+      required:
+      - id
+      - username
+      - full_name
+      - role
+      - is_active
+      - clearance
+      - unit_id
+      - directive_channel_access
+      - command_channel_access
+      - is_system
+      - must_change_password
+      title: UserOut
+    ValidationError:
+      properties:
+        loc:
+          items:
+            anyOf:
+            - type: string
+            - type: integer
+          type: array
+          title: Location
+        msg:
+          type: string
+          title: Message
+        type:
+          type: string
+          title: Error Type
+        input:
+          title: Input
+        ctx:
+          type: object
+          title: Context
+      type: object
+      required:
+      - loc
+      - msg
+      - type
+      title: ValidationError
+  securitySchemes:
+    HTTPBearer:
+      type: http
+      scheme: bearer
