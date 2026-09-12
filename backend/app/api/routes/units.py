@@ -5,6 +5,7 @@ from sqlalchemy.orm import Session
 
 from app.api.deps import get_current_user, require_roles
 from app.core.database import get_db
+from app.core.roles import ADMIN_ROLES
 from app.schemas.unit import UnitCreate, UnitKind, UnitOut
 from app.services import unit_service
 
@@ -19,7 +20,7 @@ router = APIRouter(
     "/",
     response_model=UnitOut,
     status_code=status.HTTP_201_CREATED,
-    dependencies=[Depends(require_roles("admin"))],
+    dependencies=[Depends(require_roles(*ADMIN_ROLES))],
 )
 def create_unit(unit_in: UnitCreate, db: Session = Depends(get_db)):
     return unit_service.create_unit(db, unit_in)
@@ -45,7 +46,7 @@ def get_unit(unit_id: int, db: Session = Depends(get_db)):
     "/{unit_id}",
     response_model=UnitOut,
     status_code=status.HTTP_200_OK,
-    dependencies=[Depends(require_roles("admin"))],
+    dependencies=[Depends(require_roles(*ADMIN_ROLES))],
 )
 def update_unit(unit_id: int, unit_in: UnitCreate, db: Session = Depends(get_db)):
     return unit_service.update_unit(db, unit_id, unit_in)
@@ -54,7 +55,7 @@ def update_unit(unit_id: int, unit_in: UnitCreate, db: Session = Depends(get_db)
 @router.delete(
     "/{unit_id}",
     status_code=status.HTTP_204_NO_CONTENT,
-    dependencies=[Depends(require_roles("admin"))],
+    dependencies=[Depends(require_roles(*ADMIN_ROLES))],
 )
 def delete_unit(unit_id: int, db: Session = Depends(get_db)):
     unit_service.delete_unit(db, unit_id)

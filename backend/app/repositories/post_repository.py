@@ -69,6 +69,30 @@ def get(db: Session, post_id: int) -> Post | None:
     return db.get(Post, post_id)
 
 
+def slug_taken(db: Session, slug: str, exclude_id: Optional[int] = None) -> bool:
+    query = db.query(Post.id).filter(Post.slug == slug)
+    if exclude_id is not None:
+        query = query.filter(Post.id != exclude_id)
+    return db.query(query.exists()).scalar()
+
+
+def set_status(
+    db: Session,
+    post: Post,
+    *,
+    status: str,
+    clear_review: bool = False,
+) -> Post:
+    post.status = status
+    if clear_review:
+        post.review_note = None
+        post.reviewed_by_id = None
+        post.reviewed_at = None
+    db.commit()
+    db.refresh(post)
+    return post
+
+
 def update(db: Session, post: Post, post_in: PostCreate) -> Post:
     for field, value in post_in.model_dump().items():
         setattr(post, field, value)

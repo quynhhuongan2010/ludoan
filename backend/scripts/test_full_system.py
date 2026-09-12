@@ -1,4 +1,4 @@
-"""Kiem thu tu dong End-to-End toan bo 5 Phase (API v1.3.0 -> v1.8.0).
+"""Kiem thu tu dong End-to-End toan bo 4 Phase (API v1.3.0 -> v7.0.0).
 
 Script tu khoi dong mot instance uvicorn rieng (cong 8099), goi API bang HTTP
 that (urllib - khong can thu vien ngoai), in Pass/Fail + status code + du lieu
@@ -167,8 +167,6 @@ def cleanup_db() -> None:
     from app.core.database import engine
 
     stmts = [
-        "DELETE FROM command_meeting_attendees WHERE meeting_id IN (SELECT id FROM command_meetings WHERE title LIKE 'E2E%')",
-        "DELETE FROM command_meetings WHERE title LIKE 'E2E%'",
         "DELETE FROM dispatch_acknowledgements WHERE dispatch_id IN (SELECT id FROM official_dispatches WHERE dispatch_number LIKE 'E2E%')",
         "DELETE FROM official_dispatches WHERE dispatch_number LIKE 'E2E%'",
         "DELETE FROM command_thread_reads WHERE thread_id IN (SELECT id FROM command_threads WHERE title LIKE 'E2E%')",
@@ -207,7 +205,8 @@ def main() -> None:
     admin = r.data["access_token"]
     cl = jwt_claims(admin)
     show("claim admin", {k: cl.get(k) for k in ("sub", "role", "adm", "clr", "mcp")})
-    ok("admin co role=admin & adm=true & clr=true", cl.get("role") == "admin" and cl.get("adm") and cl.get("clr"))
+    # role trong JWT nay la SO NGUYEN 0..5 (openapi >= v5.0.0); admin = 0.
+    ok("admin co role=0 & adm=true & clr=true", cl.get("role") == 0 and cl.get("adm") and cl.get("clr"))
     ctx["admin"] = admin
 
     unit_name = f"E2E-TiepDoan-{TAG}"
@@ -218,12 +217,17 @@ def main() -> None:
 
     r = expect("POST /units/ trung ten -> 409", req("POST", "/units/", admin, {"name": unit_name, "unit_kind": "tieu_doan"}), 409)
 
+    # role: SO NGUYEN 0..5 (4 = Ca nhan/"officer" cu); rank/position/unit_id BAT BUOC.
+    ROLE_OFFICER, ROLE_COMMANDER, ROLE_USER = 4, 1, 5
+    RANK, POS = "Thiếu tá", "Trợ lý"
+
     off_u = f"e2e{TAG}off"
     r = expect(
         "POST /users/ (tao officer + unit + directive_channel_access)",
         req("POST", "/users/", admin, {
             "username": off_u, "password": "E2ePass123", "full_name": f"CB E2E {TAG}",
-            "role": "officer", "unit_id": unit_id, "directive_channel_access": True,
+            "role": ROLE_OFFICER, "rank": RANK, "position": POS,
+            "unit_id": unit_id, "directive_channel_access": True,
         }),
         201,
     )
@@ -232,8 +236,8 @@ def main() -> None:
     ok("officer must_change_password = true (tai khoan do admin cap)", r.data["must_change_password"] is True)
     ok("officer unit_name join dung", r.data["unit_name"] == unit_name)
 
-    expect("POST /users/ mat khau yeu -> 422", req("POST", "/users/", admin, {"username": f"e2e{TAG}w", "password": "abcdefgh", "full_name": "x", "role": "officer"}), 422)
-    expect("POST /users/ username sai dinh dang -> 422", req("POST", "/users/", admin, {"username": f"E2E {TAG}", "password": "E2ePass123", "full_name": "x", "role": "officer"}), 422)
+    expect("POST /users/ mat khau yeu -> 422", req("POST", "/users/", admin, {"username": f"e2e{TAG}w", "password": "abcdefgh", "full_name": "x", "role": ROLE_OFFICER, "rank": RANK, "position": POS, "unit_id": unit_id}), 422)
+    expect("POST /users/ username sai dinh dang -> 422", req("POST", "/users/", admin, {"username": f"E2E {TAG}", "password": "E2ePass123", "full_name": "x", "role": ROLE_OFFICER, "rank": RANK, "position": POS, "unit_id": unit_id}), 422)
 
     r = expect("POST /users/login (officer, mat khau tam)", req("POST", "/users/login", json_body={"username": off_u, "password": "E2ePass123"}), 200)
     off_tmp = r.data["access_token"]
@@ -250,7 +254,7 @@ def main() -> None:
 
     # clearance officer + plain officer (cho Phase 4/5)
     clr_u = f"e2e{TAG}clr"
-    r = expect("POST /users/ (officer se cap clearance)", req("POST", "/users/", admin, {"username": clr_u, "password": "E2ePass123", "full_name": f"CB MAT {TAG}", "role": "officer"}), 201)
+    r = expect("POST /users/ (officer se cap clearance)", req("POST", "/users/", admin, {"username": clr_u, "password": "E2ePass123", "full_name": f"CB MAT {TAG}", "role": ROLE_OFFICER, "rank": RANK, "position": POS, "unit_id": unit_id}), 201)
     clr_id = r.data["id"]
     expect("PATCH /users/{id}/clearance {true} -> 200", req("PATCH", f"/users/{clr_id}/clearance", admin, {"clearance": True}), 200)
     r = expect("POST /users/login (clearance officer)", req("POST", "/users/login", json_body={"username": clr_u, "password": "E2ePass123"}), 200)
@@ -260,7 +264,7 @@ def main() -> None:
     ctx["clr_id"] = clr_id
 
     plain_u = f"e2e{TAG}plain"
-    r = expect("POST /users/ (officer khong clearance)", req("POST", "/users/", admin, {"username": plain_u, "password": "E2ePass123", "full_name": f"CB thuong {TAG}", "role": "officer"}), 201)
+    r = expect("POST /users/ (officer khong clearance)", req("POST", "/users/", admin, {"username": plain_u, "password": "E2ePass123", "full_name": f"CB thuong {TAG}", "role": ROLE_OFFICER, "rank": RANK, "position": POS, "unit_id": unit_id}), 201)
     r = expect("POST /users/login (plain officer)", req("POST", "/users/login", json_body={"username": plain_u, "password": "E2ePass123"}), 200)
     plain = r.data["access_token"]
     ok("token plain officer clr=false", jwt_claims(plain).get("clr") is False)
@@ -395,56 +399,9 @@ def main() -> None:
     expect("admin PUT cap nhat status -> da_xu_ly", req("PUT", f"/official-dispatches/{did}", admin, multipart=(
         {"direction": "den", "dispatch_number": dn, "summary": "V/v trien khai nhiem vu SSCD (da xu ly)", "status": "da_xu_ly"}, [])), 200)
 
-    # ------------------------------------------------------------------ PHASE 5
-    head("PHASE 5 - Giao ban truc tuyen: cuoc hop, diem danh thanh phan, bien ban ket luan")
-
-    r = expect(
-        "admin POST /command-meetings (co thanh phan trieu tap)",
-        req("POST", "/command-meetings", admin, {
-            "title": f"E2E Giao ban tuan {TAG}", "start_time": "2026-09-02T08:00:00",
-            "end_time": "2026-09-02T10:00:00", "location": "Phong hop A",
-            "meeting_link": "https://meet.example/e2e", "agenda": "1. Danh gia SSCD\n2. Trien khai nhiem vu",
-            "attendee_user_ids": [clr_id],
-        }),
-        201,
-    )
-    show("meeting", {k: r.data[k] for k in ("id", "status", "attendee_count", "present_count")})
-    mid = r.data["id"]
-    ctx["mid"] = mid
-
-    expect("end_time < start_time -> 400", req("POST", "/command-meetings", admin, {"title": "x", "start_time": "2026-09-02T10:00:00", "end_time": "2026-09-02T08:00:00"}), 400)
-    expect("start_time sai dinh dang -> 422", req("POST", "/command-meetings", admin, {"title": "x", "start_time": "khong-phai-ngay"}), 422)
-
-    expect("clearance officer GET /command-meetings/{id} -> 200", req("GET", f"/command-meetings/{mid}", clr), 200)
-    expect("plain officer GET /command-meetings/{id} -> 403", req("GET", f"/command-meetings/{mid}", ctx["plain"]), 403)
-    expect("clearance officer POST /command-meetings -> 403 (khong phai BCH)", req("POST", "/command-meetings", clr, {"title": "x", "start_time": "2026-09-02T08:00:00"}), 403)
-
-    r = expect("admin PATCH diem danh clearance officer = co_mat", req("PATCH", f"/command-meetings/{mid}/attendees/{clr_id}", admin, {"attendance": "co_mat"}), 200)
-    ok("attendee status = co_mat", r.data["attendance"] == "co_mat")
-    r = expect("clearance officer PATCH y kien dong gop (chinh minh)", req("PATCH", f"/command-meetings/{mid}/attendees/{clr_id}", clr, {"contribution_note": "De nghi tang cuong truc dem"}), 200)
-    ok("contribution_note luu dung", r.data["contribution_note"] == "De nghi tang cuong truc dem")
-    expect("clearance officer PATCH diem danh nguoi khac -> 403", req("PATCH", f"/command-meetings/{mid}/attendees/1", clr, {"attendance": "co_mat"}), 403)
-
-    expect("clearance officer POST /minutes -> 403", req("POST", f"/command-meetings/{mid}/minutes", clr, {"minutes": "x"}), 403)
-    r = expect("admin POST /minutes (+ mark_finished)", req("POST", f"/command-meetings/{mid}/minutes", admin, {"minutes": "Ket luan: hoan thanh tot cac noi dung.", "mark_finished": True}), 200)
-    ok("meeting status = da_ket_thuc", r.data["status"] == "da_ket_thuc")
-    ok("minutes da luu", "Ket luan" in (r.data["minutes"] or ""))
-
-    r = expect("admin POST /attachment (tai lieu hop DOCX)", req("POST", f"/command-meetings/{mid}/attachment", admin, multipart=({}, [("file", *DOCX)])), 200)
-    ok("meeting co attachment_url", bool(r.data["attachment_url"]))
-    expect("clearance officer GET /command-meetings/{id}/download -> 200", req("GET", f"/command-meetings/{mid}/download", clr), 200)
-    expect("plain officer GET /download -> 403", req("GET", f"/command-meetings/{mid}/download", ctx["plain"]), 403)
-
-    r = expect("admin POST /attendees (moi them admin)", req("POST", f"/command-meetings/{mid}/attendees", admin, {"user_ids": [1]}), 201)
-    ok("attendee_count = 2", r.data["attendee_count"] == 2)
-    expect("admin POST /attendees trung -> 409", req("POST", f"/command-meetings/{mid}/attendees", admin, {"user_ids": [clr_id]}), 409)
-    expect("admin DELETE /attendees/1 -> 204", req("DELETE", f"/command-meetings/{mid}/attendees/1", admin), 204)
-    expect("admin DELETE /command-meetings/{id} -> 204", req("DELETE", f"/command-meetings/{mid}", admin), 204)
-    expect("GET /command-meetings/{id} sau xoa -> 404", req("GET", f"/command-meetings/{mid}", admin), 404)
-
 
 if __name__ == "__main__":
-    print("KIEM THU E2E TOAN BO 5 PHASE  |  tag =", TAG)
+    print("KIEM THU E2E TOAN BO 4 PHASE  |  tag =", TAG)
     err = None
     try:
         start_server()

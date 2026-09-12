@@ -6,21 +6,29 @@ import { AnnouncementsPage } from './pages/AnnouncementsPage'
 import { ChangePasswordPage } from './pages/ChangePasswordPage'
 import { ChiDaoBaoCaoPage } from './pages/ChiDaoBaoCaoPage'
 import { DirectivesPage } from './pages/DirectivesPage'
+import { DirectiveFormPage } from './pages/DirectiveFormPage'
+import { DanhBaPage } from './pages/DanhBaPage'
 import { DocumentsPage } from './pages/DocumentsPage'
+import { DocumentFormPage } from './pages/DocumentFormPage'
+import { DutyRosterPage } from './pages/DutyRosterPage'
 import { EducationPage } from './pages/EducationPage'
-import { GiaoBanTrucTuyenPage } from './pages/GiaoBanTrucTuyenPage'
+import { EducationFormPage } from './pages/EducationFormPage'
 import { GiaoNhiemVuPage } from './pages/GiaoNhiemVuPage'
 import { HomePage } from './pages/HomePage'
 import { HuongDanPage } from './pages/HuongDanPage'
 import { KenhChiHuyPage } from './pages/KenhChiHuyPage'
+import { DispatchFormPage } from './pages/DispatchFormPage'
 import { ItemsPage } from './pages/ItemsPage'
 import { LoginPage } from './pages/LoginPage'
 import { PostsPage } from './pages/PostsPage'
+import { PostFormPage } from './pages/PostFormPage'
 import { ProfilePage } from './pages/ProfilePage'
 import { PublicHomePage } from './pages/PublicHomePage'
 import { RegisterPage } from './pages/RegisterPage'
 import { UnitsPage } from './pages/UnitsPage'
 import { UsersPage } from './pages/UsersPage'
+import { AuditLogsPage } from './pages/AuditLogsPage'
+import { TinNhanPage } from './pages/TinNhanPage'
 import './App.css'
 
 /** '/' : khách chưa đăng nhập -> trang công khai; đã đăng nhập -> bảng tin nội bộ. */
@@ -62,18 +70,31 @@ function App() {
         <Route element={<PortalLayout />}>
           <Route path="/bang-tin" element={<HomePage />} />
           <Route path="/tin-tuc" element={<PostsPage />} />
+          <Route path="/tin-tuc/moi" element={<PostFormPage />} />
+          <Route path="/tin-tuc/:id/sua" element={<PostFormPage />} />
           <Route path="/thong-bao" element={<AnnouncementsPage />} />
+          <Route path="/lich-truc" element={<DutyRosterPage />} />
+          <Route path="/danh-ba" element={<DanhBaPage />} />
           <Route path="/van-ban" element={<DocumentsPage />} />
+          <Route path="/van-ban/moi" element={<DocumentFormPage />} />
+          <Route path="/van-ban/:id/sua" element={<DocumentFormPage />} />
           <Route path="/giao-duc-chinh-tri" element={<EducationPage />} />
+          <Route path="/giao-duc-chinh-tri/moi" element={<EducationFormPage />} />
+          <Route path="/giao-duc-chinh-tri/:id/sua" element={<EducationFormPage />} />
           <Route path="/chi-thi-nhiem-vu" element={<DirectivesPage />} />
+          <Route path="/chi-thi-nhiem-vu/moi" element={<DirectiveFormPage />} />
+          <Route path="/chi-thi-nhiem-vu/:id/sua" element={<DirectiveFormPage />} />
           <Route path="/chi-dao-bao-cao" element={<ChiDaoBaoCaoPage />} />
           <Route path="/giao-nhiem-vu" element={<GiaoNhiemVuPage />} />
           <Route path="/kenh-chi-huy" element={<KenhChiHuyPage />} />
-          <Route path="/giao-ban" element={<GiaoBanTrucTuyenPage />} />
+          <Route path="/kenh-chi-huy/cong-van/moi" element={<DispatchFormPage />} />
+          <Route path="/kenh-chi-huy/cong-van/:id/sua" element={<DispatchFormPage />} />
           <Route path="/ho-so" element={<ProfilePage />} />
           <Route path="/huong-dan" element={<HuongDanPage />} />
           <Route path="/quan-ly-nguoi-dung" element={<UsersPage />} />
           <Route path="/quan-ly-don-vi" element={<UnitsPage />} />
+          <Route path="/nhat-ky-an-ninh" element={<AuditLogsPage />} />
+          <Route path="/tin-nhan" element={<TinNhanPage />} />
           <Route path="/items" element={<ItemsPage />} />
           <Route path="*" element={<Navigate to="/bang-tin" replace />} />
         </Route>

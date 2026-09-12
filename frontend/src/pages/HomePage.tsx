@@ -4,52 +4,22 @@ import { ApiError } from '../api/client'
 import { homeApi } from '../api/home'
 import { ClassificationBadge } from '../components/ClassificationBadge'
 import { Icon } from '../components/Icon'
+import { NewsBlock, type NewsItem } from '../components/NewsBlock'
 import { ANNOUNCEMENT_PRIORITY_LABELS } from '../types/announcement'
 import { DIRECTIVE_STATUS_LABELS } from '../types/directive'
 import { EDUCATION_CATEGORY_LABELS } from '../types/educationMaterial'
-import { POST_CATEGORY_LABELS, type Post } from '../types/post'
+import { POST_CATEGORY_LABELS } from '../types/post'
 import type { HomeSummary } from '../types/home'
+import { absolutizeStaticUrl, excerptFromHtml } from '../utils/richContent'
 
-const API_BASE = import.meta.env.VITE_API_BASE_URL ?? 'http://127.0.0.1:8000'
-
-function imgSrc(url: string): string {
-  return url.startsWith('/static') ? `${API_BASE}${url}` : url
+function imgSrc(url: string | null): string | null {
+  return url ? absolutizeStaticUrl(url) : null
 }
 
-function excerpt(text: string, max = 180): string {
-  const clean = text.replace(/\s+/g, ' ').trim()
-  return clean.length > max ? `${clean.slice(0, max)}…` : clean
-}
+const excerpt = (html: string, max = 200) => excerptFromHtml(html, max)
 
 function formatDate(iso: string): string {
   return new Date(iso).toLocaleDateString('vi-VN')
-}
-
-function HeroPost({ post }: { post: Post }) {
-  return (
-    <div className="hero-news">
-      {post.cover_image_url ? (
-        <img src={imgSrc(post.cover_image_url)} alt="" className="hero-img" />
-      ) : (
-        <div className="hero-img img-placeholder" aria-hidden="true">
-          <Icon name="newspaper" size={44} />
-        </div>
-      )}
-      <div className="hero-info">
-        <div className="badge-row">
-          <span className="post-category">{POST_CATEGORY_LABELS[post.category]}</span>
-          <ClassificationBadge value={post.classification} />
-        </div>
-        <h2>
-          <Link to="/tin-tuc">{post.title}</Link>
-        </h2>
-        <p className="post-meta">
-          {post.author_full_name} · {formatDate(post.created_at)}
-        </p>
-        <p>{excerpt(post.content)}</p>
-      </div>
-    </div>
-  )
 }
 
 export function HomePage() {
@@ -71,101 +41,54 @@ export function HomePage() {
   if (error) return <p className="state-note form-error">{error}</p>
   if (!data) return null
 
-  const [heroPost, ...restPosts] = data.latest_posts
-  const subPosts = restPosts.slice(0, 4)
-  const [heroEdu, ...restEdu] = data.latest_education_materials
+  const postItems: NewsItem[] = data.latest_posts.map((post) => ({
+    id: post.id,
+    to: '/tin-tuc',
+    category: POST_CATEGORY_LABELS[post.category],
+    title: post.title,
+    author: post.author_full_name,
+    date: post.created_at,
+    imageUrl: imgSrc(post.cover_image_url),
+    excerpt: post.summary?.trim() || excerpt(post.content),
+  }))
+
+  const eduItems: NewsItem[] = data.latest_education_materials.map((item) => ({
+    id: item.id,
+    to: '/giao-duc-chinh-tri',
+    category: EDUCATION_CATEGORY_LABELS[item.category],
+    title: item.title,
+    author: item.author_full_name,
+    date: item.created_at,
+    periodLabel: item.period_label,
+    imageUrl: null,
+    excerpt: excerpt(item.content),
+  }))
 
   return (
     <div className="layout-grid">
       <section className="main-column">
-        <div className="block-section">
-          <div className="block-title">
-            <span>
-              <Icon name="newspaper" size={15} /> Tin tức – Hoạt động đơn vị
-            </span>
-            <Link to="/tin-tuc" className="see-all">
-              Xem tất cả <Icon name="chevron-right" size={12} />
-            </Link>
-          </div>
+        <NewsBlock
+          title="Tin tức – Hoạt động đơn vị"
+          icon="newspaper"
+          seeAllTo="/tin-tuc"
+          items={postItems}
+          emptyText="Chưa có tin tức nào được đăng."
+          headingBar
+        />
 
-          {heroPost ? (
-            <>
-              <HeroPost post={heroPost} />
-              {subPosts.length > 0 ? (
-                <div className="sub-grid">
-                  {subPosts.map((post) => (
-                    <article key={post.id} className="sub-card">
-                      {post.cover_image_url ? (
-                        <img src={imgSrc(post.cover_image_url)} alt="" />
-                      ) : (
-                        <div className="sub-thumb img-placeholder" aria-hidden="true">
-                          <Icon name="newspaper" size={22} />
-                        </div>
-                      )}
-                      <h3>
-                        <Link to="/tin-tuc">{post.title}</Link>
-                      </h3>
-                    </article>
-                  ))}
-                </div>
-              ) : null}
-            </>
-          ) : (
-            <p className="state-note">Chưa có tin tức nào được đăng.</p>
-          )}
-        </div>
-
-        <div className="block-section">
-          <div className="block-title">
-            <span>
-              <Icon name="book" size={15} /> Giáo dục chính trị
-            </span>
-            <Link to="/giao-duc-chinh-tri" className="see-all">
-              Xem tất cả <Icon name="chevron-right" size={12} />
-            </Link>
-          </div>
-
-          {heroEdu ? (
-            <>
-              <div className="hero-news">
-                <div className="hero-img img-placeholder" aria-hidden="true">
-                  <Icon name="book" size={44} />
-                </div>
-                <div className="hero-info">
-                  <span className="post-category">{EDUCATION_CATEGORY_LABELS[heroEdu.category]}</span>
-                  <h2>
-                    <Link to="/giao-duc-chinh-tri">{heroEdu.title}</Link>
-                  </h2>
-                  <p className="post-meta">
-                    {heroEdu.period_label ? `${heroEdu.period_label} · ` : ''}
-                    {heroEdu.author_full_name} · {formatDate(heroEdu.created_at)}
-                  </p>
-                  <p>{excerpt(heroEdu.content)}</p>
-                </div>
-              </div>
-              {restEdu.length > 0 ? (
-                <ul className="widget-list">
-                  {restEdu.slice(0, 4).map((item) => (
-                    <li key={item.id}>
-                      <Icon name="caret-right" size={12} />
-                      <Link to="/giao-duc-chinh-tri">
-                        {item.title}
-                        {item.period_label ? <span className="tag-inline"> {item.period_label}</span> : null}
-                      </Link>
-                    </li>
-                  ))}
-                </ul>
-              ) : null}
-            </>
-          ) : (
-            <p className="state-note">Chưa có tài liệu giáo dục chính trị.</p>
-          )}
-        </div>
+        <NewsBlock
+          title="Giáo dục chính trị"
+          icon="book"
+          seeAllTo="/giao-duc-chinh-tri"
+          items={eduItems}
+          emptyText="Chưa có tài liệu giáo dục chính trị."
+          headingBar
+        />
       </section>
 
       <aside className="sidebar-column">
         <div className="block-section">
-          <div className="block-title">
+          <div className="block-title block-title--bar">
             <span>
               <Icon name="bullhorn" size={15} /> Thông báo nội bộ
             </span>
@@ -194,7 +117,7 @@ export function HomePage() {
         </div>
 
         <div className="block-section">
-          <div className="block-title">
+          <div className="block-title block-title--bar">
             <span>
               <Icon name="clipboard" size={15} /> Chỉ thị – Nhiệm vụ mới
             </span>
@@ -232,7 +155,7 @@ export function HomePage() {
         </div>
 
         <div className="block-section">
-          <div className="block-title">
+          <div className="block-title block-title--bar">
             <span>
               <Icon name="file" size={15} /> Tài liệu mới cập nhật
             </span>

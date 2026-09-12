@@ -7,10 +7,12 @@ from sqlalchemy.orm import Session
 
 from app.core.access import can_access_command_channel, is_command_level
 from app.core.config import settings
-from app.core.uploads import SavedFile, delete_upload
+from app.core.roles import COMMAND_ROLES
+from app.core.uploads import SavedFile, delete_secure_upload
 from app.models.official_dispatch import OfficialDispatch
 from app.models.user import User
 from app.repositories import official_dispatch_repository as repo
+from app.services import audit_log_service
 from app.schemas.official_dispatch import (
     DispatchAckOut,
     DispatchUpdate,
@@ -41,7 +43,7 @@ def _recipients(db: Session) -> list[User]:
         db.query(User)
         .filter(
             User.is_active.is_(True),
-            or_(User.role.in_(("commander", "admin")), User.clearance.is_(True)),
+            or_(User.role.in_(COMMAND_ROLES), User.clearance.is_(True)),
         )
         .order_by(User.full_name.asc())
         .all()
@@ -52,12 +54,19 @@ def _to_out(db: Session, d: OfficialDispatch, current_user: User) -> OfficialDis
     return OfficialDispatchOut(
         id=d.id,
         direction=d.direction,
+        doc_type=d.doc_type,
         dispatch_number=d.dispatch_number,
         summary=d.summary,
         issuing_org=d.issuing_org,
         receiving_org=d.receiving_org,
+        signer=d.signer,
         issued_date=d.issued_date,
         received_date=d.received_date,
+        deadline=d.deadline,
+        page_count=d.page_count,
+        security_level=d.security_level,
+        urgency=d.urgency,
+        archive_ref=d.archive_ref,
         status=d.status,
         classification=d.classification,
         note=d.note,
@@ -112,12 +121,19 @@ def create_dispatch(
     d = repo.create(
         db,
         direction=payload.direction,
+        doc_type=payload.doc_type,
         dispatch_number=payload.dispatch_number,
         summary=payload.summary,
         issuing_org=payload.issuing_org,
         receiving_org=payload.receiving_org,
+        signer=payload.signer,
         issued_date=payload.issued_date,
         received_date=payload.received_date,
+        deadline=payload.deadline,
+        page_count=payload.page_count,
+        security_level=payload.security_level,
+        urgency=payload.urgency,
+        archive_ref=payload.archive_ref,
         status=payload.status,
         note=payload.note,
         attachment_url=saved.url if saved else None,
@@ -133,13 +149,19 @@ def list_dispatches(
     current_user: User,
     *,
     direction: Optional[str] = None,
+    doc_type: Optional[str] = None,
     status_filter: Optional[str] = None,
     skip: int = 0,
     limit: int = 100,
 ) -> list[OfficialDispatchOut]:
     _require_channel(current_user)
     rows = repo.list_all(
-        db, direction=direction, status=status_filter, skip=skip, limit=limit
+        db,
+        direction=direction,
+        doc_type=doc_type,
+        status=status_filter,
+        skip=skip,
+        limit=limit,
     )
     return [_to_out(db, d, current_user) for d in rows]
 
@@ -164,12 +186,19 @@ def update_dispatch(
     if other is not None and other.id != d.id:
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=_DUP)
     d.direction = payload.direction
+    d.doc_type = payload.doc_type
     d.dispatch_number = payload.dispatch_number
     d.summary = payload.summary
     d.issuing_org = payload.issuing_org
     d.receiving_org = payload.receiving_org
+    d.signer = payload.signer
     d.issued_date = payload.issued_date
     d.received_date = payload.received_date
+    d.deadline = payload.deadline
+    d.page_count = payload.page_count
+    d.security_level = payload.security_level
+    d.urgency = payload.urgency
+    d.archive_ref = payload.archive_ref
     d.status = payload.status
     d.note = payload.note
     if saved is not None:
@@ -178,7 +207,7 @@ def update_dispatch(
         d.attachment_name = saved.original_name
         d.content_type = saved.content_type
         repo.save(db, d)
-        delete_upload(old)
+        delete_secure_upload(old)
     else:
         repo.save(db, d)
     return _to_detail(db, repo.get(db, d.id), current_user)
@@ -189,7 +218,7 @@ def delete_dispatch(db: Session, current_user: User, dispatch_id: int) -> None:
     d = _get_or_404(db, dispatch_id)
     attachment = d.attachment_url
     repo.delete(db, d)
-    delete_upload(attachment)
+    delete_secure_upload(attachment)
 
 
 def acknowledge(
@@ -210,14 +239,43 @@ def get_download_target(
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail="Công văn không có tệp đính kèm"
         )
+    # 1. Kiem tra trong secure_upload_path truoc (/secure/dispatches/...)
+    if d.attachment_url.startswith("/secure/"):
+        rel = d.attachment_url[len("/secure/") :]
+        path = (settings.secure_upload_path / rel).resolve()
+        if settings.secure_upload_path.resolve() in path.parents and path.is_file():
+            audit_log_service.record_action(
+                db,
+                action="secret_dispatch_download",
+                actor=current_user,
+                target_type="official_dispatch",
+                target_id=str(d.id),
+                target_name=f"[{d.dispatch_number}] {d.summary}",
+                is_success=True,
+                details=f"Tải tệp đính kèm: {d.attachment_name or path.name}",
+            )
+            return path, d.attachment_name or path.name, d.content_type or "application/octet-stream"
+
+    # 2. Fallback tuong thich nguoc cho file cu trong upload_path (/static/command/...)
     rel = (
         d.attachment_url[len("/static/") :]
         if d.attachment_url.startswith("/static/")
         else d.attachment_url
     )
     path = (settings.upload_path / rel).resolve()
-    if settings.upload_path.resolve() not in path.parents or not path.is_file():
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail="File không tồn tại trên máy chủ"
+    if settings.upload_path.resolve() in path.parents and path.is_file():
+        audit_log_service.record_action(
+            db,
+            action="secret_dispatch_download",
+            actor=current_user,
+            target_type="official_dispatch",
+            target_id=str(d.id),
+            target_name=f"[{d.dispatch_number}] {d.summary}",
+            is_success=True,
+            details=f"Tải tệp đính kèm (bản cũ): {d.attachment_name or path.name}",
         )
-    return path, d.attachment_name or path.name, d.content_type or "application/octet-stream"
+        return path, d.attachment_name or path.name, d.content_type or "application/octet-stream"
+
+    raise HTTPException(
+        status_code=status.HTTP_404_NOT_FOUND, detail="File không tồn tại trên máy chủ"
+    )

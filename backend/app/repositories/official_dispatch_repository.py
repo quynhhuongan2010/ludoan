@@ -44,6 +44,7 @@ def list_all(
     db: Session,
     *,
     direction: Optional[str] = None,
+    doc_type: Optional[str] = None,
     status: Optional[str] = None,
     skip: int = 0,
     limit: int = 100,
@@ -51,6 +52,8 @@ def list_all(
     query = db.query(OfficialDispatch).options(joinedload(OfficialDispatch.created_by))
     if direction is not None:
         query = query.filter(OfficialDispatch.direction == direction)
+    if doc_type is not None:
+        query = query.filter(OfficialDispatch.doc_type == doc_type)
     if status is not None:
         query = query.filter(OfficialDispatch.status == status)
     return (

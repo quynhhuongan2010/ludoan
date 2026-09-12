@@ -4,6 +4,7 @@ from fastapi import HTTPException, status
 from sqlalchemy.orm import Session
 
 from app.core.access import allowed_classifications, can_view_classification
+from app.core.roles import is_command
 from app.models.directive import Directive
 from app.models.user import User
 from app.repositories import directive_repository, user_repository
@@ -58,7 +59,7 @@ def list_directives(
     db: Session, current_user: User, skip: int = 0, limit: int = 100, status_filter: Optional[str] = None
 ) -> list[DirectiveOut]:
     classifications: Optional[list[str]] = None
-    if current_user.role != "commander":
+    if not is_command(current_user):
         # Nguoi khac chi thay chi thi da ban hanh + thuoc bac ho duoc xem
         status_filter = PUBLISHED
         classifications = allowed_classifications(current_user)
@@ -71,10 +72,10 @@ def list_directives(
 def _get_visible_or_404(db: Session, directive_id: int, current_user: User) -> Directive:
     directive = directive_repository.get_with_author(db, directive_id)
     if directive is None:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Directive not found")
-    if current_user.role != "commander":
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Không tìm thấy chỉ thị")
+    if not is_command(current_user):
         if directive.status != PUBLISHED or not can_view_classification(directive.classification, current_user):
-            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Directive not found")
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Không tìm thấy chỉ thị")
     return directive
 
 
@@ -89,7 +90,7 @@ def update_directive(
 ) -> DirectiveOut:
     directive = directive_repository.get_with_author(db, directive_id)
     if directive is None:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Directive not found")
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Không tìm thấy chỉ thị")
     updated = directive_repository.update(db, directive, directive_in)
     recipient_count = len(user_repository.list_active(db))
     return _build_out(db, updated, current_user, recipient_count)
@@ -98,7 +99,7 @@ def update_directive(
 def delete_directive(db: Session, directive_id: int, current_user: User) -> None:
     directive = directive_repository.get(db, directive_id)
     if directive is None:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Directive not found")
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Không tìm thấy chỉ thị")
     directive_repository.delete(db, directive)
 
 
@@ -107,7 +108,7 @@ def acknowledge_directive(db: Session, directive_id: int, current_user: User) ->
     if directive.status != PUBLISHED:
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
-            detail="Directive is not published yet",
+            detail="Chỉ thị chưa được ban hành",
         )
     if directive_repository.get_ack(db, directive_id, current_user.id) is None:
         directive_repository.add_ack(db, directive_id, current_user.id)
@@ -118,7 +119,7 @@ def acknowledge_directive(db: Session, directive_id: int, current_user: User) ->
 def get_acknowledgement_report(db: Session, directive_id: int) -> DirectiveAckReport:
     directive = directive_repository.get(db, directive_id)
     if directive is None:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Directive not found")
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Không tìm thấy chỉ thị")
 
     acks = directive_repository.list_acks(db, directive_id)
     acked_at_by_user = {a.user_id: a.acknowledged_at for a in acks}

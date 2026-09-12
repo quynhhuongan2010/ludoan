@@ -7,7 +7,7 @@ tu `.env` (co gia tri mac dinh `admin` / `admin`).
 Quy tac:
   - Neu da co bat ky tai khoan nao `is_system = True` -> khong lam gi.
   - Neu username trung voi tai khoan da ton tai -> nang cap tai khoan do
-    (`is_system = True`, `role = "admin"`, `is_active = True`).
+    (`is_system = True`, `role = 0` [Quản trị hệ thống], `is_active = True`).
   - Nguoc lai -> tao moi tai khoan admin he thong, `must_change_password = True`.
 """
 
@@ -16,6 +16,7 @@ import logging
 from sqlalchemy.orm import Session
 
 from app.core.config import settings
+from app.core.roles import ROLE_ADMIN
 from app.core.security import hash_password
 from app.models.unit import Unit
 from app.models.user import User
@@ -25,19 +26,20 @@ logger = logging.getLogger(__name__)
 
 # Co cau to chuc chuan Lu doan Thong tin 21: (ten, unit_kind, mo ta)
 STANDARD_UNITS = [
-    ("Ban chỉ huy Lữ đoàn", "bch_lu_doan", "Lữ trưởng, Chính uỷ, các Phó Lữ trưởng, Phó Chính uỷ"),
+    ("Ban chỉ huy Lữ đoàn", "bch_lu_doan", "Lữ trưởng (Chính quyền), Chính uỷ (Đảng), các Lữ phó chuyên ngành, Phó Chính uỷ (Quần chúng)"),
     ("Cấp uỷ – Đảng bộ Lữ đoàn", "cap_uy", "Cấp uỷ, Đảng bộ Lữ đoàn"),
     ("Phòng Tham mưu", "phong_ban",
-     "Cơ quan tham mưu — đầu mối nhận và triển khai nhiệm vụ tác chiến, huấn luyện, SSCĐ"),
+     "Cơ quan Tham mưu — chỉ đạo chuyên ngành tác chiến, huấn luyện, SSCĐ, hệ thống TTLL"),
     ("Phòng Chính trị", "phong_ban",
-     "Cơ quan chính trị — đầu mối công tác đảng, công tác chính trị, tuyên huấn"),
+     "Cơ quan Chính trị — chỉ đạo CTĐ - CTCT, cán bộ, tuyên huấn, bảo vệ an ninh"),
     ("Phòng Hậu cần – Kỹ thuật", "phong_ban",
-     "Cơ quan hậu cần – kỹ thuật — đầu mối bảo đảm vật chất, kỹ thuật, quân y"),
-    ("Tiểu đoàn 1", "tieu_doan", "Đầu mối tiểu đoàn — nhận nhiệm vụ và báo cáo tiến độ"),
-    ("Tiểu đoàn 2", "tieu_doan", "Đầu mối tiểu đoàn — nhận nhiệm vụ và báo cáo tiến độ"),
-    ("Đại đội 5", "dai_doi", "Đầu mối đại đội trực thuộc"),
-    ("Trạm bảo đảm", "tram", "Trạm bảo đảm thông tin"),
-    ("Trung tâm 2", "phong_ban", "Trung tâm 2 — đầu mối trực thuộc"),
+     "Cơ quan Hậu cần – Kỹ thuật — chỉ đạo bảo đảm VKTB, khí tài TTLL, xe máy, hậu cần, quân y"),
+    ("Tiểu đoàn 1", "tieu_doan", "Đầu mối Tiểu đoàn 1 — đơn vị thông tin tác chiến"),
+    ("Tiểu đoàn 2", "tieu_doan", "Đầu mối Tiểu đoàn 2 — đơn vị thông tin tác chiến"),
+    ("Đại đội 5", "dai_doi", "Đầu mối Đại đội 5 trực thuộc"),
+    ("Trung tâm 2", "phong_ban", "Trung tâm 2 — trung tâm TTLL trọng điểm trực thuộc"),
+    ("Trạm Kiểm soát", "tram", "Trạm Kiểm soát thông tin liên lạc"),
+    ("Trạm bảo đảm", "tram", "Trạm bảo đảm thông tin liên lạc"),
 ]
 
 
@@ -64,7 +66,7 @@ def ensure_system_admin(db: Session) -> User | None:
     existing = user_repository.get_by_username(db, username)
     if existing is not None:
         existing.is_system = True
-        existing.role = "admin"
+        existing.role = ROLE_ADMIN
         existing.is_active = True
         db.add(existing)
         db.commit()
@@ -76,7 +78,7 @@ def ensure_system_admin(db: Session) -> User | None:
         username=username,
         hashed_password=hash_password(settings.SYSTEM_ADMIN_PASSWORD),
         full_name="Quản trị hệ thống",
-        role="admin",
+        role=ROLE_ADMIN,
         is_active=True,
         clearance=True,
         is_system=True,

@@ -16,10 +16,15 @@ from app.models.user import User
 
 
 class OfficialDispatch(Base):
-    """So quan ly Cong van / Van ban di - den (mat noi bo).
+    """So dang ky Van ban di - den (kenh chi huy, bao mat).
 
-    `direction`: `di` (van ban di) | `den` (van ban den).
-    `status`   : `moi` | `dang_xu_ly` | `da_xu_ly` | `luu_tru`.
+    `direction`     : `di` (van ban di) | `den` (van ban den).
+    `doc_type`      : loai van ban - cong_van | dien_mat | chi_thi | quyet_dinh |
+                      menh_lenh | thong_bao | thong_tri | ke_hoach | bao_cao |
+                      to_trinh | bien_ban | huong_dan | giay_moi | khac.
+    `security_level`: do mat  - thuong | mat | toi_mat | tuyet_mat.
+    `urgency`       : do khan - thuong | khan | thuong_khan | hoa_toc.
+    `status`        : moi | dang_xu_ly | da_xu_ly | luu_tru.
     """
 
     __tablename__ = "official_dispatches"
@@ -29,12 +34,19 @@ class OfficialDispatch(Base):
 
     id = Column(Integer, primary_key=True, index=True, autoincrement=True)
     direction = Column(String(10), nullable=False, server_default="den", index=True)
+    doc_type = Column(String(20), nullable=False, server_default="cong_van", index=True)
     dispatch_number = Column(String(80), nullable=False, index=True)
     summary = Column(String(500), nullable=False)  # trich yeu
     issuing_org = Column(String(200), nullable=True)  # co quan ban hanh
     receiving_org = Column(String(200), nullable=True)  # noi nhan
+    signer = Column(String(200), nullable=True)  # nguoi ky (chuc vu + ho ten)
     issued_date = Column(Date, nullable=True)  # ngay ban hanh
     received_date = Column(Date, nullable=True)  # ngay den (van ban den)
+    deadline = Column(Date, nullable=True)  # han xu ly / han tra loi
+    page_count = Column(Integer, nullable=True)  # so to
+    security_level = Column(String(20), nullable=False, server_default="mat", index=True)
+    urgency = Column(String(20), nullable=False, server_default="thuong", index=True)
+    archive_ref = Column(String(120), nullable=True)  # so ho so luu tru (hop/cap)
     status = Column(String(20), nullable=False, server_default="moi", index=True)
     classification = Column(String(20), nullable=False, server_default="mat")
     note = Column(Text, nullable=True)

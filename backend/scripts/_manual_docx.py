@@ -14,7 +14,37 @@ from docx.shared import Inches, Pt, RGBColor
 ROOT = pathlib.Path(__file__).resolve().parent.parent.parent
 DOCS = ROOT / "docs"
 IMG = DOCS / "img"
+SHOTS = DOCS / "screenshots_khai_thac"  # anh chup THAT tu he thong dang chay
 OUT = DOCS / "HUONG_DAN_SU_DUNG.docx"
+
+# Anh chup that thay cho mockup ve tay. Sinh boi:
+#   backend/scripts/e2e_full_walkthrough.py  (cAn backend chay o :8000)
+FIGURE_MAP = {
+    "01_login": "01_dang_nhap_admin",
+    "02_doi_mat_khau": "30_doi_mat_khau",
+    "03_trang_cong_khai": "00_khach_trang_cong_khai",
+    "04_bang_tin": "10_bang_tin",
+    "05_tin_tuc": "11_tin_tuc",
+    "06_duyet_bai": "50_chi_huy_duyet_bai",
+    "07_giao_duc": "18_giao_duc",
+    "08_thong_bao": "13_thong_bao",
+    "08b_lich_truc": "14_lich_truc",
+    "08c_danh_ba": "15_danh_ba",
+    "09_van_ban": "16_van_ban",
+    "09b_chi_thi": "20_chi_thi",
+    "10_chi_dao_luong": "22_chi_dao_bao_cao",
+    "11_giao_nhiem_vu": "23_giao_nhiem_vu",
+    "11b_nop_bao_cao": "38_can_bo_nop_bao_cao",
+    "11c_duyet_bao_cao": "52_chi_huy_da_duyet",
+    "12a_kenh_chi_huy_hop_ban": "24_kenh_chi_huy",
+    "12b_so_cong_van": "24c_so_cong_van",
+    "14_quan_ly_nguoi_dung": "28_quan_ly_nguoi_dung",
+    "15_quan_ly_don_vi": "29_quan_ly_don_vi",
+    "16_ho_so": "26_ho_so",
+    "17_menu_can_bo": "31_can_bo_menu",
+    "18_menu_chien_si": "40_nguoi_dung_menu",
+    "19_kenh_bi_chan": "36_can_bo_kenh_chi_huy_bi_chan",
+}
 
 GREEN = RGBColor(0x22, 0x66, 0x37)
 DARK = RGBColor(0x21, 0x25, 0x29)
@@ -109,13 +139,39 @@ class M:
         self.d.add_paragraph()
 
     def figure(self, name, caption):
-        path = IMG / f"{name}.png"
-        if not path.exists():
+        # Uu tien anh chup THAT (screenshots_khai_thac), roi den ten da anh xa,
+        # cuoi cung moi den mockup cu trong docs/img.
+        real = FIGURE_MAP.get(name, name)
+        path = None
+        for cand in (SHOTS / f"{real}.png", SHOTS / f"{name}.png", IMG / f"{name}.png"):
+            if cand.exists():
+                path = cand
+                break
+        if path is None:
             self.p(f"[Thiếu hình: {name}]", italic=True, color=GRAYTXT)
             return
-        self.d.add_picture(str(path), width=Inches(6.4))
+        # Anh chup that thuong rat cao (full-page) -> gioi han CA be rong lan
+        # chieu cao de vua 1 trang A4, khong bi Word cat. Be rong 6.6" = gan het
+        # vung in (kho A4 8.27" - le 2x0.8") de anh to, ro chu hon.
+        max_w, max_h = Inches(6.6), Inches(8.7)
+        w, h = max_w, None
+        try:
+            from PIL import Image  # noqa: PLC0415
+
+            with Image.open(path) as im:
+                pw, ph = im.size
+            h = int(max_w * ph / pw)
+            if h > max_h:
+                h = max_h
+                w = int(max_h * pw / ph)
+        except Exception:  # noqa: BLE001
+            h = None
+        if h:
+            self.d.add_picture(str(path), width=w, height=h)
+        else:
+            self.d.add_picture(str(path), width=w)
         self.d.paragraphs[-1].alignment = WD_ALIGN_PARAGRAPH.CENTER
-        cap = self.d.add_paragraph(f"Hình minh hoạ: {caption}")
+        cap = self.d.add_paragraph(f"Ảnh màn hình: {caption}")
         cap.alignment = WD_ALIGN_PARAGRAPH.CENTER
         for r in cap.runs:
             r.italic = True
@@ -193,10 +249,11 @@ def build_docx():
     c = box.cell(0, 0)
     _shade(c, "F2F6F2")
     c.paragraphs[0].alignment = WD_ALIGN_PARAGRAPH.CENTER
-    for line in ["Phiên bản hợp đồng API: v1.8.0",
+    for line in ["Phiên bản hợp đồng API: v7.0.0",
                  f"Ngày biên soạn: {today}",
-                 "Đối tượng: mọi cán bộ, chiến sĩ được cấp tài khoản",
+                 "Đối tượng: mọi cán bộ, quân nhân chuyên nghiệp được cấp tài khoản",
                  "Bộ phận kỹ thuật: xem Mục 3 để cài đặt và bàn giao",
+                 "Hình minh hoạ trong tài liệu là ẢNH CHỤP THẬT từ hệ thống đang chạy",
                  "LƯU HÀNH NỘI BỘ"]:
         pr = c.add_paragraph(line)
         pr.alignment = WD_ALIGN_PARAGRAPH.CENTER
@@ -221,7 +278,7 @@ def build_docx():
     m.bullets([
         "Khách truy cập trong mạng nội bộ: xem được tin tức, thông báo, văn bản ở mức CÔNG KHAI mà không cần đăng nhập.",
         "Tài khoản đã đăng nhập: xem thêm nội dung NỘI BỘ và dùng các chức năng theo quyền được cấp.",
-        "Ban chỉ huy và các đơn vị: trao đổi, giao nhiệm vụ, nộp báo cáo, ký nhận công văn, họp giao ban trực tuyến.",
+        "Ban chỉ huy và các đơn vị: trao đổi, giao nhiệm vụ, nộp báo cáo, ký nhận công văn.",
     ])
     m.h(2, "1.2. Ai sẽ sử dụng")
     m.table(
@@ -250,15 +307,22 @@ def build_docx():
     # ================================================================= 2
     m.h(1, "2. NHỮNG KHÁI NIỆM CẦN NẮM TRƯỚC")
     m.h(2, "2.1. Vai trò của tài khoản")
-    m.p("“Vai trò” quyết định bạn được làm gì. Người quản trị / chỉ huy là người đặt vai trò cho từng tài khoản.")
+    m.p("“Vai trò” quyết định bạn được làm gì. Người quản trị / chỉ huy là người đặt vai trò cho từng tài khoản. "
+        "Trên màn hình “Quản lý người dùng”, vai trò hiển thị đúng theo tên trong cột “Vai trò” dưới đây.")
     m.table(
-        ["Vai trò", "Ý nghĩa", "Quyền chính"],
-        [["Chiến sĩ", "Mức mặc định khi mới tạo/đăng ký", "Chỉ xem"],
-         ["Cán bộ", "Cán bộ, nhân viên các bộ phận", "Xem + đăng/sửa Tin tức, Giáo dục chính trị"],
-         ["Chỉ huy", "Ban chỉ huy Lữ đoàn", "Toàn quyền nội dung + ban hành Chỉ thị + quản lý tài khoản"],
-         ["Quản trị (admin)", "Tài khoản hệ thống, chủ đơn vị giữ", "Như Chỉ huy + cấp tài khoản/phân quyền + quản lý đơn vị"]],
-        widths=[1.3, 2.4, 2.9],
+        ["Tên hiển thị (trong hệ thống)", "Đối tượng thực tế", "Quyền chính"],
+        [["Quản trị hệ thống", "Chủ đơn vị giữ tài khoản “admin” (và các tài khoản admin khác)",
+          "Toàn quyền chỉ huy + độc quyền: cấp/thu “Quyền xem MẬT” và cờ Kênh Chỉ đạo, cấp lại mật khẩu, quản lý đơn vị, tạo tài khoản quản trị"],
+         ["Lữ trưởng – Chính uỷ / Phó Lữ trưởng – Phó Chính uỷ / Chỉ huy đơn vị",
+          "Ban chỉ huy Lữ đoàn và chỉ huy các đầu mối", "Toàn quyền chỉ huy: ban hành Chỉ thị, duyệt & đăng mọi nội dung, quản lý tài khoản"],
+         ["Cá nhân", "Cán bộ, sĩ quan, QNCN các phòng ban / tiểu đoàn / đại đội được giao đăng nội dung",
+          "Xem + đăng/sửa Tin tức và Giáo dục chính trị; xem Chỉ thị; nếu được bật cờ thì dùng Kênh Chỉ đạo – Báo cáo"],
+         ["Người dùng", "Tài khoản đã kích hoạt nhưng chưa được giao việc đăng nội dung (mức mặc định khi tự đăng ký)",
+          "Chỉ XEM nội bộ; không đăng, không sửa"]],
+        widths=[2.0, 2.3, 2.3],
     )
+    m.p("Trong tài liệu này, để gọn, các mục đôi khi viết tắt: “Chỉ huy” = nhóm toàn quyền chỉ huy (gồm cả Quản trị); "
+        "“Cán bộ” = vai trò “Cá nhân” (được đăng nội dung); “Người dùng” = chỉ xem.", italic=True, color=GRAYTXT)
     m.h(2, "2.2. Ba bậc phân loại nội dung")
     m.p("Mỗi bài viết, văn bản, chỉ thị… có một “bậc phân loại” quy định ai được xem:")
     m.table(
@@ -277,7 +341,7 @@ def build_docx():
         "Chỉ tài khoản được quản trị bật cờ “Kênh Chỉ đạo” (hoặc là Chỉ huy/Quản trị) mới vào được. "
         "Tài khoản của đơn vị chỉ thấy phần việc của đơn vị mình.",
         "KÊNH CHỈ HUY (MẬT): dành riêng cho Ban chỉ huy Lữ đoàn và Cấp uỷ. Điều kiện vào là có “Quyền xem MẬT” "
-        "(hoặc là Chỉ huy/Quản trị). Gồm: họp bàn nội bộ, sổ công văn mật, giao ban trực tuyến.",
+        "(hoặc là Chỉ huy/Quản trị). Gồm: họp bàn nội bộ và sổ công văn mật.",
     ])
     m.h(2, "2.4. Bố cục màn hình")
     m.bullets([
@@ -606,8 +670,38 @@ def build_docx():
         "Tích “Ghim lên đầu” nếu muốn thông báo luôn nằm trên cùng; tích “Công khai” nếu cho khách xem.",
         "Bấm “Lưu”. Danh sách sắp xếp: ghim → ưu tiên → mới nhất.",
     ])
-    m.p("Lịch trực kíp: nhập ở thẻ riêng trong cùng trang — chọn ngày trực, ca trực, người trực, chức trách, ghi chú. "
-        "Có bộ lọc theo khoảng ngày.")
+    m.h(2, "8.1. Lịch trực – Kíp trực")
+    m.figure("08b_lich_truc", "Trang Lịch trực – Kíp trực (4 thẻ: biểu trực tuần / kíp trực ngày / lập & duyệt / sổ bàn giao ca)")
+    m.bullets([
+        "Thẻ “Biểu trực tuần”: xem toàn Lữ đoàn hoặc theo khối/đơn vị; chọn tuần bằng nút “Tuần trước / Tuần này / Tuần sau”; "
+        "chú giải màu theo 7 loại trực (chỉ huy, ban tác chiến, ban nội vụ, chuyên môn, ca kíp, bảo vệ – vệ binh, khác). "
+        "Chỉ bảng đã duyệt mới lên bảng tổng hợp chung. Bấm “In biểu trực” để in.",
+        "Thẻ “Kíp trực ngày”: xem chi tiết kíp trực của một ngày cụ thể, gom theo đơn vị, kèm tổng quân số có mặt / biên chế.",
+        "Thẻ “Lập & duyệt bảng trực”: trực ban đơn vị (thường là Phòng Tham mưu) lập bảng trực tuần cho đơn vị mình, "
+        "thêm từng dòng ca trực rồi bấm “Gửi duyệt”. Luồng: Nháp → Chờ duyệt → Đã duyệt / Trả lại (kèm lý do) → có thể Mở lại. "
+        "Mỗi đơn vị chỉ có một bảng cho mỗi tuần. Chỉ huy Lữ đoàn bấm “Phê duyệt lịch trực” hoặc “Trả lại / Yêu cầu Tham mưu sửa”.",
+    ])
+    m.h(2, "8.2. Bàn giao ca trực điện tử (sổ nhật ký kíp trực)")
+    m.figure("08b_lich_truc", "Thẻ “Sổ bàn giao & Nhật ký kíp trực” trong trang Lịch trực")
+    m.p("Mỗi biên bản bàn giao gắn với một dòng ca trực trong biểu trực tuần. Quy trình 3 bước:")
+    m.steps([
+        "Kíp trước lập biên bản: tình hình quân số; tình hình khí tài thông tin liên lạc – vũ khí trang bị; "
+        "nhật ký các sự vụ / mệnh lệnh nhận trong ca; nhiệm vụ còn dở dang bàn giao ca sau theo dõi.",
+        "Kíp sau đối soát thực tế rồi ký nhận điện tử: chọn “Đã nhận” hoặc “Có kiến nghị” (kèm ghi chú phản hồi).",
+        "Chỉ huy ca trực kiểm tra và ghi ý kiến chỉ đạo vào sổ.",
+    ])
+    m.bullets([
+        "Trạng thái mỗi biên bản: Chờ nhận / Đã nhận / Có kiến nghị.",
+        "Tất cả lưu vết thời gian, người giao – người nhận; tra cứu lại theo khoảng ngày / đơn vị / trạng thái.",
+    ])
+    m.h(2, "8.3. Danh bạ điện thoại")
+    m.figure("08c_danh_ba", "Trang Danh bạ điện thoại (nhập từ file Excel/CSV)")
+    m.steps([
+        "Vào menu Bản tin → “Danh bạ điện thoại”.",
+        "Bấm “Nhập danh bạ”, chọn file Excel (.xlsx) hoặc .csv của đơn vị / Bộ đội Biên phòng / toàn quân.",
+        "Hệ thống giữ NGUYÊN mọi cột của file. Dùng ô tìm kiếm để tra nhanh trên tất cả các trường (tên, đơn vị, chức danh, số máy…).",
+        "Có thể nhập nhiều bộ danh bạ; chọn bộ ở danh sách bên trái để tra cứu.",
+    ])
     m.pagebreak()
 
     # ================================================================= 9
@@ -676,16 +770,19 @@ def build_docx():
         "(3) Bấm “Giao nhiệm vụ”. Mỗi đơn vị xuất hiện một dòng ở bảng bên dưới với trạng thái “Chưa nộp”.",
     ])
     m.h(2, "12.2. Đơn vị nộp báo cáo tiến độ")
+    m.figure("11b_nop_bao_cao", "Cán bộ đơn vị nộp báo cáo tiến độ nhiệm vụ")
     m.steps([
-        "Mở nhiệm vụ, bấm (4) “Xem” ở dòng đơn vị mình.",
-        "Nhập NỘI DUNG BÁO CÁO, đính kèm tệp minh chứng nếu có, rồi bấm “Nộp báo cáo”. Trạng thái chuyển “Chờ duyệt”.",
-        "Nếu bị “Trả lại”, xem ghi chú của chỉ huy, sửa và nộp lại.",
+        "Mở nhiệm vụ, ở khối đơn vị mình chọn thẻ “Của tôi” rồi bấm “Xem”.",
+        "Nhập NỘI DUNG BÁO CÁO vào ô soạn, bấm “Đính kèm minh chứng” để gửi kèm tệp nếu có, rồi bấm “Nộp báo cáo”. "
+        "Trạng thái chuyển “Chờ duyệt”; bảng “Tiến độ duyệt” cập nhật ngay.",
+        "Nếu bị “Trả lại”, xem ghi chú của chỉ huy, sửa và nộp lại (lịch sử các lần nộp được giữ lại).",
     ])
     m.h(2, "12.3. Chỉ huy duyệt báo cáo")
+    m.figure("11c_duyet_bao_cao", "Nhiệm vụ đã được duyệt xong — chuyển trạng thái “Hoàn thành”")
     m.steps([
-        "Ở dòng đơn vị đang “Chờ duyệt”, bấm (5) “Duyệt”.",
+        "Ở dòng đơn vị đang “Chờ duyệt”, bấm “Duyệt”.",
         "Chọn “Đã duyệt” hoặc “Trả lại”, nhập ghi chú (bắt buộc nêu lý do khi trả lại), bấm “Xác nhận”.",
-        "Khi TẤT CẢ đơn vị đều “Đã duyệt”, nhiệm vụ tự chuyển “Hoàn thành”. "
+        "Khi TẤT CẢ đơn vị đều “Đã duyệt”, nhiệm vụ tự chuyển “Hoàn thành” (thanh tiến độ đầy, xuất hiện nút “Huỷ nhiệm vụ”). "
         "Quá hạn mà chưa xong sẽ hiển thị “Quá hạn”.",
     ])
     m.pagebreak()
@@ -696,6 +793,7 @@ def build_docx():
     m.p("Chỉ vào được nếu bạn là Chỉ huy/Quản trị HOẶC được cấp “Quyền xem MẬT”. "
         "Người không đủ quyền bấm vào sẽ bị chặn (báo 403). Toàn bộ nội dung ở đây là MẬT — "
         "nghiêm cấm sao chụp, chuyển tiếp ra ngoài phạm vi được phép.")
+    m.figure("19_kenh_bi_chan", "Tài khoản không có “Quyền xem MẬT” mở Kênh chỉ huy — bị chặn 403")
     m.h(2, "13.2. Họp bàn Ban Chỉ huy & Cấp uỷ")
     m.figure("12a_kenh_chi_huy_hop_ban", "Kênh chỉ huy – thẻ “Họp bàn BCH & Cấp uỷ”")
     m.steps([
@@ -717,37 +815,11 @@ def build_docx():
     m.pagebreak()
 
     # ================================================================= 14
-    m.h(1, "14. GIAO BAN TRỰC TUYẾN")
-    m.p("Điều kiện truy cập như Mục 13. Tạo / điều hành cuộc họp, ghi biên bản, điểm danh người khác, "
-        "mời – gỡ thành phần: CHỈ Chỉ huy/Quản trị. Thành viên được triệu tập: xem lịch, tài liệu, vào phòng họp, "
-        "tự báo có mặt / vắng và gửi ý kiến.")
-    m.note("Phần mềm KHÔNG tự tạo phòng video. “Liên kết phòng trực tuyến” là đường dẫn tới công cụ họp bên ngoài "
-           "do Ban chỉ huy cung cấp; bấm nút “Vào phòng trực tuyến” sẽ mở đường dẫn đó.")
-    m.figure("13_giao_ban", "Giao ban trực tuyến — tạo cuộc họp, điểm danh, biên bản")
-    m.h(2, "14.1. Chỉ huy tạo cuộc họp")
-    m.steps([
-        "Vào menu “Giao ban trực tuyến”.",
-        "(1) Nhập TIÊU ĐỀ và THỜI GIAN BẮT ĐẦU (thời gian kết thúc phải sau thời gian bắt đầu).",
-        "(2) Nhập ĐỊA ĐIỂM và dán LIÊN KẾT PHÒNG TRỰC TUYẾN; nhập CHƯƠNG TRÌNH.",
-        "Tích chọn THÀNH PHẦN TRIỆU TẬP.",
-        "(3) Bấm “Tạo cuộc họp”.",
-    ])
-    m.h(2, "14.2. Trong / sau cuộc họp")
-    m.steps([
-        "(4) Mọi người bấm “Vào phòng trực tuyến” để mở phòng họp ngoài.",
-        "Chỉ huy điểm danh: ở bảng thành phần, đổi ô “Điểm danh” của từng người thành Có mặt / Vắng mặt.",
-        "Thành viên tự cập nhật: ở khu “Điểm danh của tôi”, chọn trạng thái, ghi lý do vắng và ý kiến đóng góp, bấm “Gửi”.",
-        "(5) Chỉ huy nhập BIÊN BẢN / KẾT LUẬN rồi bấm “Lưu biên bản” hoặc “Lưu & kết thúc họp” (chuyển trạng thái “Đã kết thúc”).",
-        "(6) Đính kèm TÀI LIỆU HỌP bằng nút “Tải lên”; mọi người bấm “Tải” để lấy.",
-    ])
-    m.pagebreak()
-
-    # ================================================================= 15
-    m.h(1, "15. QUẢN LÝ NGƯỜI DÙNG (Quản trị / Chỉ huy)")
+    m.h(1, "14. QUẢN LÝ NGƯỜI DÙNG (Quản trị / Chỉ huy)")
     m.figure("14_quan_ly_nguoi_dung", "Màn hình Quản lý người dùng")
-    m.h(2, "15.1. Duyệt tài khoản đang chờ")
+    m.h(2, "14.1. Duyệt tài khoản đang chờ")
     m.p("Khu “Tài khoản chờ duyệt” ở đầu trang liệt kê người mới đăng ký. Bấm “Kích hoạt” để cho phép đăng nhập.")
-    m.h(2, "15.2. Tạo tài khoản mới trực tiếp")
+    m.h(2, "14.2. Tạo tài khoản mới trực tiếp")
     m.steps([
         "Điền TÊN ĐĂNG NHẬP (chữ thường, số, dấu chấm/gạch), MẬT KHẨU tạm (≥ 8 ký tự có cả chữ và số), HỌ TÊN.",
         "(1) Chọn VAI TRÒ. Chỉ tài khoản admin mới tạo được tài khoản “Quản trị”.",
@@ -755,7 +827,7 @@ def build_docx():
         "(2) (admin) Tích “Cấp quyền vào Kênh Chỉ đạo – Báo cáo” nếu người này cần dùng kênh đó.",
         "(3) Bấm “Tạo tài khoản”. Tài khoản mới sẽ bị buộc đổi mật khẩu ở lần đăng nhập đầu.",
     ])
-    m.h(2, "15.3. Phân quyền cho tài khoản đã có")
+    m.h(2, "14.3. Phân quyền cho tài khoản đã có")
     m.p("Trong bảng danh sách, thao tác ngay trên từng dòng:")
     m.table(
         ["Cột / nút", "Tác dụng"],
@@ -767,7 +839,7 @@ def build_docx():
          ["Cấp lại MK", "Đặt mật khẩu mới; người đó phải đổi lại ở lần đăng nhập kế tiếp"]],
         widths=[1.8, 4.8],
     )
-    m.h(2, "15.4. Quy tắc an toàn (hệ thống tự chặn)")
+    m.h(2, "14.4. Quy tắc an toàn (hệ thống tự chặn)")
     m.bullets([
         "Không thể tự hạ vai trò hoặc tự khoá chính tài khoản mình đang dùng.",
         "Luôn phải còn ít nhất MỘT tài khoản Chỉ huy/Quản trị đang hoạt động — không khoá/hạ quyền người cuối cùng.",
@@ -777,7 +849,7 @@ def build_docx():
     m.pagebreak()
 
     # ================================================================= 16
-    m.h(1, "16. QUẢN LÝ ĐƠN VỊ (Quản trị)")
+    m.h(1, "15. QUẢN LÝ ĐƠN VỊ (Quản trị)")
     m.p("Phần mềm đã nạp sẵn cơ cấu tổ chức chuẩn của Lữ đoàn (bảng dưới). Việc chính của bạn là "
         "vào “Quản lý người dùng” để gán từng tài khoản vào đúng đơn vị; chỉ thêm/sửa đơn vị khi tổ chức thay đổi.")
     m.table(
@@ -801,7 +873,7 @@ def build_docx():
         "Trong bảng: đổi loại, bật/tắt “Hoạt động”, hoặc “Xoá”.",
     ])
     m.note("Không xoá được đơn vị khi vẫn còn tài khoản trực thuộc — hãy chuyển các tài khoản sang đơn vị khác trước.")
-    m.h(2, "16.1. Cấp quyền cho một bộ phận nhận & triển khai nhiệm vụ")
+    m.h(2, "15.1. Cấp quyền cho một bộ phận nhận & triển khai nhiệm vụ")
     m.steps([
         "Vào “Quản lý người dùng”, tạo tài khoản cho cán bộ của bộ phận (Phòng Tham mưu, Tiểu đoàn 2…).",
         "Gán tài khoản vào ĐÚNG đơn vị đó.",
@@ -812,7 +884,7 @@ def build_docx():
     m.pagebreak()
 
     # ================================================================= 17
-    m.h(1, "17. HỒ SƠ CÁ NHÂN")
+    m.h(1, "16. HỒ SƠ CÁ NHÂN")
     m.figure("16_ho_so", "Màn hình Hồ sơ cá nhân")
     m.steps([
         "Vào menu “Hồ sơ cá nhân”.",
@@ -822,10 +894,10 @@ def build_docx():
     m.pagebreak()
 
     # ================================================================= 18
-    m.h(1, "18. TÀI KHOẢN CÁN BỘ VÀ CHIẾN SĨ NHÌN THẤY GÌ")
+    m.h(1, "17. TÀI KHOẢN “CÁ NHÂN” VÀ “NGƯỜI DÙNG” NHÌN THẤY GÌ")
     m.p("Menu hiển thị theo quyền. Hai ví dụ dưới đây giúp bạn đối chiếu.")
-    m.figure("17_menu_can_bo", "Thanh menu của tài khoản Cán bộ (được cấp Kênh Chỉ đạo)")
-    m.figure("18_menu_chien_si", "Thanh menu của tài khoản Chiến sĩ")
+    m.figure("17_menu_can_bo", "Thanh menu của tài khoản “Cá nhân” (cán bộ được cấp Kênh Chỉ đạo)")
+    m.figure("18_menu_chien_si", "Thanh menu của tài khoản “Người dùng” (chỉ xem)")
     m.bullets([
         "Không thấy một mục = bạn chưa được cấp quyền cho mục đó. Liên hệ quản trị nếu công việc yêu cầu.",
         "Thấy mục nhưng bấm vào bị báo “không đủ quyền” (403) = mục đó cần quyền cao hơn (ví dụ Kênh chỉ huy cần “Quyền xem MẬT”).",
@@ -833,7 +905,7 @@ def build_docx():
     m.pagebreak()
 
     # ================================================================= 19
-    m.h(1, "19. XỬ LÝ SỰ CỐ KHI SỬ DỤNG")
+    m.h(1, "18. XỬ LÝ SỰ CỐ KHI SỬ DỤNG")
     m.p("Bảng dưới đây là các tình huống người dùng TỰ xử lý được. Sự cố về cài đặt, máy chủ, "
         "cơ sở dữ liệu, giao diện trắng trang… thuộc phần kỹ thuật — xem Mục 3.11 và báo trợ lý CNTT của đơn vị.")
     m.table(
@@ -854,7 +926,7 @@ def build_docx():
          ["Đổi mật khẩu báo sai mật khẩu hiện tại (400)", "Gõ nhầm mật khẩu cũ", "Nhập lại đúng mật khẩu đang dùng; quên thì nhờ quản trị “Cấp lại mật khẩu”."],
          ["Gõ tìm kiếm tiếng Việt không ra kết quả", "Khác dấu / khác cách bỏ dấu", "Gõ đúng dấu, hoặc thử gõ không dấu / ít từ khoá hơn."],
          ["Danh sách trống trơn dù chắc chắn có dữ liệu", "Bộ lọc đang bật (khoảng ngày, trạng thái, đơn vị)", "Xoá / đặt lại các ô lọc trên đầu danh sách rồi xem lại."],
-         ["Bấm “Vào phòng trực tuyến” không mở được gì", "Chỉ huy chưa dán liên kết phòng họp, hoặc liên kết sai", "Báo chỉ huy bổ sung “Liên kết phòng trực tuyến” cho cuộc họp."],
+         ["Nhập danh bạ từ Excel không lên dữ liệu", "File không đúng .xlsx/.csv, hoặc dòng tiêu đề cột nằm sai vị trí", "Lưu lại đúng định dạng .xlsx/.csv, để dòng tiêu đề ở hàng đầu; thử lại."],
          ["Ảnh / tệp đính kèm bấm vào báo “không tìm thấy” (404)", "Tệp đã bị xoá, hoặc lỗi phía máy chủ tệp", "Báo người đăng tải lại; nếu nhiều tệp cùng lỗi → báo trợ lý CNTT (Mục 3.11)."],
          ["Vừa đăng nhập đã bị đăng xuất, lặp lại nhiều lần", "Giờ máy trạm lệch nhiều so với máy chủ", "Chỉnh lại ngày giờ máy đang dùng cho đúng; vẫn lỗi → báo trợ lý CNTT."],
          ["Trang giao diện trắng / báo không kết nối được máy chủ", "Máy chủ chưa chạy hoặc địa chỉ giao diện cấu hình sai", "Thử lại sau ít phút; nếu cả đơn vị cùng bị → báo trợ lý CNTT (Mục 3.11)."]],
@@ -863,7 +935,7 @@ def build_docx():
     m.pagebreak()
 
     # ================================================================= 20
-    m.h(1, "20. PHỤ LỤC A — BẢNG PHÂN QUYỀN")
+    m.h(1, "19. PHỤ LỤC A — BẢNG PHÂN QUYỀN")
     m.table(
         ["Chức năng", "Chiến sĩ", "Cán bộ", "Chỉ huy", "Quản trị"],
         [["Xem tin tức / GDCT / thông báo / chỉ thị", "Có", "Có", "Có", "Có"],
@@ -872,7 +944,7 @@ def build_docx():
          ["Ban hành Chỉ thị – Nhiệm vụ", "—", "—", "Có", "Có"],
          ["Kênh Chỉ đạo – Báo cáo (luồng, giao nhiệm vụ)", "Khi được bật cờ", "Khi được bật cờ", "Có", "Có"],
          ["Duyệt báo cáo / giao – huỷ nhiệm vụ", "—", "—", "Có", "Có"],
-         ["Kênh chỉ huy (MẬT): họp bàn, công văn, giao ban", "Khi có Quyền xem MẬT", "Khi có Quyền xem MẬT", "Có", "Có"],
+         ["Kênh chỉ huy (MẬT): họp bàn, công văn", "Khi có Quyền xem MẬT", "Khi có Quyền xem MẬT", "Có", "Có"],
          ["Vào sổ / sửa công văn, ghi biên bản, điểm danh người khác", "—", "—", "Có", "Có"],
          ["Quản lý người dùng (kích hoạt, phân quyền)", "—", "—", "Có", "Có"],
          ["Tạo tài khoản “Quản trị”, Quản lý đơn vị", "—", "—", "—", "Có"]],
@@ -883,7 +955,7 @@ def build_docx():
     m.pagebreak()
 
     # ================================================================= 21
-    m.h(1, "21. PHỤ LỤC B — CÁC TRẠNG THÁI THƯỜNG GẶP")
+    m.h(1, "20. PHỤ LỤC B — CÁC TRẠNG THÁI THƯỜNG GẶP")
     m.h(2, "Bài viết Tin tức")
     m.table(["Trạng thái", "Ý nghĩa"],
             [["Chờ duyệt", "Cán bộ vừa đăng/sửa, chưa hiển thị công khai"],
@@ -907,14 +979,6 @@ def build_docx():
     m.table(["Trạng thái", "Ý nghĩa"],
             [["Mới", "Vừa vào sổ"], ["Đang xử lý", "Đang được giải quyết"],
              ["Đã xử lý", "Đã giải quyết xong"], ["Lưu trữ", "Đưa vào lưu"]], widths=[1.6, 5.0])
-    m.h(2, "Cuộc họp giao ban")
-    m.table(["Trạng thái", "Ý nghĩa"],
-            [["Sắp diễn ra", "Chưa tới giờ họp"], ["Đang diễn ra", "Đang họp"],
-             ["Đã kết thúc", "Họp xong, thường đã có biên bản"], ["Đã huỷ", "Cuộc họp bị huỷ"]], widths=[1.6, 5.0])
-    m.h(2, "Điểm danh")
-    m.table(["Trạng thái", "Ý nghĩa"],
-            [["Chưa điểm danh", "Chưa xác nhận"], ["Có mặt", "Tham dự"], ["Vắng mặt", "Không dự (nên ghi lý do)"]],
-            widths=[1.6, 5.0])
 
     d.add_paragraph()
     end = d.add_paragraph("— HẾT —")

@@ -3,6 +3,7 @@ from typing import Optional
 from fastapi import HTTPException, status
 from sqlalchemy.orm import Session
 
+from app.core.roles import is_command
 from app.models.announcement import Announcement
 from app.models.user import User
 from app.repositories import announcement_repository
@@ -52,16 +53,16 @@ def list_announcements(
 def get_announcement_or_404(db: Session, ann_id: int, current_user: Optional[User]) -> AnnouncementOut:
     ann = announcement_repository.get_with_author(db, ann_id)
     if ann is None or (current_user is None and not ann.is_public):
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Announcement not found")
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Không tìm thấy thông báo")
     return _to_out(ann)
 
 
 def _get_owned_or_404(db: Session, ann_id: int, current_user: User) -> Announcement:
     ann = announcement_repository.get_with_author(db, ann_id)
     if ann is None:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Announcement not found")
-    if current_user.role != "commander" and ann.author_id != current_user.id:
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Not enough permissions")
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Không tìm thấy thông báo")
+    if not is_command(current_user) and ann.author_id != current_user.id:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Không đủ quyền thực hiện thao tác này")
     return ann
 
 

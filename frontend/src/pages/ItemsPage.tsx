@@ -1,6 +1,9 @@
 import { useEffect, useState, type FormEvent } from 'react'
 import { ApiError } from '../api/client'
 import { itemsApi } from '../api/items'
+import { EmptyState } from '../components/EmptyState'
+import { Icon } from '../components/Icon'
+import { useConfirm } from '../context/ConfirmContext'
 import type { Item, ItemCreate } from '../types/item'
 
 const emptyForm: ItemCreate = { name: '', description: '' }
@@ -13,17 +16,25 @@ export function ItemsPage() {
   const [form, setForm] = useState<ItemCreate>(emptyForm)
   const [editingId, setEditingId] = useState<number | null>(null)
   const [submitting, setSubmitting] = useState(false)
+  const confirm = useConfirm()
 
-  function loadItems() {
-    setLoading(true)
+  useEffect(() => {
+    let active = true
     itemsApi
       .list()
-      .then(setItems)
-      .catch((err: unknown) => setError(err instanceof ApiError ? err.message : 'Failed to load items'))
-      .finally(() => setLoading(false))
-  }
-
-  useEffect(loadItems, [])
+      .then((data) => {
+        if (active) setItems(data)
+      })
+      .catch((err: unknown) => {
+        if (active) setError(err instanceof ApiError ? err.message : 'Failed to load items')
+      })
+      .finally(() => {
+        if (active) setLoading(false)
+      })
+    return () => {
+      active = false
+    }
+  }, [])
 
   function startEdit(item: Item) {
     setEditingId(item.id)
@@ -57,6 +68,15 @@ export function ItemsPage() {
   }
 
   async function handleDelete(id: number) {
+    const item = items.find((it) => it.id === id)
+    const ok = await confirm({
+      message: (
+        <>
+          Xoá item <strong>{item?.name ?? `#${id}`}</strong>? Thao tác này không thể hoàn tác.
+        </>
+      ),
+    })
+    if (!ok) return
     setError(null)
     try {
       await itemsApi.remove(id)
@@ -108,7 +128,7 @@ export function ItemsPage() {
       {loading ? (
         <p>Đang tải...</p>
       ) : items.length === 0 ? (
-        <p>Chưa có item nào.</p>
+        <EmptyState message="Chưa có item nào." />
       ) : (
         <table>
           <thead>
@@ -126,11 +146,11 @@ export function ItemsPage() {
                 <td>{item.name}</td>
                 <td>{item.description ?? '—'}</td>
                 <td className="row-actions">
-                  <button type="button" onClick={() => startEdit(item)}>
-                    Sửa
+                  <button type="button" className="btn-edit" onClick={() => startEdit(item)}>
+                    <Icon name="edit" /> Sửa
                   </button>
-                  <button type="button" onClick={() => handleDelete(item.id)}>
-                    Xoá
+                  <button type="button" className="btn-delete" onClick={() => handleDelete(item.id)}>
+                    <Icon name="trash" /> Xoá
                   </button>
                 </td>
               </tr>

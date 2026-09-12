@@ -3,17 +3,36 @@ import type {
   CommandMessage,
   CommandThread,
   CommandThreadDetail,
+  CommandThreadDocument,
+  CommandThreadMinutes,
   DispatchFormValues,
+  DocVisibility,
   OfficialDispatch,
   OfficialDispatchDetail,
 } from '../types/commandDispatch'
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL ?? 'http://127.0.0.1:8000'
 
+async function authedBlob(path: string): Promise<Blob> {
+  const token = getToken()
+  const res = await fetch(`${API_BASE}${path}`, {
+    headers: token ? { Authorization: `Bearer ${token}` } : {},
+  })
+  if (!res.ok) {
+    const body = await res.json().catch(() => null)
+    throw new ApiError(res.status, body?.detail ?? res.statusText)
+  }
+  return res.blob()
+}
+
 export const commandThreadsApi = {
   list: () => apiClient.get<CommandThread[]>('/command-threads'),
   get: (id: number) => apiClient.get<CommandThreadDetail>(`/command-threads/${id}`),
-  create: (title: string) => apiClient.post<CommandThread>('/command-threads', { title }),
+  create: (title: string, memberUserIds: number[] = []) =>
+    apiClient.post<CommandThread>('/command-threads', {
+      title,
+      member_user_ids: memberUserIds,
+    }),
   postMessage: (id: number, body: string, file?: File | null) => {
     const form = new FormData()
     form.set('body', body)
@@ -22,17 +41,55 @@ export const commandThreadsApi = {
   },
   close: (id: number, isClosed: boolean) =>
     apiClient.patch<CommandThread>(`/command-threads/${id}/close`, { is_closed: isClosed }),
+  downloadMessageAttachment: (id: number, messageId: number) =>
+    authedBlob(`/command-threads/${id}/messages/${messageId}/download`),
+
+  // Thanh phan (thanh vien) cua luong
+  addMembers: (id: number, userIds: number[]) =>
+    apiClient.post<CommandThreadDetail>(`/command-threads/${id}/members`, {
+      user_ids: userIds,
+    }),
+  removeMember: (id: number, userId: number) =>
+    apiClient.delete<void>(`/command-threads/${id}/members/${userId}`),
+
+  // Kho van ban (chung/rieng)
+  listDocuments: (id: number) =>
+    apiClient.get<CommandThreadDocument[]>(`/command-threads/${id}/documents`),
+  uploadDocument: (id: number, title: string, visibility: DocVisibility, file: File) => {
+    const form = new FormData()
+    form.set('title', title)
+    form.set('visibility', visibility)
+    form.set('file', file)
+    return apiClient.postForm<CommandThreadDocument>(`/command-threads/${id}/documents`, form)
+  },
+  downloadDocument: (id: number, docId: number) =>
+    authedBlob(`/command-threads/${id}/documents/${docId}/download`),
+  removeDocument: (id: number, docId: number) =>
+    apiClient.delete<void>(`/command-threads/${id}/documents/${docId}`),
+
+  // Bien ban thao luan (tu ghep, khong AI)
+  generateMinutes: (id: number) =>
+    apiClient.post<CommandThreadMinutes>(`/command-threads/${id}/minutes/generate`, {}),
+  listMinutes: (id: number) =>
+    apiClient.get<CommandThreadMinutes[]>(`/command-threads/${id}/minutes`),
 }
 
 function dispatchForm(values: DispatchFormValues, file?: File | null): FormData {
   const form = new FormData()
   form.set('direction', values.direction)
+  form.set('doc_type', values.doc_type)
   form.set('dispatch_number', values.dispatch_number)
   form.set('summary', values.summary)
   if (values.issuing_org) form.set('issuing_org', values.issuing_org)
   if (values.receiving_org) form.set('receiving_org', values.receiving_org)
+  if (values.signer) form.set('signer', values.signer)
   if (values.issued_date) form.set('issued_date', values.issued_date)
   if (values.received_date) form.set('received_date', values.received_date)
+  if (values.deadline) form.set('deadline', values.deadline)
+  if (values.page_count) form.set('page_count', values.page_count)
+  form.set('security_level', values.security_level)
+  form.set('urgency', values.urgency)
+  if (values.archive_ref) form.set('archive_ref', values.archive_ref)
   form.set('status', values.status)
   if (values.note) form.set('note', values.note)
   if (file) form.set('file', file)
@@ -40,9 +97,10 @@ function dispatchForm(values: DispatchFormValues, file?: File | null): FormData 
 }
 
 export const officialDispatchesApi = {
-  list: (params?: { direction?: string; status_filter?: string }) => {
+  list: (params?: { direction?: string; doc_type?: string; status_filter?: string }) => {
     const q = new URLSearchParams()
     if (params?.direction) q.set('direction', params.direction)
+    if (params?.doc_type) q.set('doc_type', params.doc_type)
     if (params?.status_filter) q.set('status_filter', params.status_filter)
     const qs = q.toString()
     return apiClient.get<OfficialDispatch[]>(`/official-dispatches${qs ? `?${qs}` : ''}`)

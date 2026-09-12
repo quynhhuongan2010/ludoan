@@ -1,6 +1,7 @@
 interface JwtPayload {
   sub?: string
-  role?: string
+  /** Vai trò: số nguyên 0..5 (openapi v5.x). */
+  role?: number
   uid?: number
   clr?: boolean
   unit?: number | null

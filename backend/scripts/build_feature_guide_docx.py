@@ -12,6 +12,7 @@ Chay:
     backend/venv/Scripts/python.exe scripts/build_feature_guide_docx.py
 """
 
+import io
 import pathlib
 import re
 import sys
@@ -26,6 +27,11 @@ from docx.enum.table import WD_TABLE_ALIGNMENT
 from docx.enum.text import WD_ALIGN_PARAGRAPH
 from docx.shared import Inches, Pt, RGBColor
 
+try:
+    from PIL import Image as _PILImage
+except ImportError:  # pragma: no cover
+    _PILImage = None
+
 ROOT = pathlib.Path(__file__).resolve().parent.parent.parent
 SRC = ROOT / "HUONG_DAN_KHAI_THAC_TINH_NANG.md"
 OUT = ROOT / "HUONG_DAN_KHAI_THAC_TINH_NANG.docx"
@@ -34,8 +40,39 @@ FONT = "Times New Roman"
 GREEN = RGBColor(0x1F, 0x4C, 0x30)
 INK = RGBColor(0x22, 0x22, 0x22)
 
-INLINE = re.compile(r"(\*\*.+?\*\*|`[^`]+`)")
+MAX_IMG_W = Inches(6.3)
+MAX_IMG_H = Inches(8.2)
+
+# Anh chup full-page 2x DPI rat nang (~600KB/anh). Thu nho ve be ngang toi da
+# ~1500px + nen JPEG q85 -> van net khi in / xem 100%, giam file .docx ~3x.
+IMG_MAX_PX = 1500
+IMG_JPEG_QUALITY = 85
+
+
+def _prepared_image(img_path: pathlib.Path):
+    """Tra ve (stream, ratio) da thu nho + nen; None,None neu khong xu ly duoc."""
+    if _PILImage is None:
+        return None, None
+    try:
+        with _PILImage.open(img_path) as im:
+            im = im.convert("RGB")
+            iw, ih = im.size
+            ratio = iw / ih if ih else None
+            if iw > IMG_MAX_PX:
+                nh = max(1, round(ih * IMG_MAX_PX / iw))
+                im = im.resize((IMG_MAX_PX, nh), _PILImage.LANCZOS)
+            buf = io.BytesIO()
+            im.save(buf, format="JPEG", quality=IMG_JPEG_QUALITY, optimize=True)
+            buf.seek(0)
+            return buf, ratio
+    except Exception:  # noqa: BLE001
+        return None, None
+
+INLINE = re.compile(r"(\*\*.+?\*\*|\*[^*\n]+\*|`[^`]+`)")
 IMAGE = re.compile(r"^!\[(.*?)\]\((.*?)\)$")
+# Anh viet bang HTML trong .md: <p align="center"><img src="..." alt="..." width="960"></p>
+HTML_IMG = re.compile(r'<img\b[^>]*\bsrc="([^"]+)"[^>]*>', re.IGNORECASE)
+HTML_IMG_ALT = re.compile(r'\balt="([^"]*)"', re.IGNORECASE)
 
 
 def _set_base_style(doc: Document) -> None:
@@ -57,6 +94,9 @@ def _add_runs(paragraph, text: str) -> None:
             run = paragraph.add_run(chunk[1:-1])
             run.font.name = "Consolas"
             run.font.size = Pt(11)
+        elif len(chunk) >= 2 and chunk.startswith("*") and chunk.endswith("*"):
+            run = paragraph.add_run(chunk[1:-1])
+            run.italic = True
         else:
             paragraph.add_run(chunk)
 
@@ -104,7 +144,15 @@ def _add_image(doc: Document, alt: str, rel_path: str) -> None:
         run.italic = True
         run.font.color.rgb = RGBColor(0xAA, 0x22, 0x22)
         return
-    doc.add_picture(str(img_path), width=Inches(6.3))
+    # Anh chup full-page rat cao -> gioi han ca chieu rong lan chieu cao de khong
+    # tran nhieu trang. Anh rong (dashboard, bang) giu 6.3"; anh cao (form doc)
+    # gioi han 8.2" chieu cao. Dong thoi thu nho + nen de .docx nhe.
+    stream, ratio = _prepared_image(img_path)
+    src = stream if stream is not None else str(img_path)
+    if ratio is not None and ratio < (MAX_IMG_W / MAX_IMG_H):
+        doc.add_picture(src, height=MAX_IMG_H)
+    else:
+        doc.add_picture(src, width=MAX_IMG_W)
     last = doc.paragraphs[-1]
     last.alignment = WD_ALIGN_PARAGRAPH.CENTER
     if alt:
@@ -158,6 +206,12 @@ def build() -> None:
         m_img = IMAGE.match(line.strip())
         if m_img:
             _add_image(doc, m_img.group(1), m_img.group(2))
+            continue
+
+        m_html_img = HTML_IMG.search(line)
+        if m_html_img:
+            alt_m = HTML_IMG_ALT.search(line)
+            _add_image(doc, alt_m.group(1) if alt_m else "", m_html_img.group(1))
             continue
 
         if line.startswith("### "):

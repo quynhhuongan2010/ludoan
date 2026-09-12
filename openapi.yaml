@@ -1,6 +1,6 @@
 # ==========================================================
-#  HOP DONG API - Quynh Web  |  phien ban: 1.9.1
-#  Sinh luc: 2026-08-30 23:16:08  |  62 path, 100 operation
+#  HOP DONG API - Quynh Web  |  phien ban: 8.1.0
+#  Sinh luc: 2026-09-10 18:47:49  |  115 path, 162 operation
 #  Lich su thay doi: openapi.CHANGELOG.md (cung thu muc)
 #  File nay sinh tu backend - KHONG sua tay.
 # ==========================================================
@@ -9,7 +9,7 @@ info:
   title: Quynh Web API
   description: Cổng thông tin điện tử nội bộ Lữ đoàn Thông tin 21. Xem lịch sử thay
     đổi ở openapi.CHANGELOG.md.
-  version: 1.9.1
+  version: 8.1.0
 paths:
   /:
     get:
@@ -375,6 +375,8 @@ paths:
       tags:
       - users
       summary: List Users
+      description: Danh sach nguoi dung, phan trang qua skip/limit. Tra ve {items,
+        total, skip, limit}.
       operationId: list_users_users__get
       security:
       - HTTPBearer: []
@@ -384,6 +386,7 @@ paths:
         required: false
         schema:
           type: integer
+          minimum: 0
           default: 0
           title: Skip
       - name: limit
@@ -391,6 +394,8 @@ paths:
         required: false
         schema:
           type: integer
+          maximum: 500
+          minimum: 1
           default: 100
           title: Limit
       - name: active
@@ -407,10 +412,7 @@ paths:
           content:
             application/json:
               schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/UserOut'
-                title: Response List Users Users  Get
+                $ref: '#/components/schemas/UserPage'
         '422':
           description: Validation Error
           content:
@@ -422,8 +424,8 @@ paths:
       tags:
       - users
       summary: Register
-      description: Tu dang ky tai khoan tu giao dien ngoai. Tao role=soldier, chua
-        kich hoat.
+      description: Tu dang ky tai khoan tu giao dien ngoai. Tao role=5 (Nguoi dung),
+        chua kich hoat.
       operationId: register_users_register_post
       requestBody:
         content:
@@ -444,6 +446,84 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/HTTPValidationError'
+  /users/import:
+    post:
+      tags:
+      - users
+      summary: Import Users
+      description: Nhập danh sách quân nhân hàng loạt từ file Excel (.xlsx, .xls)
+        hoặc Word (.docx).
+      operationId: import_users_users_import_post
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Body_import_users_users_import_post'
+        required: true
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserImportResult'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+      security:
+      - HTTPBearer: []
+  /users/import/template:
+    get:
+      tags:
+      - users
+      summary: Get User Import Template
+      description: Tải file mẫu Excel hoặc Word chuẩn quân sự để nhập danh sách quân
+        nhân.
+      operationId: get_user_import_template_users_import_template_get
+      security:
+      - HTTPBearer: []
+      parameters:
+      - name: format
+        in: query
+        required: false
+        schema:
+          type: string
+          pattern: ^(excel|xlsx|word|docx)$
+          description: 'Định dạng file mẫu: excel hoặc word'
+          default: excel
+          title: Format
+        description: 'Định dạng file mẫu: excel hoặc word'
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema: {}
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /users/purge-test-users:
+    delete:
+      tags:
+      - users
+      summary: Purge Test Users
+      description: Xoá toàn bộ tài khoản thử nghiệm, chỉ giữ lại tài khoản admin.
+      operationId: purge_test_users_users_purge_test_users_delete
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PurgeResult'
+      security:
+      - HTTPBearer: []
   /users/{user_id}:
     get:
       tags:
@@ -466,6 +546,31 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/UserOut'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+    delete:
+      tags:
+      - users
+      summary: Delete User
+      description: Xoa han tai khoan (role 0, 1, 2). Xem `user_service.delete_user`
+        cho cac rang buoc.
+      operationId: delete_user_users__user_id__delete
+      security:
+      - HTTPBearer: []
+      parameters:
+      - name: user_id
+        in: path
+        required: true
+        schema:
+          type: integer
+          title: User Id
+      responses:
+        '204':
+          description: Successful Response
         '422':
           description: Validation Error
           content:
@@ -630,6 +735,42 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/HTTPValidationError'
+  /users/{user_id}/info:
+    patch:
+      tags:
+      - users
+      summary: Set Info
+      description: Bo sung / sua Cap bac + Chuc danh cho mot tai khoan (bat buoc truoc
+        khi kich hoat).
+      operationId: set_info_users__user_id__info_patch
+      security:
+      - HTTPBearer: []
+      parameters:
+      - name: user_id
+        in: path
+        required: true
+        schema:
+          type: integer
+          title: User Id
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserInfoUpdate'
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserOut'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
   /users/{user_id}/channel-access:
     patch:
       tags:
@@ -760,6 +901,23 @@ paths:
                 $ref: '#/components/schemas/HTTPValidationError'
       security:
       - HTTPBearer: []
+  /profile/permissions:
+    get:
+      tags:
+      - profile
+      summary: Get My Permissions
+      description: Tra ve ma tran phan quyen chi tiet va Khoi/Nganh co quan cua quan
+        nhan.
+      operationId: get_my_permissions_profile_permissions_get
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserPermissionsOut'
+      security:
+      - HTTPBearer: []
   /profile/change-password:
     post:
       tags:
@@ -791,6 +949,14 @@ paths:
       operationId: create_post_posts_post
       security:
       - HTTPBearer: []
+      parameters:
+      - name: as_draft
+        in: query
+        required: false
+        schema:
+          type: boolean
+          default: false
+          title: As Draft
       requestBody:
         required: true
         content:
@@ -914,6 +1080,13 @@ paths:
         schema:
           type: integer
           title: Post Id
+      - name: as_draft
+        in: query
+        required: false
+        schema:
+          type: boolean
+          default: false
+          title: As Draft
       requestBody:
         required: true
         content:
@@ -950,6 +1123,34 @@ paths:
       responses:
         '204':
           description: Successful Response
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /posts/{post_id}/submit:
+    post:
+      tags:
+      - posts
+      summary: Submit Post
+      operationId: submit_post_posts__post_id__submit_post
+      security:
+      - HTTPBearer: []
+      parameters:
+      - name: post_id
+        in: path
+        required: true
+        schema:
+          type: integer
+          title: Post Id
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PostOut'
         '422':
           description: Validation Error
           content:
@@ -2032,6 +2233,39 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/HTTPValidationError'
+  /command-threads/{thread_id}/messages/{message_id}/download:
+    get:
+      tags:
+      - command-threads
+      summary: Download Message Attachment
+      operationId: download_message_attachment_command_threads__thread_id__messages__message_id__download_get
+      security:
+      - HTTPBearer: []
+      parameters:
+      - name: thread_id
+        in: path
+        required: true
+        schema:
+          type: integer
+          title: Thread Id
+      - name: message_id
+        in: path
+        required: true
+        schema:
+          type: integer
+          title: Message Id
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema: {}
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
   /command-threads/{thread_id}/close:
     patch:
       tags:
@@ -2066,6 +2300,1233 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/HTTPValidationError'
+  /command-threads/{thread_id}/members:
+    post:
+      tags:
+      - command-threads
+      summary: Add Members
+      operationId: add_members_command_threads__thread_id__members_post
+      security:
+      - HTTPBearer: []
+      parameters:
+      - name: thread_id
+        in: path
+        required: true
+        schema:
+          type: integer
+          title: Thread Id
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MemberAddRequest'
+      responses:
+        '201':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CommandThreadDetailOut'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /command-threads/{thread_id}/members/{user_id}:
+    delete:
+      tags:
+      - command-threads
+      summary: Remove Member
+      operationId: remove_member_command_threads__thread_id__members__user_id__delete
+      security:
+      - HTTPBearer: []
+      parameters:
+      - name: thread_id
+        in: path
+        required: true
+        schema:
+          type: integer
+          title: Thread Id
+      - name: user_id
+        in: path
+        required: true
+        schema:
+          type: integer
+          title: User Id
+      responses:
+        '204':
+          description: Successful Response
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /command-threads/{thread_id}/documents:
+    get:
+      tags:
+      - command-threads
+      summary: List Documents
+      operationId: list_documents_command_threads__thread_id__documents_get
+      security:
+      - HTTPBearer: []
+      parameters:
+      - name: thread_id
+        in: path
+        required: true
+        schema:
+          type: integer
+          title: Thread Id
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/CommandThreadDocumentOut'
+                title: Response List Documents Command Threads  Thread Id  Documents
+                  Get
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+    post:
+      tags:
+      - command-threads
+      summary: Upload Document
+      operationId: upload_document_command_threads__thread_id__documents_post
+      security:
+      - HTTPBearer: []
+      parameters:
+      - name: thread_id
+        in: path
+        required: true
+        schema:
+          type: integer
+          title: Thread Id
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Body_upload_document_command_threads__thread_id__documents_post'
+      responses:
+        '201':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CommandThreadDocumentOut'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /command-threads/{thread_id}/documents/{doc_id}/download:
+    get:
+      tags:
+      - command-threads
+      summary: Download Document
+      operationId: download_document_command_threads__thread_id__documents__doc_id__download_get
+      security:
+      - HTTPBearer: []
+      parameters:
+      - name: thread_id
+        in: path
+        required: true
+        schema:
+          type: integer
+          title: Thread Id
+      - name: doc_id
+        in: path
+        required: true
+        schema:
+          type: integer
+          title: Doc Id
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema: {}
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /command-threads/{thread_id}/documents/{doc_id}:
+    delete:
+      tags:
+      - command-threads
+      summary: Remove Document
+      operationId: remove_document_command_threads__thread_id__documents__doc_id__delete
+      security:
+      - HTTPBearer: []
+      parameters:
+      - name: thread_id
+        in: path
+        required: true
+        schema:
+          type: integer
+          title: Thread Id
+      - name: doc_id
+        in: path
+        required: true
+        schema:
+          type: integer
+          title: Doc Id
+      responses:
+        '204':
+          description: Successful Response
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /command-threads/{thread_id}/minutes/generate:
+    post:
+      tags:
+      - command-threads
+      summary: Generate Minutes
+      operationId: generate_minutes_command_threads__thread_id__minutes_generate_post
+      security:
+      - HTTPBearer: []
+      parameters:
+      - name: thread_id
+        in: path
+        required: true
+        schema:
+          type: integer
+          title: Thread Id
+      responses:
+        '201':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CommandThreadMinutesOut'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /command-threads/{thread_id}/minutes:
+    get:
+      tags:
+      - command-threads
+      summary: List Minutes
+      operationId: list_minutes_command_threads__thread_id__minutes_get
+      security:
+      - HTTPBearer: []
+      parameters:
+      - name: thread_id
+        in: path
+        required: true
+        schema:
+          type: integer
+          title: Thread Id
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/CommandThreadMinutesOut'
+                title: Response List Minutes Command Threads  Thread Id  Minutes Get
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /chats:
+    get:
+      tags:
+      - chats
+      summary: List Conversations
+      description: Danh sách các cuộc trò chuyện tác chiến & trao đổi nghiệp vụ của
+        quân nhân.
+      operationId: list_conversations_chats_get
+      security:
+      - HTTPBearer: []
+      parameters:
+      - name: archived
+        in: query
+        required: false
+        schema:
+          type: boolean
+          description: true = chỉ hiện hội thoại đã lưu trữ của người gọi
+          default: false
+          title: Archived
+        description: true = chỉ hiện hội thoại đã lưu trữ của người gọi
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ChatConversationOut'
+                title: Response List Conversations Chats Get
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /chats/unread-count:
+    get:
+      tags:
+      - chats
+      summary: Get Unread Count
+      description: Lấy tổng số tin nhắn chưa đọc của quân nhân để hiển thị huy hiệu
+        trên thanh điều hướng.
+      operationId: get_unread_count_chats_unread_count_get
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ChatUnreadCountResponse'
+      security:
+      - HTTPBearer: []
+  /chats/search:
+    get:
+      tags:
+      - chats
+      summary: Search All Messages
+      description: Tìm kiếm tin nhắn trên toàn bộ hội thoại mà quân nhân tham gia.
+      operationId: search_all_messages_chats_search_get
+      security:
+      - HTTPBearer: []
+      parameters:
+      - name: q
+        in: query
+        required: true
+        schema:
+          type: string
+          minLength: 1
+          description: Từ khoá tìm kiếm
+          title: Q
+        description: Từ khoá tìm kiếm
+      - name: limit
+        in: query
+        required: false
+        schema:
+          type: integer
+          maximum: 100
+          minimum: 1
+          default: 50
+          title: Limit
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ChatMessageOut'
+                title: Response Search All Messages Chats Search Get
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /chats/pending-groups:
+    get:
+      tags:
+      - chats
+      summary: List Pending Groups
+      description: Danh sách nhóm chat đang chờ duyệt. Chỉ Quản trị hệ thống / Lữ
+        trưởng / Chính uỷ (role 0-1) → 403 nếu khác.
+      operationId: list_pending_groups_chats_pending_groups_get
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: '#/components/schemas/ChatConversationOut'
+                type: array
+                title: Response List Pending Groups Chats Pending Groups Get
+      security:
+      - HTTPBearer: []
+  /chats/direct:
+    post:
+      tags:
+      - chats
+      summary: Open Or Create Direct Chat
+      description: Mở hoặc khởi tạo cuộc trò chuyện trực tiếp 1-1 với một đồng chí.
+      operationId: open_or_create_direct_chat_chats_direct_post
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DirectChatCreate'
+        required: true
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ChatConversationOut'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+      security:
+      - HTTPBearer: []
+  /chats/group:
+    post:
+      tags:
+      - chats
+      summary: Create Group Chat
+      description: Tạo nhóm trao đổi nghiệp vụ / nhóm kíp trực tác chiến mới.
+      operationId: create_group_chat_chats_group_post
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/GroupChatCreate'
+        required: true
+      responses:
+        '201':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ChatConversationOut'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+      security:
+      - HTTPBearer: []
+  /chats/{id}/messages/search:
+    get:
+      tags:
+      - chats
+      summary: Search Conversation Messages
+      description: Tìm kiếm tin nhắn trong một hội thoại (yêu cầu là thành viên →
+        403).
+      operationId: search_conversation_messages_chats__id__messages_search_get
+      security:
+      - HTTPBearer: []
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          title: Id
+      - name: q
+        in: query
+        required: true
+        schema:
+          type: string
+          minLength: 1
+          description: Từ khoá tìm trong hội thoại
+          title: Q
+        description: Từ khoá tìm trong hội thoại
+      - name: skip
+        in: query
+        required: false
+        schema:
+          type: integer
+          minimum: 0
+          default: 0
+          title: Skip
+      - name: limit
+        in: query
+        required: false
+        schema:
+          type: integer
+          maximum: 100
+          minimum: 1
+          default: 50
+          title: Limit
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ChatMessageOut'
+                title: Response Search Conversation Messages Chats  Id  Messages Search
+                  Get
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /chats/{id}/messages:
+    get:
+      tags:
+      - chats
+      summary: Get Messages
+      description: Lấy lịch sử tin nhắn của cuộc trò chuyện (tự động cập nhật trạng
+        thái đã đọc).
+      operationId: get_messages_chats__id__messages_get
+      security:
+      - HTTPBearer: []
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          title: Id
+      - name: skip
+        in: query
+        required: false
+        schema:
+          type: integer
+          minimum: 0
+          default: 0
+          title: Skip
+      - name: limit
+        in: query
+        required: false
+        schema:
+          type: integer
+          maximum: 100
+          minimum: 1
+          default: 50
+          title: Limit
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ChatMessageOut'
+                title: Response Get Messages Chats  Id  Messages Get
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+    post:
+      tags:
+      - chats
+      summary: Send Message
+      description: Gửi tin nhắn mới vào cuộc trò chuyện, đẩy thời gian thực tới thành
+        viên đang online.
+      operationId: send_message_chats__id__messages_post
+      security:
+      - HTTPBearer: []
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          title: Id
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ChatMessageCreate'
+      responses:
+        '201':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ChatMessageOut'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /chats/{id}/messages/upload:
+    post:
+      tags:
+      - chats
+      summary: Send Message With File
+      description: 'Gửi tin nhắn kèm tệp đính kèm vào cuộc trò chuyện, đẩy thời gian
+        thực tới thành viên online.
+
+
+        Định dạng cho phép: ảnh (.jpg/.jpeg/.png/.webp/.gif), tài liệu
+
+        (.pdf/.doc(x)/.xls(x)/.ppt(x)), video (.mp4/.webm/.ogg/.mov/.m4v) và
+
+        tệp nén (.zip/.rar/.7z/.tar/.gz/.bz2). Video và tệp nén dùng hạn mức
+
+        `MAX_VIDEO_UPLOAD_MB`, còn lại `MAX_UPLOAD_MB`. Sai định dạng / quá dung
+
+        lượng / tệp rỗng → 400; không phải thành viên hội thoại → 403.'
+      operationId: send_message_with_file_chats__id__messages_upload_post
+      security:
+      - HTTPBearer: []
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          title: Id
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Body_send_message_with_file_chats__id__messages_upload_post'
+      responses:
+        '201':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ChatMessageOut'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /chats/{id}/messages/{message_id}:
+    patch:
+      tags:
+      - chats
+      summary: Edit Message
+      description: Sửa nội dung tin nhắn — chỉ người gửi; tin hệ thống / đã thu hồi
+        → 409.
+      operationId: edit_message_chats__id__messages__message_id__patch
+      security:
+      - HTTPBearer: []
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          title: Id
+      - name: message_id
+        in: path
+        required: true
+        schema:
+          type: integer
+          title: Message Id
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ChatMessageEditPayload'
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ChatMessageOut'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+    delete:
+      tags:
+      - chats
+      summary: Recall Message
+      description: Thu hồi tin nhắn — người gửi / quản trị viên nhóm / Ban chỉ huy.
+        403 nếu không đủ quyền.
+      operationId: recall_message_chats__id__messages__message_id__delete
+      security:
+      - HTTPBearer: []
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          title: Id
+      - name: message_id
+        in: path
+        required: true
+        schema:
+          type: integer
+          title: Message Id
+      responses:
+        '204':
+          description: Successful Response
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /chats/{id}/messages/{message_id}/reactions:
+    post:
+      tags:
+      - chats
+      summary: Add Reaction
+      description: Thả một biểu tượng cảm xúc lên tin nhắn (idempotent nếu đã thả).
+      operationId: add_reaction_chats__id__messages__message_id__reactions_post
+      security:
+      - HTTPBearer: []
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          title: Id
+      - name: message_id
+        in: path
+        required: true
+        schema:
+          type: integer
+          title: Message Id
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ChatReactionPayload'
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ChatMessageOut'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+    delete:
+      tags:
+      - chats
+      summary: Remove Reaction
+      description: Gỡ biểu tượng cảm xúc mà quân nhân đã thả trên tin nhắn.
+      operationId: remove_reaction_chats__id__messages__message_id__reactions_delete
+      security:
+      - HTTPBearer: []
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          title: Id
+      - name: message_id
+        in: path
+        required: true
+        schema:
+          type: integer
+          title: Message Id
+      - name: emoji
+        in: query
+        required: true
+        schema:
+          type: string
+          minLength: 1
+          maxLength: 16
+          title: Emoji
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ChatMessageOut'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /chats/{id}/messages/{message_id}/pin:
+    post:
+      tags:
+      - chats
+      summary: Pin Message
+      description: 'Ghim / bỏ ghim tin nhắn. Nhóm: quản trị viên nhóm hoặc Ban chỉ
+        huy → 403 nếu khác.'
+      operationId: pin_message_chats__id__messages__message_id__pin_post
+      security:
+      - HTTPBearer: []
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          title: Id
+      - name: message_id
+        in: path
+        required: true
+        schema:
+          type: integer
+          title: Message Id
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ChatMessagePinPayload'
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ChatMessageOut'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /chats/{id}/messages/{message_id}/forward:
+    post:
+      tags:
+      - chats
+      summary: Forward Message
+      description: Chuyển tiếp tin nhắn sang hội thoại đích (phải là thành viên cả
+        hai → 403).
+      operationId: forward_message_chats__id__messages__message_id__forward_post
+      security:
+      - HTTPBearer: []
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          title: Id
+      - name: message_id
+        in: path
+        required: true
+        schema:
+          type: integer
+          title: Message Id
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ChatForwardPayload'
+      responses:
+        '201':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ChatMessageOut'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /chats/{id}/pinned:
+    get:
+      tags:
+      - chats
+      summary: List Pinned
+      description: Danh sách tin nhắn đã ghim trong hội thoại.
+      operationId: list_pinned_chats__id__pinned_get
+      security:
+      - HTTPBearer: []
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          title: Id
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ChatMessageOut'
+                title: Response List Pinned Chats  Id  Pinned Get
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /chats/{id}/read:
+    post:
+      tags:
+      - chats
+      summary: Mark Read
+      description: Đánh dấu đã đọc toàn bộ tin nhắn trong cuộc hội thoại + đẩy biên
+        nhận realtime.
+      operationId: mark_read_chats__id__read_post
+      security:
+      - HTTPBearer: []
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          title: Id
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema: {}
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /chats/{id}/receipts:
+    get:
+      tags:
+      - chats
+      summary: Get Receipts
+      description: Mốc đọc của từng thành viên trong hội thoại (hiển thị 'Đã xem').
+      operationId: get_receipts_chats__id__receipts_get
+      security:
+      - HTTPBearer: []
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          title: Id
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ReadReceiptOut'
+                title: Response Get Receipts Chats  Id  Receipts Get
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /chats/{id}/mute:
+    post:
+      tags:
+      - chats
+      summary: Set Mute
+      description: Tắt / bật thông báo hội thoại cho chính người gọi.
+      operationId: set_mute_chats__id__mute_post
+      security:
+      - HTTPBearer: []
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          title: Id
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MutePayload'
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema: {}
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /chats/{id}/archive:
+    post:
+      tags:
+      - chats
+      summary: Set Archive
+      description: Lưu trữ / bỏ lưu trữ hội thoại cho chính người gọi (ẩn khỏi danh
+        sách mặc định).
+      operationId: set_archive_chats__id__archive_post
+      security:
+      - HTTPBearer: []
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          title: Id
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ArchivePayload'
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema: {}
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /chats/{id}/members:
+    post:
+      tags:
+      - chats
+      summary: Add Member
+      description: Thêm một đồng chí vào nhóm trao đổi nghiệp vụ.
+      operationId: add_member_chats__id__members_post
+      security:
+      - HTTPBearer: []
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          title: Id
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ChatAddMemberPayload'
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ChatConversationOut'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /chats/{id}/members/{user_id}:
+    delete:
+      tags:
+      - chats
+      summary: Remove Member
+      description: Rời nhóm (tự mình) hoặc xoá thành viên khác (người tạo nhóm / Quản
+        trị hệ thống).
+      operationId: remove_member_chats__id__members__user_id__delete
+      security:
+      - HTTPBearer: []
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          title: Id
+      - name: user_id
+        in: path
+        required: true
+        schema:
+          type: integer
+          title: User Id
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema: {}
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /chats/{id}/members/{user_id}/role:
+    patch:
+      tags:
+      - chats
+      summary: Set Member Role
+      description: Phong / gỡ quản trị viên nhóm — người tạo nhóm hoặc Ban chỉ huy.
+        409 nếu là người tạo nhóm.
+      operationId: set_member_role_chats__id__members__user_id__role_patch
+      security:
+      - HTTPBearer: []
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          title: Id
+      - name: user_id
+        in: path
+        required: true
+        schema:
+          type: integer
+          title: User Id
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MemberRolePayload'
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ChatConversationOut'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /chats/{id}:
+    patch:
+      tags:
+      - chats
+      summary: Rename Group
+      description: Đổi tên nhóm — quản trị viên nhóm hoặc Ban chỉ huy. Sinh 1 tin
+        hệ thống.
+      operationId: rename_group_chats__id__patch
+      security:
+      - HTTPBearer: []
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          title: Id
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/GroupRenamePayload'
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ChatConversationOut'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+    delete:
+      tags:
+      - chats
+      summary: Delete Group
+      description: 'Xoá cứng nhóm chat (kèm tin nhắn + tệp đính kèm). Quyền: người
+        tạo nhóm hoặc Quản trị hệ thống (role 0) → 403 nếu khác.'
+      operationId: delete_group_chats__id__delete
+      security:
+      - HTTPBearer: []
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          title: Id
+      responses:
+        '204':
+          description: Successful Response
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /chats/{id}/review:
+    post:
+      tags:
+      - chats
+      summary: Review Group
+      description: 'Duyệt / từ chối nhóm chờ duyệt. Quyền: role 0-1 → 403 nếu khác;
+        409 nếu nhóm không ở trạng thái chờ; 400 nếu từ chối mà thiếu lý do.'
+      operationId: review_group_chats__id__review_post
+      security:
+      - HTTPBearer: []
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          title: Id
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/GroupReviewPayload'
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ChatConversationOut'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
   /official-dispatches:
     get:
       tags:
@@ -2086,6 +3547,29 @@ paths:
             type: string
           - type: 'null'
           title: Direction
+      - name: doc_type
+        in: query
+        required: false
+        schema:
+          anyOf:
+          - enum:
+            - cong_van
+            - dien_mat
+            - chi_thi
+            - quyet_dinh
+            - menh_lenh
+            - thong_bao
+            - thong_tri
+            - ke_hoach
+            - bao_cao
+            - to_trinh
+            - bien_ban
+            - huong_dan
+            - giay_moi
+            - khac
+            type: string
+          - type: 'null'
+          title: Doc Type
       - name: status_filter
         in: query
         required: false
@@ -2300,384 +3784,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/HTTPValidationError'
-  /command-meetings:
-    get:
-      tags:
-      - command-meetings
-      summary: List Meetings
-      operationId: list_meetings_command_meetings_get
-      security:
-      - HTTPBearer: []
-      parameters:
-      - name: status_filter
-        in: query
-        required: false
-        schema:
-          anyOf:
-          - enum:
-            - sap_dien_ra
-            - dang_dien_ra
-            - da_ket_thuc
-            - da_huy
-            type: string
-          - type: 'null'
-          title: Status Filter
-      - name: date_from
-        in: query
-        required: false
-        schema:
-          anyOf:
-          - type: string
-            format: date-time
-          - type: 'null'
-          title: Date From
-      - name: date_to
-        in: query
-        required: false
-        schema:
-          anyOf:
-          - type: string
-            format: date-time
-          - type: 'null'
-          title: Date To
-      - name: skip
-        in: query
-        required: false
-        schema:
-          type: integer
-          default: 0
-          title: Skip
-      - name: limit
-        in: query
-        required: false
-        schema:
-          type: integer
-          default: 100
-          title: Limit
-      responses:
-        '200':
-          description: Successful Response
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/CommandMeetingOut'
-                title: Response List Meetings Command Meetings Get
-        '422':
-          description: Validation Error
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/HTTPValidationError'
-    post:
-      tags:
-      - command-meetings
-      summary: Create Meeting
-      operationId: create_meeting_command_meetings_post
-      security:
-      - HTTPBearer: []
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/CommandMeetingCreate'
-      responses:
-        '201':
-          description: Successful Response
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/CommandMeetingDetailOut'
-        '422':
-          description: Validation Error
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/HTTPValidationError'
-  /command-meetings/{meeting_id}:
-    get:
-      tags:
-      - command-meetings
-      summary: Get Meeting
-      operationId: get_meeting_command_meetings__meeting_id__get
-      security:
-      - HTTPBearer: []
-      parameters:
-      - name: meeting_id
-        in: path
-        required: true
-        schema:
-          type: integer
-          title: Meeting Id
-      responses:
-        '200':
-          description: Successful Response
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/CommandMeetingDetailOut'
-        '422':
-          description: Validation Error
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/HTTPValidationError'
-    put:
-      tags:
-      - command-meetings
-      summary: Update Meeting
-      operationId: update_meeting_command_meetings__meeting_id__put
-      security:
-      - HTTPBearer: []
-      parameters:
-      - name: meeting_id
-        in: path
-        required: true
-        schema:
-          type: integer
-          title: Meeting Id
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/CommandMeetingUpdate'
-      responses:
-        '200':
-          description: Successful Response
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/CommandMeetingDetailOut'
-        '422':
-          description: Validation Error
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/HTTPValidationError'
-    delete:
-      tags:
-      - command-meetings
-      summary: Delete Meeting
-      operationId: delete_meeting_command_meetings__meeting_id__delete
-      security:
-      - HTTPBearer: []
-      parameters:
-      - name: meeting_id
-        in: path
-        required: true
-        schema:
-          type: integer
-          title: Meeting Id
-      responses:
-        '204':
-          description: Successful Response
-        '422':
-          description: Validation Error
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/HTTPValidationError'
-  /command-meetings/{meeting_id}/minutes:
-    post:
-      tags:
-      - command-meetings
-      summary: Set Minutes
-      operationId: set_minutes_command_meetings__meeting_id__minutes_post
-      security:
-      - HTTPBearer: []
-      parameters:
-      - name: meeting_id
-        in: path
-        required: true
-        schema:
-          type: integer
-          title: Meeting Id
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/MinutesRequest'
-      responses:
-        '200':
-          description: Successful Response
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/CommandMeetingDetailOut'
-        '422':
-          description: Validation Error
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/HTTPValidationError'
-  /command-meetings/{meeting_id}/attachment:
-    post:
-      tags:
-      - command-meetings
-      summary: Upload Attachment
-      operationId: upload_attachment_command_meetings__meeting_id__attachment_post
-      security:
-      - HTTPBearer: []
-      parameters:
-      - name: meeting_id
-        in: path
-        required: true
-        schema:
-          type: integer
-          title: Meeting Id
-      requestBody:
-        required: true
-        content:
-          multipart/form-data:
-            schema:
-              $ref: '#/components/schemas/Body_upload_attachment_command_meetings__meeting_id__attachment_post'
-      responses:
-        '200':
-          description: Successful Response
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/CommandMeetingDetailOut'
-        '422':
-          description: Validation Error
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/HTTPValidationError'
-  /command-meetings/{meeting_id}/download:
-    get:
-      tags:
-      - command-meetings
-      summary: Download Attachment
-      operationId: download_attachment_command_meetings__meeting_id__download_get
-      security:
-      - HTTPBearer: []
-      parameters:
-      - name: meeting_id
-        in: path
-        required: true
-        schema:
-          type: integer
-          title: Meeting Id
-      responses:
-        '200':
-          description: Successful Response
-          content:
-            application/json:
-              schema: {}
-        '422':
-          description: Validation Error
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/HTTPValidationError'
-  /command-meetings/{meeting_id}/attendees:
-    post:
-      tags:
-      - command-meetings
-      summary: Invite Attendees
-      operationId: invite_attendees_command_meetings__meeting_id__attendees_post
-      security:
-      - HTTPBearer: []
-      parameters:
-      - name: meeting_id
-        in: path
-        required: true
-        schema:
-          type: integer
-          title: Meeting Id
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/InviteRequest'
-      responses:
-        '201':
-          description: Successful Response
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/CommandMeetingDetailOut'
-        '422':
-          description: Validation Error
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/HTTPValidationError'
-  /command-meetings/{meeting_id}/attendees/{user_id}:
-    delete:
-      tags:
-      - command-meetings
-      summary: Remove Attendee
-      operationId: remove_attendee_command_meetings__meeting_id__attendees__user_id__delete
-      security:
-      - HTTPBearer: []
-      parameters:
-      - name: meeting_id
-        in: path
-        required: true
-        schema:
-          type: integer
-          title: Meeting Id
-      - name: user_id
-        in: path
-        required: true
-        schema:
-          type: integer
-          title: User Id
-      responses:
-        '204':
-          description: Successful Response
-        '422':
-          description: Validation Error
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/HTTPValidationError'
-    patch:
-      tags:
-      - command-meetings
-      summary: Update Attendance
-      operationId: update_attendance_command_meetings__meeting_id__attendees__user_id__patch
-      security:
-      - HTTPBearer: []
-      parameters:
-      - name: meeting_id
-        in: path
-        required: true
-        schema:
-          type: integer
-          title: Meeting Id
-      - name: user_id
-        in: path
-        required: true
-        schema:
-          type: integer
-          title: User Id
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/AttendanceUpdate'
-      responses:
-        '200':
-          description: Successful Response
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/AttendeeOut'
-        '422':
-          description: Validation Error
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/HTTPValidationError'
   /announcements:
     post:
       tags:
@@ -2843,32 +3949,6 @@ paths:
               schema:
                 $ref: '#/components/schemas/HTTPValidationError'
   /duty-schedules:
-    post:
-      tags:
-      - duty-schedules
-      summary: Create Duty
-      operationId: create_duty_duty_schedules_post
-      security:
-      - HTTPBearer: []
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/DutyScheduleCreate'
-      responses:
-        '201':
-          description: Successful Response
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/DutyScheduleOut'
-        '422':
-          description: Validation Error
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/HTTPValidationError'
     get:
       tags:
       - duty-schedules
@@ -2909,6 +3989,22 @@ paths:
             format: date
           - type: 'null'
           title: Date To
+      - name: unit_id
+        in: query
+        required: false
+        schema:
+          anyOf:
+          - type: integer
+          - type: 'null'
+          title: Unit Id
+      - name: duty_type
+        in: query
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Duty Type
       responses:
         '200':
           description: Successful Response
@@ -2925,21 +4021,110 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/HTTPValidationError'
-  /duty-schedules/{duty_id}:
+  /duty-schedules/board/day:
+    get:
+      tags:
+      - duty-schedules
+      summary: Duty Day Board
+      description: 'Tính năng 1: kíp trực toàn Lữ đoàn theo ngày, gom theo đơn vị
+        + tổng quân số.
+
+
+        Chỉ huy Lữ đoàn thấy mọi trạng thái bảng trực tuần (kèm nhãn); đơn vị cấp
+
+        dưới chỉ thấy bảng đã duyệt của đơn vị khác và mọi trạng thái của đơn vị mình.'
+      operationId: duty_day_board_duty_schedules_board_day_get
+      security:
+      - HTTPBearer: []
+      parameters:
+      - name: day
+        in: query
+        required: true
+        schema:
+          type: string
+          format: date
+          description: Ngày cần xem kíp trực toàn Lữ đoàn
+          title: Day
+        description: Ngày cần xem kíp trực toàn Lữ đoàn
+      - name: unit_id
+        in: query
+        required: false
+        schema:
+          anyOf:
+          - type: integer
+          - type: 'null'
+          title: Unit Id
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DutyDayBoard'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /duty-schedules/board/week:
+    get:
+      tags:
+      - duty-schedules
+      summary: Duty Week Board
+      description: 'Tính năng 2: trực tuần - khung nhìn 7 ngày (Thứ Hai → Chủ Nhật)
+        + ma trận
+
+        trạng thái phê duyệt bảng trực tuần của từng đơn vị.'
+      operationId: duty_week_board_duty_schedules_board_week_get
+      security:
+      - HTTPBearer: []
+      parameters:
+      - name: week_of
+        in: query
+        required: true
+        schema:
+          type: string
+          format: date
+          description: Ngày bất kỳ trong tuần cần xem (chuẩn hoá về Thứ Hai)
+          title: Week Of
+        description: Ngày bất kỳ trong tuần cần xem (chuẩn hoá về Thứ Hai)
+      - name: unit_id
+        in: query
+        required: false
+        schema:
+          anyOf:
+          - type: integer
+          - type: 'null'
+          title: Unit Id
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DutyWeekBoard'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /duty-schedules/{entry_id}:
     get:
       tags:
       - duty-schedules
       summary: Get Duty
-      operationId: get_duty_duty_schedules__duty_id__get
+      operationId: get_duty_duty_schedules__entry_id__get
       security:
       - HTTPBearer: []
       parameters:
-      - name: duty_id
+      - name: entry_id
         in: path
         required: true
         schema:
           type: integer
-          title: Duty Id
+          title: Entry Id
       responses:
         '200':
           description: Successful Response
@@ -2957,16 +4142,16 @@ paths:
       tags:
       - duty-schedules
       summary: Update Duty
-      operationId: update_duty_duty_schedules__duty_id__put
+      operationId: update_duty_duty_schedules__entry_id__put
       security:
       - HTTPBearer: []
       parameters:
-      - name: duty_id
+      - name: entry_id
         in: path
         required: true
         schema:
           type: integer
-          title: Duty Id
+          title: Entry Id
       requestBody:
         required: true
         content:
@@ -2990,19 +4175,830 @@ paths:
       tags:
       - duty-schedules
       summary: Delete Duty
-      operationId: delete_duty_duty_schedules__duty_id__delete
+      operationId: delete_duty_duty_schedules__entry_id__delete
       security:
       - HTTPBearer: []
       parameters:
-      - name: duty_id
+      - name: entry_id
         in: path
         required: true
         schema:
           type: integer
-          title: Duty Id
+          title: Entry Id
       responses:
         '204':
           description: Successful Response
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /duty-week-plans:
+    post:
+      tags:
+      - duty-week-plans
+      summary: Create Plan
+      operationId: create_plan_duty_week_plans_post
+      security:
+      - HTTPBearer: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DutyWeekPlanCreate'
+      responses:
+        '201':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DutyWeekPlanOut'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+    get:
+      tags:
+      - duty-week-plans
+      summary: List Plans
+      operationId: list_plans_duty_week_plans_get
+      security:
+      - HTTPBearer: []
+      parameters:
+      - name: unit_id
+        in: query
+        required: false
+        schema:
+          anyOf:
+          - type: integer
+          - type: 'null'
+          title: Unit Id
+      - name: week_of
+        in: query
+        required: false
+        schema:
+          anyOf:
+          - type: string
+            format: date
+          - type: 'null'
+          title: Week Of
+      - name: status_filter
+        in: query
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Status Filter
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/DutyWeekPlanOut'
+                title: Response List Plans Duty Week Plans Get
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /duty-week-plans/{plan_id}:
+    get:
+      tags:
+      - duty-week-plans
+      summary: Get Plan
+      operationId: get_plan_duty_week_plans__plan_id__get
+      security:
+      - HTTPBearer: []
+      parameters:
+      - name: plan_id
+        in: path
+        required: true
+        schema:
+          type: integer
+          title: Plan Id
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DutyWeekPlanDetail'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+    put:
+      tags:
+      - duty-week-plans
+      summary: Update Plan
+      operationId: update_plan_duty_week_plans__plan_id__put
+      security:
+      - HTTPBearer: []
+      parameters:
+      - name: plan_id
+        in: path
+        required: true
+        schema:
+          type: integer
+          title: Plan Id
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DutyWeekPlanUpdate'
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DutyWeekPlanOut'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+    delete:
+      tags:
+      - duty-week-plans
+      summary: Delete Plan
+      operationId: delete_plan_duty_week_plans__plan_id__delete
+      security:
+      - HTTPBearer: []
+      parameters:
+      - name: plan_id
+        in: path
+        required: true
+        schema:
+          type: integer
+          title: Plan Id
+      responses:
+        '204':
+          description: Successful Response
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /duty-week-plans/{plan_id}/entries:
+    post:
+      tags:
+      - duty-week-plans
+      summary: Add Entry
+      operationId: add_entry_duty_week_plans__plan_id__entries_post
+      security:
+      - HTTPBearer: []
+      parameters:
+      - name: plan_id
+        in: path
+        required: true
+        schema:
+          type: integer
+          title: Plan Id
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DutyScheduleCreate'
+      responses:
+        '201':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DutyScheduleOut'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /duty-week-plans/{plan_id}/attachments:
+    get:
+      tags:
+      - duty-week-plans
+      summary: List Plan Attachments
+      operationId: list_plan_attachments_duty_week_plans__plan_id__attachments_get
+      security:
+      - HTTPBearer: []
+      parameters:
+      - name: plan_id
+        in: path
+        required: true
+        schema:
+          type: integer
+          title: Plan Id
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/DutyPlanAttachmentOut'
+                title: Response List Plan Attachments Duty Week Plans  Plan Id  Attachments
+                  Get
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+    post:
+      tags:
+      - duty-week-plans
+      summary: Add Plan Attachment
+      operationId: add_plan_attachment_duty_week_plans__plan_id__attachments_post
+      security:
+      - HTTPBearer: []
+      parameters:
+      - name: plan_id
+        in: path
+        required: true
+        schema:
+          type: integer
+          title: Plan Id
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Body_add_plan_attachment_duty_week_plans__plan_id__attachments_post'
+      responses:
+        '201':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DutyPlanAttachmentOut'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /duty-week-plans/{plan_id}/attachments/{attachment_id}:
+    delete:
+      tags:
+      - duty-week-plans
+      summary: Delete Plan Attachment
+      operationId: delete_plan_attachment_duty_week_plans__plan_id__attachments__attachment_id__delete
+      security:
+      - HTTPBearer: []
+      parameters:
+      - name: plan_id
+        in: path
+        required: true
+        schema:
+          type: integer
+          title: Plan Id
+      - name: attachment_id
+        in: path
+        required: true
+        schema:
+          type: integer
+          title: Attachment Id
+      responses:
+        '204':
+          description: Successful Response
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /duty-week-plans/{plan_id}/submit:
+    post:
+      tags:
+      - duty-week-plans
+      summary: Submit Plan
+      operationId: submit_plan_duty_week_plans__plan_id__submit_post
+      security:
+      - HTTPBearer: []
+      parameters:
+      - name: plan_id
+        in: path
+        required: true
+        schema:
+          type: integer
+          title: Plan Id
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DutyWeekPlanOut'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /duty-week-plans/{plan_id}/review:
+    post:
+      tags:
+      - duty-week-plans
+      summary: Review Plan
+      operationId: review_plan_duty_week_plans__plan_id__review_post
+      security:
+      - HTTPBearer: []
+      parameters:
+      - name: plan_id
+        in: path
+        required: true
+        schema:
+          type: integer
+          title: Plan Id
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DutyWeekPlanReview'
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DutyWeekPlanOut'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /duty-week-plans/{plan_id}/reopen:
+    post:
+      tags:
+      - duty-week-plans
+      summary: Reopen Plan
+      operationId: reopen_plan_duty_week_plans__plan_id__reopen_post
+      security:
+      - HTTPBearer: []
+      parameters:
+      - name: plan_id
+        in: path
+        required: true
+        schema:
+          type: integer
+          title: Plan Id
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DutyWeekPlanOut'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /duty-shift-handovers:
+    get:
+      tags:
+      - duty-shift-handovers
+      summary: List Shift Handovers
+      description: Tra cứu Sổ bàn giao ca trực & Nhật ký kíp trực toàn Lữ đoàn.
+      operationId: list_shift_handovers_duty_shift_handovers_get
+      security:
+      - HTTPBearer: []
+      parameters:
+      - name: skip
+        in: query
+        required: false
+        schema:
+          type: integer
+          default: 0
+          title: Skip
+      - name: limit
+        in: query
+        required: false
+        schema:
+          type: integer
+          default: 50
+          title: Limit
+      - name: date_from
+        in: query
+        required: false
+        schema:
+          anyOf:
+          - type: string
+            format: date
+          - type: 'null'
+          title: Date From
+      - name: date_to
+        in: query
+        required: false
+        schema:
+          anyOf:
+          - type: string
+            format: date
+          - type: 'null'
+          title: Date To
+      - name: unit_id
+        in: query
+        required: false
+        schema:
+          anyOf:
+          - type: integer
+          - type: 'null'
+          title: Unit Id
+      - name: status
+        in: query
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          description: 'Trạng thái: cho_nhan | da_nhan | co_kien_nghi'
+          title: Status
+        description: 'Trạng thái: cho_nhan | da_nhan | co_kien_nghi'
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DutyShiftHandoverListResponse'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+    post:
+      tags:
+      - duty-shift-handovers
+      summary: Create Shift Handover
+      description: Ca trước lập biên bản bàn giao ca trực điện tử.
+      operationId: create_shift_handover_duty_shift_handovers_post
+      security:
+      - HTTPBearer: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DutyShiftHandoverCreate'
+      responses:
+        '201':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DutyShiftHandoverOut'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /duty-shift-handovers/by-schedule/{schedule_id}:
+    get:
+      tags:
+      - duty-shift-handovers
+      summary: Get Handover By Schedule
+      description: Lấy chi tiết biên bản bàn giao gắn với một dòng ca trực cụ thể.
+      operationId: get_handover_by_schedule_duty_shift_handovers_by_schedule__schedule_id__get
+      security:
+      - HTTPBearer: []
+      parameters:
+      - name: schedule_id
+        in: path
+        required: true
+        schema:
+          type: integer
+          title: Schedule Id
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                anyOf:
+                - $ref: '#/components/schemas/DutyShiftHandoverOut'
+                - type: 'null'
+                title: Response Get Handover By Schedule Duty Shift Handovers By Schedule  Schedule
+                  Id  Get
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /duty-shift-handovers/{id}/acknowledge:
+    post:
+      tags:
+      - duty-shift-handovers
+      summary: Acknowledge Shift Handover
+      description: Ca sau đối soát thực tế và ký nhận bàn giao ca trực.
+      operationId: acknowledge_shift_handover_duty_shift_handovers__id__acknowledge_post
+      security:
+      - HTTPBearer: []
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          title: Id
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DutyShiftHandoverAcknowledge'
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DutyShiftHandoverOut'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /duty-shift-handovers/{id}/review:
+    post:
+      tags:
+      - duty-shift-handovers
+      summary: Review Shift Handover
+      description: Cấp Chỉ huy kiểm tra và ghi ý kiến chỉ đạo vào sổ ca trực.
+      operationId: review_shift_handover_duty_shift_handovers__id__review_post
+      security:
+      - HTTPBearer: []
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          title: Id
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DutyShiftHandoverCommanderReview'
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DutyShiftHandoverOut'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /leadership-tasks:
+    get:
+      tags:
+      - leadership-tasks
+      summary: List Leadership Tasks
+      description: 'Danh sách & Tra cứu các chỉ đạo, giao việc của Ban Chỉ huy Lữ
+        đoàn.
+
+
+        Ban Chỉ huy (role 0–3) thấy mọi chỉ đạo; tài khoản khác (role 4–5) chỉ thấy
+
+        chỉ đạo giao cho đơn vị mình hoặc chỉ đạo phạm vi rộng thuộc khối/ngành mình.'
+      operationId: list_leadership_tasks_leadership_tasks_get
+      security:
+      - HTTPBearer: []
+      parameters:
+      - name: skip
+        in: query
+        required: false
+        schema:
+          type: integer
+          default: 0
+          title: Skip
+      - name: limit
+        in: query
+        required: false
+        schema:
+          type: integer
+          default: 50
+          title: Limit
+      - name: commander_role
+        in: query
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          description: 'Chức danh Ban Chỉ huy: lu_truong | chinh_uy | lu_pho_tmt |
+            lu_pho_hckt | pho_chinh_uy'
+          title: Commander Role
+        description: 'Chức danh Ban Chỉ huy: lu_truong | chinh_uy | lu_pho_tmt | lu_pho_hckt
+          | pho_chinh_uy'
+      - name: target_branch
+        in: query
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          description: 'Ngành công tác: tham_muu | chinh_tri | hau_can_ky_thuat'
+          title: Target Branch
+        description: 'Ngành công tác: tham_muu | chinh_tri | hau_can_ky_thuat'
+      - name: assigned_unit_id
+        in: query
+        required: false
+        schema:
+          anyOf:
+          - type: integer
+          - type: 'null'
+          description: Đơn vị được giao
+          title: Assigned Unit Id
+        description: Đơn vị được giao
+      - name: status
+        in: query
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          description: 'Trạng thái: dang_thuc_hien | da_bao_cao | da_hoan_thanh |
+            can_bo_sung'
+          title: Status
+        description: 'Trạng thái: dang_thuc_hien | da_bao_cao | da_hoan_thanh | can_bo_sung'
+      - name: urgency
+        in: query
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          description: 'Độ khẩn: thuong | khan | hoa_toc'
+          title: Urgency
+        description: 'Độ khẩn: thuong | khan | hoa_toc'
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LeadershipTaskListResponse'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+    post:
+      tags:
+      - leadership-tasks
+      summary: Create Leadership Task
+      description: Ban Chỉ huy Lữ đoàn ban hành Chỉ đạo, Mệnh lệnh, Giao việc mới
+        (Yêu cầu role <= 2).
+      operationId: create_leadership_task_leadership_tasks_post
+      security:
+      - HTTPBearer: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LeadershipTaskCreate'
+      responses:
+        '201':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LeadershipTaskOut'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /leadership-tasks/{id}:
+    get:
+      tags:
+      - leadership-tasks
+      summary: Get Leadership Task
+      description: 'Chi tiết một chỉ đạo tác chiến / nhiệm vụ giao của Chỉ huy Lữ
+        đoàn.
+
+
+        Ngoài phạm vi xem của tài khoản (không thuộc đơn vị/ngành được giao) → 404.'
+      operationId: get_leadership_task_leadership_tasks__id__get
+      security:
+      - HTTPBearer: []
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          title: Id
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LeadershipTaskOut'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /leadership-tasks/{id}/report:
+    post:
+      tags:
+      - leadership-tasks
+      summary: Report Leadership Task
+      description: Đơn vị cơ sở hoặc trợ lý ban ngành báo cáo tiến độ / kết quả thực
+        hiện chỉ đạo.
+      operationId: report_leadership_task_leadership_tasks__id__report_post
+      security:
+      - HTTPBearer: []
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          title: Id
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LeadershipTaskReport'
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LeadershipTaskOut'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /leadership-tasks/{id}/review:
+    post:
+      tags:
+      - leadership-tasks
+      summary: Review Leadership Task
+      description: Ban Chỉ huy Lữ đoàn đánh giá kết quả, bút phê chỉ đạo bổ sung hoặc
+        kết luận hoàn thành.
+      operationId: review_leadership_task_leadership_tasks__id__review_post
+      security:
+      - HTTPBearer: []
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          title: Id
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LeadershipTaskReview'
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LeadershipTaskOut'
         '422':
           description: Validation Error
           content:
@@ -3127,7 +5123,7 @@ paths:
       requestBody:
         required: true
         content:
-          application/x-www-form-urlencoded:
+          multipart/form-data:
             schema:
               $ref: '#/components/schemas/Body_update_document_documents__doc_id__put'
       responses:
@@ -3193,6 +5189,156 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/HTTPValidationError'
+  /contact-books:
+    get:
+      tags:
+      - contacts
+      summary: List Books
+      operationId: list_books_contact_books_get
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: '#/components/schemas/ContactBookOut'
+                type: array
+                title: Response List Books Contact Books Get
+      security:
+      - HTTPBearer: []
+    post:
+      tags:
+      - contacts
+      summary: Import Book
+      operationId: import_book_contact_books_post
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Body_import_book_contact_books_post'
+        required: true
+      responses:
+        '201':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ContactBookOut'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+      security:
+      - HTTPBearer: []
+  /contact-books/{book_id}:
+    get:
+      tags:
+      - contacts
+      summary: Get Book
+      operationId: get_book_contact_books__book_id__get
+      security:
+      - HTTPBearer: []
+      parameters:
+      - name: book_id
+        in: path
+        required: true
+        schema:
+          type: integer
+          title: Book Id
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ContactBookOut'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+    delete:
+      tags:
+      - contacts
+      summary: Delete Book
+      operationId: delete_book_contact_books__book_id__delete
+      security:
+      - HTTPBearer: []
+      parameters:
+      - name: book_id
+        in: path
+        required: true
+        schema:
+          type: integer
+          title: Book Id
+      responses:
+        '204':
+          description: Successful Response
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /contact-books/{book_id}/contacts:
+    get:
+      tags:
+      - contacts
+      summary: List Contacts
+      operationId: list_contacts_contact_books__book_id__contacts_get
+      security:
+      - HTTPBearer: []
+      parameters:
+      - name: book_id
+        in: path
+        required: true
+        schema:
+          type: integer
+          title: Book Id
+      - name: q
+        in: query
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          description: Từ khoá tra cứu trên mọi trường
+          title: Q
+        description: Từ khoá tra cứu trên mọi trường
+      - name: skip
+        in: query
+        required: false
+        schema:
+          type: integer
+          minimum: 0
+          default: 0
+          title: Skip
+      - name: limit
+        in: query
+        required: false
+        schema:
+          type: integer
+          maximum: 500
+          minimum: 1
+          default: 50
+          title: Limit
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ContactPage'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
   /home/public:
     get:
       tags:
@@ -3248,6 +5394,130 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/HomeSummaryOut'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /api/upload:
+    post:
+      tags:
+      - upload
+      summary: Upload File
+      operationId: upload_file_api_upload_post
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Body_upload_file_api_upload_post'
+        required: true
+      responses:
+        '201':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UploadOut'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+      security:
+      - HTTPBearer: []
+  /audit-logs:
+    get:
+      tags:
+      - audit-logs
+      summary: Get Audit Logs
+      operationId: get_audit_logs_audit_logs_get
+      security:
+      - HTTPBearer: []
+      parameters:
+      - name: page
+        in: query
+        required: false
+        schema:
+          type: integer
+          minimum: 1
+          default: 1
+          title: Page
+      - name: page_size
+        in: query
+        required: false
+        schema:
+          type: integer
+          maximum: 200
+          minimum: 1
+          default: 50
+          title: Page Size
+      - name: action
+        in: query
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Action
+      - name: actor_id
+        in: query
+        required: false
+        schema:
+          anyOf:
+          - type: integer
+          - type: 'null'
+          title: Actor Id
+      - name: target_type
+        in: query
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Target Type
+      - name: is_success
+        in: query
+        required: false
+        schema:
+          anyOf:
+          - type: boolean
+          - type: 'null'
+          title: Is Success
+      - name: from_date
+        in: query
+        required: false
+        schema:
+          anyOf:
+          - type: string
+            format: date-time
+          - type: 'null'
+          title: From Date
+      - name: to_date
+        in: query
+        required: false
+        schema:
+          anyOf:
+          - type: string
+            format: date-time
+          - type: 'null'
+          title: To Date
+      - name: search
+        in: query
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Search
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuditLogListResponse'
         '422':
           description: Validation Error
           content:
@@ -3370,83 +5640,124 @@ components:
       - author_full_name
       - created_at
       title: AnnouncementOut
-    AttendanceUpdate:
+    ArchivePayload:
       properties:
-        attendance:
-          anyOf:
-          - type: string
-            enum:
-            - co_mat
-            - vang_mat
-            - chua_diem_danh
-          - type: 'null'
-          title: Attendance
-        absence_reason:
-          anyOf:
-          - type: string
-            maxLength: 500
-          - type: 'null'
-          title: Absence Reason
-        contribution_note:
-          anyOf:
-          - type: string
-          - type: 'null'
-          title: Contribution Note
+        archived:
+          type: boolean
+          title: Archived
+          description: true = lưu trữ (ẩn khỏi danh sách); false = bỏ lưu trữ
       type: object
-      title: AttendanceUpdate
-    AttendeeOut:
+      required:
+      - archived
+      title: ArchivePayload
+    AuditLogListResponse:
+      properties:
+        items:
+          items:
+            $ref: '#/components/schemas/AuditLogOut'
+          type: array
+          title: Items
+        total:
+          type: integer
+          title: Total
+        page:
+          type: integer
+          title: Page
+        page_size:
+          type: integer
+          title: Page Size
+      type: object
+      required:
+      - items
+      - total
+      - page
+      - page_size
+      title: AuditLogListResponse
+    AuditLogOut:
       properties:
         id:
           type: integer
           title: Id
-        meeting_id:
-          type: integer
-          title: Meeting Id
-        user_id:
-          type: integer
-          title: User Id
-        full_name:
+        created_at:
           type: string
-          title: Full Name
-        unit_id:
+          format: date-time
+          title: Created At
+        actor_id:
           anyOf:
           - type: integer
           - type: 'null'
-          title: Unit Id
-        unit_name:
+          title: Actor Id
+        actor_username:
           anyOf:
           - type: string
           - type: 'null'
-          title: Unit Name
-        attendance:
+          title: Actor Username
+        actor_full_name:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Actor Full Name
+        actor_role:
+          anyOf:
+          - type: integer
+          - type: 'null'
+          title: Actor Role
+        action:
           type: string
-          enum:
-          - co_mat
-          - vang_mat
-          - chua_diem_danh
-          title: Attendance
-        absence_reason:
+          title: Action
+        target_type:
           anyOf:
           - type: string
           - type: 'null'
-          title: Absence Reason
-        contribution_note:
+          title: Target Type
+        target_id:
           anyOf:
           - type: string
           - type: 'null'
-          title: Contribution Note
+          title: Target Id
+        target_name:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Target Name
+        ip_address:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Ip Address
+        is_success:
+          type: boolean
+          title: Is Success
+        details:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Details
       type: object
       required:
       - id
-      - meeting_id
-      - user_id
-      - full_name
-      - unit_id
-      - unit_name
-      - attendance
-      - absence_reason
-      - contribution_note
-      title: AttendeeOut
+      - created_at
+      - action
+      - is_success
+      title: AuditLogOut
+    Body_add_plan_attachment_duty_week_plans__plan_id__attachments_post:
+      properties:
+        file:
+          type: string
+          contentMediaType: application/octet-stream
+          title: File
+          description: 'Tệp lịch trực: .pdf/.doc/.docx/.xls/.xlsx/.ppt/.pptx/.jpg/.jpeg/.png/.webp/.gif'
+        label:
+          anyOf:
+          - type: string
+            maxLength: 200
+          - type: 'null'
+          title: Label
+          description: Mô tả ngắn (không bắt buộc)
+      type: object
+      required:
+      - file
+      title: Body_add_plan_attachment_duty_week_plans__plan_id__attachments_post
     Body_create_dispatch_official_dispatches_post:
       properties:
         file:
@@ -3461,6 +5772,25 @@ components:
           - di
           - den
           title: Direction
+        doc_type:
+          type: string
+          enum:
+          - cong_van
+          - dien_mat
+          - chi_thi
+          - quyet_dinh
+          - menh_lenh
+          - thong_bao
+          - thong_tri
+          - ke_hoach
+          - bao_cao
+          - to_trinh
+          - bien_ban
+          - huong_dan
+          - giay_moi
+          - khac
+          title: Doc Type
+          default: cong_van
         dispatch_number:
           type: string
           maxLength: 80
@@ -3479,6 +5809,11 @@ components:
           - type: string
           - type: 'null'
           title: Receiving Org
+        signer:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Signer
         issued_date:
           anyOf:
           - type: string
@@ -3491,6 +5826,40 @@ components:
             format: date
           - type: 'null'
           title: Received Date
+        deadline:
+          anyOf:
+          - type: string
+            format: date
+          - type: 'null'
+          title: Deadline
+        page_count:
+          anyOf:
+          - type: integer
+          - type: 'null'
+          title: Page Count
+        security_level:
+          type: string
+          enum:
+          - thuong
+          - mat
+          - toi_mat
+          - tuyet_mat
+          title: Security Level
+          default: mat
+        urgency:
+          type: string
+          enum:
+          - thuong
+          - khan
+          - thuong_khan
+          - hoa_toc
+          title: Urgency
+          default: thuong
+        archive_ref:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Archive Ref
         status:
           type: string
           enum:
@@ -3511,6 +5880,35 @@ components:
       - dispatch_number
       - summary
       title: Body_create_dispatch_official_dispatches_post
+    Body_import_book_contact_books_post:
+      properties:
+        name:
+          type: string
+          title: Name
+          default: ''
+        description:
+          type: string
+          title: Description
+          default: ''
+        file:
+          type: string
+          contentMediaType: application/octet-stream
+          title: File
+      type: object
+      required:
+      - file
+      title: Body_import_book_contact_books_post
+    Body_import_users_users_import_post:
+      properties:
+        file:
+          type: string
+          contentMediaType: application/octet-stream
+          title: File
+          description: File danh sách quân nhân (.xlsx, .xls hoặc .docx)
+      type: object
+      required:
+      - file
+      title: Body_import_users_users_import_post
     Body_post_message_command_threads__thread_id__messages_post:
       properties:
         body:
@@ -3539,6 +5937,28 @@ components:
           title: File
       type: object
       title: Body_post_message_directive_threads__thread_id__messages_post
+    Body_send_message_with_file_chats__id__messages_upload_post:
+      properties:
+        content:
+          type: string
+          title: Content
+          description: Chú thích kèm tệp (tuỳ chọn)
+          default: ''
+        reply_to_id:
+          anyOf:
+          - type: integer
+          - type: 'null'
+          title: Reply To Id
+          description: ID tin nhắn được trả lời
+        file:
+          type: string
+          contentMediaType: application/octet-stream
+          title: File
+          description: Ảnh / tài liệu / video đính kèm
+      type: object
+      required:
+      - file
+      title: Body_send_message_with_file_chats__id__messages_upload_post
     Body_submit_report_directive_assignments__assignment_id__targets__target_id__submit_post:
       properties:
         content:
@@ -3568,6 +5988,25 @@ components:
           - di
           - den
           title: Direction
+        doc_type:
+          type: string
+          enum:
+          - cong_van
+          - dien_mat
+          - chi_thi
+          - quyet_dinh
+          - menh_lenh
+          - thong_bao
+          - thong_tri
+          - ke_hoach
+          - bao_cao
+          - to_trinh
+          - bien_ban
+          - huong_dan
+          - giay_moi
+          - khac
+          title: Doc Type
+          default: cong_van
         dispatch_number:
           type: string
           maxLength: 80
@@ -3586,6 +6025,11 @@ components:
           - type: string
           - type: 'null'
           title: Receiving Org
+        signer:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Signer
         issued_date:
           anyOf:
           - type: string
@@ -3598,6 +6042,40 @@ components:
             format: date
           - type: 'null'
           title: Received Date
+        deadline:
+          anyOf:
+          - type: string
+            format: date
+          - type: 'null'
+          title: Deadline
+        page_count:
+          anyOf:
+          - type: integer
+          - type: 'null'
+          title: Page Count
+        security_level:
+          type: string
+          enum:
+          - thuong
+          - mat
+          - toi_mat
+          - tuyet_mat
+          title: Security Level
+          default: mat
+        urgency:
+          type: string
+          enum:
+          - thuong
+          - khan
+          - thuong_khan
+          - hoa_toc
+          title: Urgency
+          default: thuong
+        archive_ref:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Archive Ref
         status:
           type: string
           enum:
@@ -3636,13 +6114,30 @@ components:
           type: string
           title: Classification
           default: noi_bo
+        file:
+          anyOf:
+          - type: string
+            contentMediaType: application/octet-stream
+          - type: 'null'
+          title: File
       type: object
       required:
       - title
       - category
       title: Body_update_document_documents__doc_id__put
-    Body_upload_attachment_command_meetings__meeting_id__attachment_post:
+    Body_upload_document_command_threads__thread_id__documents_post:
       properties:
+        title:
+          type: string
+          title: Title
+          default: ''
+        visibility:
+          type: string
+          enum:
+          - chung
+          - rieng
+          title: Visibility
+          default: chung
         file:
           type: string
           contentMediaType: application/octet-stream
@@ -3650,7 +6145,7 @@ components:
       type: object
       required:
       - file
-      title: Body_upload_attachment_command_meetings__meeting_id__attachment_post
+      title: Body_upload_document_command_threads__thread_id__documents_post
     Body_upload_document_documents_post:
       properties:
         title:
@@ -3679,6 +6174,16 @@ components:
       - category
       - file
       title: Body_upload_document_documents_post
+    Body_upload_file_api_upload_post:
+      properties:
+        file:
+          type: string
+          contentMediaType: application/octet-stream
+          title: File
+      type: object
+      required:
+      - file
+      title: Body_upload_file_api_upload_post
     Body_upload_thumbnail_posts__post_id__thumbnail_post:
       properties:
         file:
@@ -3703,6 +6208,327 @@ components:
           title: Command Channel Access
       type: object
       title: ChannelAccessUpdate
+    ChatAddMemberPayload:
+      properties:
+        user_id:
+          type: integer
+          title: User Id
+          description: ID của đồng chí được thêm vào nhóm
+      type: object
+      required:
+      - user_id
+      title: ChatAddMemberPayload
+    ChatConversationOut:
+      properties:
+        id:
+          type: integer
+          title: Id
+        type:
+          type: string
+          title: Type
+        name:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Name
+        created_by_id:
+          type: integer
+          title: Created By Id
+        created_at:
+          type: string
+          format: date-time
+          title: Created At
+        last_message_at:
+          anyOf:
+          - type: string
+            format: date-time
+          - type: 'null'
+          title: Last Message At
+        last_message_preview:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Last Message Preview
+        unread_count:
+          type: integer
+          title: Unread Count
+          default: 0
+        status:
+          type: string
+          title: Status
+          default: da_duyet
+        review_note:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Review Note
+        reviewed_by_id:
+          anyOf:
+          - type: integer
+          - type: 'null'
+          title: Reviewed By Id
+        participants:
+          items:
+            $ref: '#/components/schemas/ChatParticipantOut'
+          type: array
+          title: Participants
+          default: []
+        other_user:
+          anyOf:
+          - $ref: '#/components/schemas/ChatParticipantOut'
+          - type: 'null'
+        is_muted:
+          type: boolean
+          title: Is Muted
+          default: false
+        is_archived:
+          type: boolean
+          title: Is Archived
+          default: false
+        other_user_online:
+          type: boolean
+          title: Other User Online
+          default: false
+      type: object
+      required:
+      - id
+      - type
+      - created_by_id
+      - created_at
+      title: ChatConversationOut
+    ChatForwardPayload:
+      properties:
+        target_conversation_id:
+          type: integer
+          title: Target Conversation Id
+          description: ID hội thoại đích để chuyển tiếp tin nhắn
+      type: object
+      required:
+      - target_conversation_id
+      title: ChatForwardPayload
+    ChatMessageCreate:
+      properties:
+        content:
+          type: string
+          minLength: 1
+          title: Content
+          description: Nội dung tin nhắn
+        attachment_url:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Attachment Url
+        attachment_name:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Attachment Name
+        reply_to_id:
+          anyOf:
+          - type: integer
+          - type: 'null'
+          title: Reply To Id
+          description: ID tin nhắn được trả lời (trích dẫn) trong cùng hội thoại
+      type: object
+      required:
+      - content
+      title: ChatMessageCreate
+    ChatMessageEditPayload:
+      properties:
+        content:
+          type: string
+          minLength: 1
+          title: Content
+          description: Nội dung mới của tin nhắn
+      type: object
+      required:
+      - content
+      title: ChatMessageEditPayload
+    ChatMessageOut:
+      properties:
+        id:
+          type: integer
+          title: Id
+        conversation_id:
+          type: integer
+          title: Conversation Id
+        sender_id:
+          type: integer
+          title: Sender Id
+        sender_name:
+          type: string
+          title: Sender Name
+        sender_rank:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Sender Rank
+        sender_position:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Sender Position
+        content:
+          type: string
+          title: Content
+        attachment_url:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Attachment Url
+        attachment_name:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Attachment Name
+        created_at:
+          type: string
+          format: date-time
+          title: Created At
+        is_me:
+          type: boolean
+          title: Is Me
+          default: false
+        message_type:
+          type: string
+          title: Message Type
+          default: user
+        reply_to:
+          anyOf:
+          - $ref: '#/components/schemas/ReplyPreviewOut'
+          - type: 'null'
+        forwarded_from:
+          anyOf:
+          - $ref: '#/components/schemas/ReplyPreviewOut'
+          - type: 'null'
+        reactions:
+          items:
+            $ref: '#/components/schemas/ReactionOut'
+          type: array
+          title: Reactions
+          default: []
+        is_edited:
+          type: boolean
+          title: Is Edited
+          default: false
+        edited_at:
+          anyOf:
+          - type: string
+            format: date-time
+          - type: 'null'
+          title: Edited At
+        is_recalled:
+          type: boolean
+          title: Is Recalled
+          default: false
+        recalled_at:
+          anyOf:
+          - type: string
+            format: date-time
+          - type: 'null'
+          title: Recalled At
+        is_pinned:
+          type: boolean
+          title: Is Pinned
+          default: false
+        pinned_at:
+          anyOf:
+          - type: string
+            format: date-time
+          - type: 'null'
+          title: Pinned At
+      type: object
+      required:
+      - id
+      - conversation_id
+      - sender_id
+      - sender_name
+      - content
+      - created_at
+      title: ChatMessageOut
+    ChatMessagePinPayload:
+      properties:
+        pinned:
+          type: boolean
+          title: Pinned
+          description: true = ghim tin nhắn; false = bỏ ghim
+      type: object
+      required:
+      - pinned
+      title: ChatMessagePinPayload
+    ChatParticipantOut:
+      properties:
+        user_id:
+          type: integer
+          title: User Id
+        username:
+          type: string
+          title: Username
+        full_name:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Full Name
+        rank:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Rank
+        position:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Position
+        unit_id:
+          anyOf:
+          - type: integer
+          - type: 'null'
+          title: Unit Id
+        unit_name:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Unit Name
+        is_admin:
+          type: boolean
+          title: Is Admin
+          default: false
+        joined_at:
+          type: string
+          format: date-time
+          title: Joined At
+        is_online:
+          type: boolean
+          title: Is Online
+          default: false
+      type: object
+      required:
+      - user_id
+      - username
+      - joined_at
+      title: ChatParticipantOut
+    ChatReactionPayload:
+      properties:
+        emoji:
+          type: string
+          maxLength: 16
+          minLength: 1
+          title: Emoji
+          description: Biểu tượng cảm xúc
+      type: object
+      required:
+      - emoji
+      title: ChatReactionPayload
+    ChatUnreadCountResponse:
+      properties:
+        total_unread:
+          type: integer
+          title: Total Unread
+          description: Tổng số tin nhắn chưa đọc của người dùng
+      type: object
+      required:
+      - total_unread
+      title: ChatUnreadCountResponse
     ClearanceUpdate:
       properties:
         clearance:
@@ -3712,314 +6538,6 @@ components:
       required:
       - clearance
       title: ClearanceUpdate
-    CommandMeetingCreate:
-      properties:
-        title:
-          type: string
-          maxLength: 255
-          minLength: 1
-          title: Title
-        start_time:
-          type: string
-          format: date-time
-          title: Start Time
-        end_time:
-          anyOf:
-          - type: string
-            format: date-time
-          - type: 'null'
-          title: End Time
-        location:
-          anyOf:
-          - type: string
-            maxLength: 255
-          - type: 'null'
-          title: Location
-        meeting_link:
-          anyOf:
-          - type: string
-            maxLength: 500
-          - type: 'null'
-          title: Meeting Link
-        agenda:
-          anyOf:
-          - type: string
-          - type: 'null'
-          title: Agenda
-        attendee_user_ids:
-          items:
-            type: integer
-          type: array
-          title: Attendee User Ids
-      type: object
-      required:
-      - title
-      - start_time
-      title: CommandMeetingCreate
-    CommandMeetingDetailOut:
-      properties:
-        id:
-          type: integer
-          title: Id
-        title:
-          type: string
-          title: Title
-        start_time:
-          type: string
-          format: date-time
-          title: Start Time
-        end_time:
-          anyOf:
-          - type: string
-            format: date-time
-          - type: 'null'
-          title: End Time
-        location:
-          anyOf:
-          - type: string
-          - type: 'null'
-          title: Location
-        meeting_link:
-          anyOf:
-          - type: string
-          - type: 'null'
-          title: Meeting Link
-        agenda:
-          anyOf:
-          - type: string
-          - type: 'null'
-          title: Agenda
-        minutes:
-          anyOf:
-          - type: string
-          - type: 'null'
-          title: Minutes
-        attachment_url:
-          anyOf:
-          - type: string
-          - type: 'null'
-          title: Attachment Url
-        attachment_name:
-          anyOf:
-          - type: string
-          - type: 'null'
-          title: Attachment Name
-        status:
-          type: string
-          enum:
-          - sap_dien_ra
-          - dang_dien_ra
-          - da_ket_thuc
-          - da_huy
-          title: Status
-        classification:
-          type: string
-          title: Classification
-        created_by_id:
-          type: integer
-          title: Created By Id
-        created_by_full_name:
-          type: string
-          title: Created By Full Name
-        created_at:
-          type: string
-          format: date-time
-          title: Created At
-        attendee_count:
-          type: integer
-          title: Attendee Count
-        present_count:
-          type: integer
-          title: Present Count
-        my_attendance:
-          anyOf:
-          - type: string
-            enum:
-            - co_mat
-            - vang_mat
-            - chua_diem_danh
-          - type: 'null'
-          title: My Attendance
-        attendees:
-          items:
-            $ref: '#/components/schemas/AttendeeOut'
-          type: array
-          title: Attendees
-      type: object
-      required:
-      - id
-      - title
-      - start_time
-      - end_time
-      - location
-      - meeting_link
-      - agenda
-      - minutes
-      - attachment_url
-      - attachment_name
-      - status
-      - classification
-      - created_by_id
-      - created_by_full_name
-      - created_at
-      - attendee_count
-      - present_count
-      - my_attendance
-      - attendees
-      title: CommandMeetingDetailOut
-    CommandMeetingOut:
-      properties:
-        id:
-          type: integer
-          title: Id
-        title:
-          type: string
-          title: Title
-        start_time:
-          type: string
-          format: date-time
-          title: Start Time
-        end_time:
-          anyOf:
-          - type: string
-            format: date-time
-          - type: 'null'
-          title: End Time
-        location:
-          anyOf:
-          - type: string
-          - type: 'null'
-          title: Location
-        meeting_link:
-          anyOf:
-          - type: string
-          - type: 'null'
-          title: Meeting Link
-        agenda:
-          anyOf:
-          - type: string
-          - type: 'null'
-          title: Agenda
-        minutes:
-          anyOf:
-          - type: string
-          - type: 'null'
-          title: Minutes
-        attachment_url:
-          anyOf:
-          - type: string
-          - type: 'null'
-          title: Attachment Url
-        attachment_name:
-          anyOf:
-          - type: string
-          - type: 'null'
-          title: Attachment Name
-        status:
-          type: string
-          enum:
-          - sap_dien_ra
-          - dang_dien_ra
-          - da_ket_thuc
-          - da_huy
-          title: Status
-        classification:
-          type: string
-          title: Classification
-        created_by_id:
-          type: integer
-          title: Created By Id
-        created_by_full_name:
-          type: string
-          title: Created By Full Name
-        created_at:
-          type: string
-          format: date-time
-          title: Created At
-        attendee_count:
-          type: integer
-          title: Attendee Count
-        present_count:
-          type: integer
-          title: Present Count
-        my_attendance:
-          anyOf:
-          - type: string
-            enum:
-            - co_mat
-            - vang_mat
-            - chua_diem_danh
-          - type: 'null'
-          title: My Attendance
-      type: object
-      required:
-      - id
-      - title
-      - start_time
-      - end_time
-      - location
-      - meeting_link
-      - agenda
-      - minutes
-      - attachment_url
-      - attachment_name
-      - status
-      - classification
-      - created_by_id
-      - created_by_full_name
-      - created_at
-      - attendee_count
-      - present_count
-      - my_attendance
-      title: CommandMeetingOut
-    CommandMeetingUpdate:
-      properties:
-        title:
-          type: string
-          maxLength: 255
-          minLength: 1
-          title: Title
-        start_time:
-          type: string
-          format: date-time
-          title: Start Time
-        end_time:
-          anyOf:
-          - type: string
-            format: date-time
-          - type: 'null'
-          title: End Time
-        location:
-          anyOf:
-          - type: string
-            maxLength: 255
-          - type: 'null'
-          title: Location
-        meeting_link:
-          anyOf:
-          - type: string
-            maxLength: 500
-          - type: 'null'
-          title: Meeting Link
-        agenda:
-          anyOf:
-          - type: string
-          - type: 'null'
-          title: Agenda
-        status:
-          type: string
-          enum:
-          - sap_dien_ra
-          - dang_dien_ra
-          - da_ket_thuc
-          - da_huy
-          title: Status
-          default: sap_dien_ra
-      type: object
-      required:
-      - title
-      - start_time
-      title: CommandMeetingUpdate
     CommandMessageOut:
       properties:
         id:
@@ -4072,6 +6590,11 @@ components:
           maxLength: 255
           minLength: 1
           title: Title
+        member_user_ids:
+          items:
+            type: integer
+          type: array
+          title: Member User Ids
       type: object
       required:
       - title
@@ -4112,11 +6635,19 @@ components:
         unread_count:
           type: integer
           title: Unread Count
+        member_count:
+          type: integer
+          title: Member Count
         messages:
           items:
             $ref: '#/components/schemas/CommandMessageOut'
           type: array
           title: Messages
+        members:
+          items:
+            $ref: '#/components/schemas/MemberOut'
+          type: array
+          title: Members
       type: object
       required:
       - id
@@ -4129,8 +6660,99 @@ components:
       - is_closed
       - message_count
       - unread_count
+      - member_count
       - messages
+      - members
       title: CommandThreadDetailOut
+    CommandThreadDocumentOut:
+      properties:
+        id:
+          type: integer
+          title: Id
+        thread_id:
+          type: integer
+          title: Thread Id
+        title:
+          type: string
+          title: Title
+        visibility:
+          type: string
+          enum:
+          - chung
+          - rieng
+          title: Visibility
+        file_url:
+          type: string
+          title: File Url
+        file_name:
+          type: string
+          title: File Name
+        file_size:
+          type: integer
+          title: File Size
+        content_type:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Content Type
+        uploaded_by_id:
+          type: integer
+          title: Uploaded By Id
+        uploaded_by_full_name:
+          type: string
+          title: Uploaded By Full Name
+        created_at:
+          type: string
+          format: date-time
+          title: Created At
+      type: object
+      required:
+      - id
+      - thread_id
+      - title
+      - visibility
+      - file_url
+      - file_name
+      - file_size
+      - content_type
+      - uploaded_by_id
+      - uploaded_by_full_name
+      - created_at
+      title: CommandThreadDocumentOut
+    CommandThreadMinutesOut:
+      properties:
+        id:
+          type: integer
+          title: Id
+        thread_id:
+          type: integer
+          title: Thread Id
+        content:
+          type: string
+          title: Content
+        message_count:
+          type: integer
+          title: Message Count
+        generated_by_id:
+          type: integer
+          title: Generated By Id
+        generated_by_full_name:
+          type: string
+          title: Generated By Full Name
+        generated_at:
+          type: string
+          format: date-time
+          title: Generated At
+      type: object
+      required:
+      - id
+      - thread_id
+      - content
+      - message_count
+      - generated_by_id
+      - generated_by_full_name
+      - generated_at
+      title: CommandThreadMinutesOut
     CommandThreadOut:
       properties:
         id:
@@ -4167,6 +6789,9 @@ components:
         unread_count:
           type: integer
           title: Unread Count
+        member_count:
+          type: integer
+          title: Member Count
       type: object
       required:
       - id
@@ -4179,7 +6804,149 @@ components:
       - is_closed
       - message_count
       - unread_count
+      - member_count
       title: CommandThreadOut
+    ContactBookOut:
+      properties:
+        id:
+          type: integer
+          title: Id
+        name:
+          type: string
+          title: Name
+        description:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Description
+        source_file_name:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Source File Name
+        column_headers:
+          items:
+            type: string
+          type: array
+          title: Column Headers
+        row_count:
+          type: integer
+          title: Row Count
+        created_by_id:
+          type: integer
+          title: Created By Id
+        created_by_full_name:
+          type: string
+          title: Created By Full Name
+        created_at:
+          type: string
+          format: date-time
+          title: Created At
+      type: object
+      required:
+      - id
+      - name
+      - description
+      - source_file_name
+      - column_headers
+      - row_count
+      - created_by_id
+      - created_by_full_name
+      - created_at
+      title: ContactBookOut
+    ContactOut:
+      properties:
+        id:
+          type: integer
+          title: Id
+        book_id:
+          type: integer
+          title: Book Id
+        row_index:
+          type: integer
+          title: Row Index
+        full_name:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Full Name
+        unit:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Unit
+        position:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Position
+        phone:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Phone
+        email:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Email
+        extra:
+          additionalProperties:
+            type: string
+          type: object
+          title: Extra
+      type: object
+      required:
+      - id
+      - book_id
+      - row_index
+      - full_name
+      - unit
+      - position
+      - phone
+      - email
+      - extra
+      title: ContactOut
+    ContactPage:
+      properties:
+        items:
+          items:
+            $ref: '#/components/schemas/ContactOut'
+          type: array
+          title: Items
+        total:
+          type: integer
+          title: Total
+        skip:
+          type: integer
+          title: Skip
+        limit:
+          type: integer
+          title: Limit
+        columns:
+          items:
+            type: string
+          type: array
+          title: Columns
+      type: object
+      required:
+      - items
+      - total
+      - skip
+      - limit
+      - columns
+      title: ContactPage
+      description: Ket qua phan trang cho GET /contact-books/{id}/contacts.
+    DirectChatCreate:
+      properties:
+        recipient_id:
+          type: integer
+          title: Recipient Id
+          description: ID của đồng chí nhận tin nhắn trực tiếp
+      type: object
+      required:
+      - recipient_id
+      title: DirectChatCreate
     DirectiveAckReport:
       properties:
         directive_id:
@@ -4218,7 +6985,7 @@ components:
           type: string
           title: Full Name
         role:
-          type: string
+          type: integer
           title: Role
         acknowledged_at:
           anyOf:
@@ -4700,7 +7467,7 @@ components:
           type: string
           title: Full Name
         role:
-          type: string
+          type: integer
           title: Role
         acknowledged_at:
           anyOf:
@@ -4786,12 +7553,106 @@ components:
       - uploaded_by_full_name
       - created_at
       title: DocumentOut
+    DutyDayBoard:
+      properties:
+        date:
+          type: string
+          format: date
+          title: Date
+        weekday_label:
+          type: string
+          title: Weekday Label
+        groups:
+          items:
+            $ref: '#/components/schemas/DutyUnitGroup'
+          type: array
+          title: Groups
+        total_entries:
+          type: integer
+          title: Total Entries
+        personnel_present:
+          type: integer
+          title: Personnel Present
+        personnel_total:
+          type: integer
+          title: Personnel Total
+      type: object
+      required:
+      - date
+      - weekday_label
+      - groups
+      - total_entries
+      - personnel_present
+      - personnel_total
+      title: DutyDayBoard
+    DutyPlanAttachmentOut:
+      properties:
+        id:
+          type: integer
+          title: Id
+        week_plan_id:
+          type: integer
+          title: Week Plan Id
+        file_url:
+          type: string
+          title: File Url
+        original_name:
+          type: string
+          title: Original Name
+        file_size:
+          type: integer
+          title: File Size
+        content_type:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Content Type
+        label:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Label
+        uploaded_by_id:
+          type: integer
+          title: Uploaded By Id
+        uploaded_by_name:
+          type: string
+          title: Uploaded By Name
+        created_at:
+          type: string
+          format: date-time
+          title: Created At
+      type: object
+      required:
+      - id
+      - week_plan_id
+      - file_url
+      - original_name
+      - file_size
+      - content_type
+      - label
+      - uploaded_by_id
+      - uploaded_by_name
+      - created_at
+      title: DutyPlanAttachmentOut
     DutyScheduleCreate:
       properties:
         duty_date:
           type: string
           format: date
           title: Duty Date
+        duty_type:
+          type: string
+          enum:
+          - truc_chi_huy
+          - truc_ban_tac_chien
+          - truc_ban_noi_vu
+          - truc_chuyen_mon
+          - truc_ca_kip
+          - truc_bao_ve
+          - khac
+          title: Duty Type
+          default: khac
         shift:
           type: string
           maxLength: 50
@@ -4804,6 +7665,24 @@ components:
           type: string
           maxLength: 100
           title: Role Title
+        contact_phone:
+          anyOf:
+          - type: string
+            maxLength: 30
+          - type: 'null'
+          title: Contact Phone
+        personnel_present:
+          anyOf:
+          - type: integer
+            minimum: 0.0
+          - type: 'null'
+          title: Personnel Present
+        personnel_total:
+          anyOf:
+          - type: integer
+            minimum: 0.0
+          - type: 'null'
+          title: Personnel Total
         note:
           anyOf:
           - type: string
@@ -4817,15 +7696,37 @@ components:
       - duty_officer
       - role_title
       title: DutyScheduleCreate
+      description: Mot dong ca truc. `unit_id` va tuan suy tu bang cha (DutyWeekPlan).
     DutyScheduleOut:
       properties:
         id:
           type: integer
           title: Id
+        week_plan_id:
+          anyOf:
+          - type: integer
+          - type: 'null'
+          title: Week Plan Id
         duty_date:
           type: string
           format: date
           title: Duty Date
+        unit_id:
+          anyOf:
+          - type: integer
+          - type: 'null'
+          title: Unit Id
+        unit_name:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Unit Name
+        duty_type:
+          type: string
+          title: Duty Type
+        duty_type_label:
+          type: string
+          title: Duty Type Label
         shift:
           type: string
           title: Shift
@@ -4835,6 +7736,21 @@ components:
         role_title:
           type: string
           title: Role Title
+        contact_phone:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Contact Phone
+        personnel_present:
+          anyOf:
+          - type: integer
+          - type: 'null'
+          title: Personnel Present
+        personnel_total:
+          anyOf:
+          - type: integer
+          - type: 'null'
+          title: Personnel Total
         note:
           anyOf:
           - type: string
@@ -4853,15 +7769,698 @@ components:
       type: object
       required:
       - id
+      - week_plan_id
       - duty_date
+      - unit_id
+      - unit_name
+      - duty_type
+      - duty_type_label
       - shift
       - duty_officer
       - role_title
+      - contact_phone
+      - personnel_present
+      - personnel_total
       - note
       - author_id
       - author_full_name
       - created_at
       title: DutyScheduleOut
+    DutyShiftHandoverAcknowledge:
+      properties:
+        status:
+          type: string
+          pattern: ^(da_nhan|co_kien_nghi)$
+          title: Status
+          description: 'Trạng thái xác nhận: da_nhan hoặc co_kien_nghi'
+          default: da_nhan
+        receiver_note:
+          anyOf:
+          - type: string
+            maxLength: 500
+          - type: 'null'
+          title: Receiver Note
+          description: Ghi chú phản hồi hoặc kiến nghị của ca sau
+      type: object
+      title: DutyShiftHandoverAcknowledge
+    DutyShiftHandoverCommanderReview:
+      properties:
+        commander_note:
+          type: string
+          maxLength: 500
+          title: Commander Note
+          description: Ý kiến nhận xét, chỉ đạo của Chỉ huy ca trực
+      type: object
+      required:
+      - commander_note
+      title: DutyShiftHandoverCommanderReview
+    DutyShiftHandoverCreate:
+      properties:
+        schedule_id:
+          type: integer
+          title: Schedule Id
+          description: ID dòng ca trực trong duty_schedules
+        giver_name:
+          anyOf:
+          - type: string
+            maxLength: 100
+          - type: 'null'
+          title: Giver Name
+          description: Tên người giao ca (mặc định lấy theo tài khoản)
+        receiver_id:
+          anyOf:
+          - type: integer
+          - type: 'null'
+          title: Receiver Id
+          description: ID tài khoản người nhận ca nếu có
+        receiver_name:
+          anyOf:
+          - type: string
+            maxLength: 100
+          - type: 'null'
+          title: Receiver Name
+          description: Họ tên người nhận ca
+        personnel_report:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Personnel Report
+          description: 'Tình hình quân số: có mặt, vắng mặt có lý do...'
+        equipment_status:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Equipment Status
+          description: Tình hình khí tài thông tin liên lạc, vũ khí trang bị
+        incident_log:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Incident Log
+          description: Nhật ký các sự vụ, mệnh lệnh nhận được trong ca trực
+        pending_tasks:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Pending Tasks
+          description: Nhiệm vụ còn dở dang bàn giao ca sau theo dõi, xử lý
+      type: object
+      required:
+      - schedule_id
+      title: DutyShiftHandoverCreate
+    DutyShiftHandoverListResponse:
+      properties:
+        items:
+          items:
+            $ref: '#/components/schemas/DutyShiftHandoverOut'
+          type: array
+          title: Items
+        total:
+          type: integer
+          title: Total
+        skip:
+          type: integer
+          title: Skip
+        limit:
+          type: integer
+          title: Limit
+      type: object
+      required:
+      - items
+      - total
+      - skip
+      - limit
+      title: DutyShiftHandoverListResponse
+    DutyShiftHandoverOut:
+      properties:
+        id:
+          type: integer
+          title: Id
+        schedule_id:
+          type: integer
+          title: Schedule Id
+        duty_date:
+          anyOf:
+          - type: string
+            format: date
+          - type: 'null'
+          title: Duty Date
+        duty_type:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Duty Type
+        shift:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Shift
+        unit_name:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Unit Name
+        giver_id:
+          type: integer
+          title: Giver Id
+        giver_name:
+          type: string
+          title: Giver Name
+        receiver_id:
+          anyOf:
+          - type: integer
+          - type: 'null'
+          title: Receiver Id
+        receiver_name:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Receiver Name
+        handover_time:
+          type: string
+          format: date-time
+          title: Handover Time
+        personnel_report:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Personnel Report
+        equipment_status:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Equipment Status
+        incident_log:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Incident Log
+        pending_tasks:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Pending Tasks
+        commander_note:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Commander Note
+        status:
+          type: string
+          title: Status
+        receiver_note:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Receiver Note
+        acknowledged_at:
+          anyOf:
+          - type: string
+            format: date-time
+          - type: 'null'
+          title: Acknowledged At
+        created_at:
+          type: string
+          format: date-time
+          title: Created At
+        updated_at:
+          type: string
+          format: date-time
+          title: Updated At
+      type: object
+      required:
+      - id
+      - schedule_id
+      - giver_id
+      - giver_name
+      - handover_time
+      - status
+      - created_at
+      - updated_at
+      title: DutyShiftHandoverOut
+    DutyUnitGroup:
+      properties:
+        unit_id:
+          anyOf:
+          - type: integer
+          - type: 'null'
+          title: Unit Id
+        unit_name:
+          type: string
+          title: Unit Name
+        plan_id:
+          anyOf:
+          - type: integer
+          - type: 'null'
+          title: Plan Id
+        plan_status:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Plan Status
+        plan_status_label:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Plan Status Label
+        entries:
+          items:
+            $ref: '#/components/schemas/DutyScheduleOut'
+          type: array
+          title: Entries
+        entry_count:
+          type: integer
+          title: Entry Count
+        personnel_present:
+          type: integer
+          title: Personnel Present
+        personnel_total:
+          type: integer
+          title: Personnel Total
+      type: object
+      required:
+      - unit_id
+      - unit_name
+      - plan_id
+      - plan_status
+      - plan_status_label
+      - entries
+      - entry_count
+      - personnel_present
+      - personnel_total
+      title: DutyUnitGroup
+    DutyWeekBoard:
+      properties:
+        week_start:
+          type: string
+          format: date
+          title: Week Start
+        week_end:
+          type: string
+          format: date
+          title: Week End
+        week_label:
+          type: string
+          title: Week Label
+        days:
+          items:
+            $ref: '#/components/schemas/DutyWeekDay'
+          type: array
+          title: Days
+        unit_plans:
+          items:
+            $ref: '#/components/schemas/DutyWeekPlanBrief'
+          type: array
+          title: Unit Plans
+        total_entries:
+          type: integer
+          title: Total Entries
+      type: object
+      required:
+      - week_start
+      - week_end
+      - week_label
+      - days
+      - unit_plans
+      - total_entries
+      title: DutyWeekBoard
+    DutyWeekDay:
+      properties:
+        date:
+          type: string
+          format: date
+          title: Date
+        weekday_label:
+          type: string
+          title: Weekday Label
+        is_today:
+          type: boolean
+          title: Is Today
+        entries:
+          items:
+            $ref: '#/components/schemas/DutyScheduleOut'
+          type: array
+          title: Entries
+        entry_count:
+          type: integer
+          title: Entry Count
+        personnel_present:
+          type: integer
+          title: Personnel Present
+        personnel_total:
+          type: integer
+          title: Personnel Total
+      type: object
+      required:
+      - date
+      - weekday_label
+      - is_today
+      - entries
+      - entry_count
+      - personnel_present
+      - personnel_total
+      title: DutyWeekDay
+    DutyWeekPlanBrief:
+      properties:
+        plan_id:
+          type: integer
+          title: Plan Id
+        unit_id:
+          type: integer
+          title: Unit Id
+        unit_name:
+          type: string
+          title: Unit Name
+        status:
+          type: string
+          title: Status
+        status_label:
+          type: string
+          title: Status Label
+        entry_count:
+          type: integer
+          title: Entry Count
+        submitted_at:
+          anyOf:
+          - type: string
+            format: date-time
+          - type: 'null'
+          title: Submitted At
+        reviewed_at:
+          anyOf:
+          - type: string
+            format: date-time
+          - type: 'null'
+          title: Reviewed At
+      type: object
+      required:
+      - plan_id
+      - unit_id
+      - unit_name
+      - status
+      - status_label
+      - entry_count
+      - submitted_at
+      - reviewed_at
+      title: DutyWeekPlanBrief
+      description: Trang thai phe duyet bang truc tuan cua tung don vi (ma tran don
+        doc).
+    DutyWeekPlanCreate:
+      properties:
+        unit_id:
+          type: integer
+          title: Unit Id
+        week_start:
+          type: string
+          format: date
+          title: Week Start
+        note:
+          anyOf:
+          - type: string
+            maxLength: 500
+          - type: 'null'
+          title: Note
+      type: object
+      required:
+      - unit_id
+      - week_start
+      title: DutyWeekPlanCreate
+    DutyWeekPlanDetail:
+      properties:
+        id:
+          type: integer
+          title: Id
+        unit_id:
+          type: integer
+          title: Unit Id
+        unit_name:
+          type: string
+          title: Unit Name
+        week_start:
+          type: string
+          format: date
+          title: Week Start
+        week_end:
+          type: string
+          format: date
+          title: Week End
+        week_label:
+          type: string
+          title: Week Label
+        status:
+          type: string
+          title: Status
+        status_label:
+          type: string
+          title: Status Label
+        note:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Note
+        entry_count:
+          type: integer
+          title: Entry Count
+        attachment_count:
+          type: integer
+          title: Attachment Count
+        personnel_present:
+          type: integer
+          title: Personnel Present
+        personnel_total:
+          type: integer
+          title: Personnel Total
+        submitted_by_id:
+          anyOf:
+          - type: integer
+          - type: 'null'
+          title: Submitted By Id
+        submitted_by_name:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Submitted By Name
+        submitted_at:
+          anyOf:
+          - type: string
+            format: date-time
+          - type: 'null'
+          title: Submitted At
+        reviewed_by_id:
+          anyOf:
+          - type: integer
+          - type: 'null'
+          title: Reviewed By Id
+        reviewed_by_name:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Reviewed By Name
+        reviewed_at:
+          anyOf:
+          - type: string
+            format: date-time
+          - type: 'null'
+          title: Reviewed At
+        review_note:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Review Note
+        author_id:
+          type: integer
+          title: Author Id
+        author_full_name:
+          type: string
+          title: Author Full Name
+        created_at:
+          type: string
+          format: date-time
+          title: Created At
+        entries:
+          items:
+            $ref: '#/components/schemas/DutyScheduleOut'
+          type: array
+          title: Entries
+        attachments:
+          items:
+            $ref: '#/components/schemas/DutyPlanAttachmentOut'
+          type: array
+          title: Attachments
+          default: []
+      type: object
+      required:
+      - id
+      - unit_id
+      - unit_name
+      - week_start
+      - week_end
+      - week_label
+      - status
+      - status_label
+      - note
+      - entry_count
+      - attachment_count
+      - personnel_present
+      - personnel_total
+      - submitted_by_id
+      - submitted_by_name
+      - submitted_at
+      - reviewed_by_id
+      - reviewed_by_name
+      - reviewed_at
+      - review_note
+      - author_id
+      - author_full_name
+      - created_at
+      - entries
+      title: DutyWeekPlanDetail
+    DutyWeekPlanOut:
+      properties:
+        id:
+          type: integer
+          title: Id
+        unit_id:
+          type: integer
+          title: Unit Id
+        unit_name:
+          type: string
+          title: Unit Name
+        week_start:
+          type: string
+          format: date
+          title: Week Start
+        week_end:
+          type: string
+          format: date
+          title: Week End
+        week_label:
+          type: string
+          title: Week Label
+        status:
+          type: string
+          title: Status
+        status_label:
+          type: string
+          title: Status Label
+        note:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Note
+        entry_count:
+          type: integer
+          title: Entry Count
+        attachment_count:
+          type: integer
+          title: Attachment Count
+        personnel_present:
+          type: integer
+          title: Personnel Present
+        personnel_total:
+          type: integer
+          title: Personnel Total
+        submitted_by_id:
+          anyOf:
+          - type: integer
+          - type: 'null'
+          title: Submitted By Id
+        submitted_by_name:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Submitted By Name
+        submitted_at:
+          anyOf:
+          - type: string
+            format: date-time
+          - type: 'null'
+          title: Submitted At
+        reviewed_by_id:
+          anyOf:
+          - type: integer
+          - type: 'null'
+          title: Reviewed By Id
+        reviewed_by_name:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Reviewed By Name
+        reviewed_at:
+          anyOf:
+          - type: string
+            format: date-time
+          - type: 'null'
+          title: Reviewed At
+        review_note:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Review Note
+        author_id:
+          type: integer
+          title: Author Id
+        author_full_name:
+          type: string
+          title: Author Full Name
+        created_at:
+          type: string
+          format: date-time
+          title: Created At
+      type: object
+      required:
+      - id
+      - unit_id
+      - unit_name
+      - week_start
+      - week_end
+      - week_label
+      - status
+      - status_label
+      - note
+      - entry_count
+      - attachment_count
+      - personnel_present
+      - personnel_total
+      - submitted_by_id
+      - submitted_by_name
+      - submitted_at
+      - reviewed_by_id
+      - reviewed_by_name
+      - reviewed_at
+      - review_note
+      - author_id
+      - author_full_name
+      - created_at
+      title: DutyWeekPlanOut
+    DutyWeekPlanReview:
+      properties:
+        status:
+          type: string
+          enum:
+          - da_duyet
+          - tra_lai
+          title: Status
+        review_note:
+          anyOf:
+          - type: string
+            maxLength: 500
+          - type: 'null'
+          title: Review Note
+      type: object
+      required:
+      - status
+      title: DutyWeekPlanReview
+    DutyWeekPlanUpdate:
+      properties:
+        note:
+          anyOf:
+          - type: string
+            maxLength: 500
+          - type: 'null'
+          title: Note
+      type: object
+      title: DutyWeekPlanUpdate
     EducationMaterialCreate:
       properties:
         title:
@@ -4948,6 +8547,53 @@ components:
       - author_full_name
       - created_at
       title: EducationMaterialOut
+    GroupChatCreate:
+      properties:
+        name:
+          type: string
+          maxLength: 200
+          minLength: 2
+          title: Name
+          description: Tên nhóm kíp trực hoặc nhóm công tác
+        member_ids:
+          items:
+            type: integer
+          type: array
+          title: Member Ids
+          description: Danh sách ID các thành viên ban đầu
+      type: object
+      required:
+      - name
+      title: GroupChatCreate
+    GroupRenamePayload:
+      properties:
+        name:
+          type: string
+          maxLength: 200
+          minLength: 2
+          title: Name
+          description: Tên nhóm mới
+      type: object
+      required:
+      - name
+      title: GroupRenamePayload
+    GroupReviewPayload:
+      properties:
+        approve:
+          type: boolean
+          title: Approve
+          description: true = duyệt nhóm; false = từ chối
+        note:
+          anyOf:
+          - type: string
+            maxLength: 500
+          - type: 'null'
+          title: Note
+          description: Lý do từ chối (BẮT BUỘC khi approve=false) hoặc ghi chú duyệt
+      type: object
+      required:
+      - approve
+      title: GroupReviewPayload
     HTTPValidationError:
       properties:
         detail:
@@ -4987,18 +8633,6 @@ components:
       - latest_announcements
       title: HomeSummaryOut
       description: Trang chu ben trong (da dang nhap) - da loc theo quyen cua user.
-    InviteRequest:
-      properties:
-        user_ids:
-          items:
-            type: integer
-          type: array
-          minItems: 1
-          title: User Ids
-      type: object
-      required:
-      - user_ids
-      title: InviteRequest
     ItemCreate:
       properties:
         name:
@@ -5035,6 +8669,223 @@ components:
       - name
       - id
       title: ItemOut
+    LeadershipTaskCreate:
+      properties:
+        commander_role:
+          type: string
+          enum:
+          - lu_truong
+          - chinh_uy
+          - lu_pho_tmt
+          - lu_pho_hckt
+          - pho_chinh_uy
+          title: Commander Role
+          description: lu_truong | chinh_uy | lu_pho_tmt | lu_pho_hckt | pho_chinh_uy
+        title:
+          type: string
+          maxLength: 255
+          minLength: 3
+          title: Title
+        content:
+          type: string
+          minLength: 5
+          title: Content
+        target_branch:
+          type: string
+          enum:
+          - tham_muu
+          - chinh_tri
+          - hau_can_ky_thuat
+          - toan_lu_doan
+          title: Target Branch
+          description: tham_muu | chinh_tri | hau_can_ky_thuat | toan_lu_doan
+          default: toan_lu_doan
+        assigned_unit_id:
+          anyOf:
+          - type: integer
+          - type: 'null'
+          title: Assigned Unit Id
+        urgency:
+          type: string
+          enum:
+          - hoa_toc
+          - khan
+          - thuong
+          title: Urgency
+          description: hoa_toc | khan | thuong
+          default: thuong
+        deadline:
+          anyOf:
+          - type: string
+            format: date
+          - type: 'null'
+          title: Deadline
+      type: object
+      required:
+      - commander_role
+      - title
+      - content
+      title: LeadershipTaskCreate
+    LeadershipTaskListResponse:
+      properties:
+        items:
+          items:
+            $ref: '#/components/schemas/LeadershipTaskOut'
+          type: array
+          title: Items
+        total:
+          type: integer
+          title: Total
+      type: object
+      required:
+      - items
+      - total
+      title: LeadershipTaskListResponse
+    LeadershipTaskOut:
+      properties:
+        id:
+          type: integer
+          title: Id
+        commander_role:
+          type: string
+          title: Commander Role
+        commander_role_label:
+          type: string
+          title: Commander Role Label
+        commander_id:
+          type: integer
+          title: Commander Id
+        commander_name:
+          type: string
+          title: Commander Name
+        title:
+          type: string
+          title: Title
+        content:
+          type: string
+          title: Content
+        target_branch:
+          type: string
+          title: Target Branch
+        target_branch_label:
+          type: string
+          title: Target Branch Label
+        assigned_unit_id:
+          anyOf:
+          - type: integer
+          - type: 'null'
+          title: Assigned Unit Id
+        assigned_unit_name:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Assigned Unit Name
+        urgency:
+          type: string
+          title: Urgency
+        urgency_label:
+          type: string
+          title: Urgency Label
+        deadline:
+          anyOf:
+          - type: string
+            format: date
+          - type: 'null'
+          title: Deadline
+        status:
+          type: string
+          title: Status
+        status_label:
+          type: string
+          title: Status Label
+        report_content:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Report Content
+        reported_by_id:
+          anyOf:
+          - type: integer
+          - type: 'null'
+          title: Reported By Id
+        reported_by_name:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Reported By Name
+        reported_at:
+          anyOf:
+          - type: string
+            format: date-time
+          - type: 'null'
+          title: Reported At
+        review_note:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Review Note
+        reviewed_at:
+          anyOf:
+          - type: string
+            format: date-time
+          - type: 'null'
+          title: Reviewed At
+        created_at:
+          type: string
+          format: date-time
+          title: Created At
+        updated_at:
+          type: string
+          format: date-time
+          title: Updated At
+      type: object
+      required:
+      - id
+      - commander_role
+      - commander_role_label
+      - commander_id
+      - commander_name
+      - title
+      - content
+      - target_branch
+      - target_branch_label
+      - urgency
+      - urgency_label
+      - status
+      - status_label
+      - created_at
+      - updated_at
+      title: LeadershipTaskOut
+    LeadershipTaskReport:
+      properties:
+        report_content:
+          type: string
+          minLength: 5
+          title: Report Content
+          description: Báo cáo tiến độ và kết quả thực hiện chỉ đạo
+      type: object
+      required:
+      - report_content
+      title: LeadershipTaskReport
+    LeadershipTaskReview:
+      properties:
+        status:
+          type: string
+          enum:
+          - da_hoan_thanh
+          - can_bo_sung
+          title: Status
+          description: 'Kết luận bút phê: da_hoan_thanh | can_bo_sung'
+          default: da_hoan_thanh
+        review_note:
+          type: string
+          minLength: 2
+          title: Review Note
+          description: Ý kiến đánh giá, nhận xét của Chỉ huy Lữ đoàn
+      type: object
+      required:
+      - review_note
+      title: LeadershipTaskReview
     LoginRequest:
       properties:
         username:
@@ -5048,20 +8899,61 @@ components:
       - username
       - password
       title: LoginRequest
-    MinutesRequest:
+    MemberAddRequest:
       properties:
-        minutes:
-          type: string
-          minLength: 1
-          title: Minutes
-        mark_finished:
-          type: boolean
-          title: Mark Finished
-          default: false
+        user_ids:
+          items:
+            type: integer
+          type: array
+          minItems: 1
+          title: User Ids
       type: object
       required:
-      - minutes
-      title: MinutesRequest
+      - user_ids
+      title: MemberAddRequest
+    MemberOut:
+      properties:
+        user_id:
+          type: integer
+          title: User Id
+        full_name:
+          type: string
+          title: Full Name
+        unit_name:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Unit Name
+        added_at:
+          type: string
+          format: date-time
+          title: Added At
+      type: object
+      required:
+      - user_id
+      - full_name
+      - added_at
+      title: MemberOut
+    MemberRolePayload:
+      properties:
+        is_admin:
+          type: boolean
+          title: Is Admin
+          description: true = phong quản trị viên nhóm; false = gỡ
+      type: object
+      required:
+      - is_admin
+      title: MemberRolePayload
+    MutePayload:
+      properties:
+        muted:
+          type: boolean
+          title: Muted
+          description: true = tắt thông báo hội thoại; false = bật lại
+      type: object
+      required:
+      - muted
+      title: MutePayload
     OfficialDispatchDetailOut:
       properties:
         id:
@@ -5073,6 +8965,9 @@ components:
           - di
           - den
           title: Direction
+        doc_type:
+          type: string
+          title: Doc Type
         dispatch_number:
           type: string
           title: Dispatch Number
@@ -5089,6 +8984,11 @@ components:
           - type: string
           - type: 'null'
           title: Receiving Org
+        signer:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Signer
         issued_date:
           anyOf:
           - type: string
@@ -5101,6 +9001,28 @@ components:
             format: date
           - type: 'null'
           title: Received Date
+        deadline:
+          anyOf:
+          - type: string
+            format: date
+          - type: 'null'
+          title: Deadline
+        page_count:
+          anyOf:
+          - type: integer
+          - type: 'null'
+          title: Page Count
+        security_level:
+          type: string
+          title: Security Level
+        urgency:
+          type: string
+          title: Urgency
+        archive_ref:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Archive Ref
         status:
           type: string
           enum:
@@ -5160,12 +9082,19 @@ components:
       required:
       - id
       - direction
+      - doc_type
       - dispatch_number
       - summary
       - issuing_org
       - receiving_org
+      - signer
       - issued_date
       - received_date
+      - deadline
+      - page_count
+      - security_level
+      - urgency
+      - archive_ref
       - status
       - classification
       - note
@@ -5191,6 +9120,9 @@ components:
           - di
           - den
           title: Direction
+        doc_type:
+          type: string
+          title: Doc Type
         dispatch_number:
           type: string
           title: Dispatch Number
@@ -5207,6 +9139,11 @@ components:
           - type: string
           - type: 'null'
           title: Receiving Org
+        signer:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Signer
         issued_date:
           anyOf:
           - type: string
@@ -5219,6 +9156,28 @@ components:
             format: date
           - type: 'null'
           title: Received Date
+        deadline:
+          anyOf:
+          - type: string
+            format: date
+          - type: 'null'
+          title: Deadline
+        page_count:
+          anyOf:
+          - type: integer
+          - type: 'null'
+          title: Page Count
+        security_level:
+          type: string
+          title: Security Level
+        urgency:
+          type: string
+          title: Urgency
+        archive_ref:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Archive Ref
         status:
           type: string
           enum:
@@ -5268,12 +9227,19 @@ components:
       required:
       - id
       - direction
+      - doc_type
       - dispatch_number
       - summary
       - issuing_org
       - receiving_org
+      - signer
       - issued_date
       - received_date
+      - deadline
+      - page_count
+      - security_level
+      - urgency
+      - archive_ref
       - status
       - classification
       - note
@@ -5306,6 +9272,18 @@ components:
           type: string
           maxLength: 255
           title: Title
+        summary:
+          anyOf:
+          - type: string
+            maxLength: 500
+          - type: 'null'
+          title: Summary
+        slug:
+          anyOf:
+          - type: string
+            maxLength: 255
+          - type: 'null'
+          title: Slug
         category:
           type: string
           enum:
@@ -5313,10 +9291,19 @@ components:
           - dan_van
           - khen_thuong
           - guong_nguoi_tot
+          - hoat_dong_don_vi
+          - cong_tac_dang
+          - thong_tin_lien_lac
+          - su_kien_le_ky_niem
           title: Category
         content:
           type: string
           title: Content
+        tags:
+          items:
+            type: string
+          type: array
+          title: Tags
         cover_image_url:
           anyOf:
           - type: string
@@ -5349,6 +9336,16 @@ components:
         title:
           type: string
           title: Title
+        summary:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Summary
+        slug:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Slug
         category:
           type: string
           enum:
@@ -5356,10 +9353,19 @@ components:
           - dan_van
           - khen_thuong
           - guong_nguoi_tot
+          - hoat_dong_don_vi
+          - cong_tac_dang
+          - thong_tin_lien_lac
+          - su_kien_le_ky_niem
           title: Category
         content:
           type: string
           title: Content
+        tags:
+          items:
+            type: string
+          type: array
+          title: Tags
         cover_image_url:
           anyOf:
           - type: string
@@ -5378,6 +9384,7 @@ components:
         status:
           type: string
           enum:
+          - nhap
           - cho_duyet
           - da_duyet
           - tra_lai
@@ -5412,8 +9419,11 @@ components:
       required:
       - id
       - title
+      - summary
+      - slug
       - category
       - content
+      - tags
       - cover_image_url
       - classification
       - is_featured
@@ -5478,6 +9488,71 @@ components:
       title: PublicHomeOut
       description: Trang cong khai cho khach chua dang nhap - chi noi dung cong_khai
         / is_public.
+    PurgeResult:
+      properties:
+        purged_count:
+          type: integer
+          title: Purged Count
+        message:
+          type: string
+          title: Message
+      type: object
+      required:
+      - purged_count
+      - message
+      title: PurgeResult
+    ReactionOut:
+      properties:
+        emoji:
+          type: string
+          title: Emoji
+        count:
+          type: integer
+          title: Count
+        user_ids:
+          items:
+            type: integer
+          type: array
+          title: User Ids
+          default: []
+        mine:
+          type: boolean
+          title: Mine
+          default: false
+      type: object
+      required:
+      - emoji
+      - count
+      title: ReactionOut
+    ReadReceiptOut:
+      properties:
+        user_id:
+          type: integer
+          title: User Id
+        full_name:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Full Name
+        rank:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Rank
+        last_read_message_id:
+          type: integer
+          title: Last Read Message Id
+          default: 0
+        last_read_at:
+          anyOf:
+          - type: string
+            format: date-time
+          - type: 'null'
+          title: Last Read At
+      type: object
+      required:
+      - user_id
+      title: ReadReceiptOut
     RegisterRequest:
       properties:
         username:
@@ -5499,8 +9574,38 @@ components:
       - password
       - full_name
       title: RegisterRequest
-      description: Nguoi dung tu dang ky o giao dien ngoai. Luon tao role=soldier,
-        cho commander kich hoat.
+      description: 'Nguoi dung tu dang ky o giao dien ngoai. Luon tao role=5 (Nguoi
+        dung), chua kich hoat.
+
+
+        Cap bac / chuc danh / don vi se do chi huy bo sung (PATCH .../info, .../unit)
+
+        truoc khi kich hoat duoc tai khoan - xem `user_service.set_user_active`.'
+    ReplyPreviewOut:
+      properties:
+        id:
+          type: integer
+          title: Id
+        sender_id:
+          type: integer
+          title: Sender Id
+        sender_name:
+          type: string
+          title: Sender Name
+        content:
+          type: string
+          title: Content
+        is_recalled:
+          type: boolean
+          title: Is Recalled
+          default: false
+      type: object
+      required:
+      - id
+      - sender_id
+      - sender_name
+      - content
+      title: ReplyPreviewOut
     ResetPasswordRequest:
       properties:
         new_password:
@@ -5532,12 +9637,14 @@ components:
     RoleUpdate:
       properties:
         role:
-          type: string
+          type: integer
           enum:
-          - soldier
-          - officer
-          - commander
-          - admin
+          - 0
+          - 1
+          - 2
+          - 3
+          - 4
+          - 5
           title: Role
       type: object
       required:
@@ -5698,9 +9805,24 @@ components:
           type: string
           title: Token Type
           default: bearer
+        role:
+          type: integer
+          enum:
+          - 0
+          - 1
+          - 2
+          - 3
+          - 4
+          - 5
+          title: Role
+          description: 'Vai trò của tài khoản vừa đăng nhập (số nguyên 0..5 — nguồn
+            sự thật: app/core/roles.py). 0 = Quản trị hệ thống (admin); 1 = Lữ trưởng
+            - Chính uỷ; 2 = Lữ phó - Phó chính uỷ; 3 = Chỉ huy các đơn vị; 4 = Cá
+            nhân; 5 = Người dùng.'
       type: object
       required:
       - access_token
+      - role
       title: Token
     UnitAssignUpdate:
       properties:
@@ -5786,6 +9908,25 @@ components:
       - created_at
       - user_count
       title: UnitOut
+    UploadOut:
+      properties:
+        status:
+          type: string
+          const: success
+          title: Status
+          default: success
+        filename:
+          type: string
+          title: Filename
+        url:
+          type: string
+          title: Url
+      type: object
+      required:
+      - filename
+      - url
+      title: UploadOut
+      description: Ket qua tra ve cho POST /api/upload (upload file dung chung).
     UserCreate:
       properties:
         username:
@@ -5801,15 +9942,33 @@ components:
           maxLength: 100
           title: Full Name
         role:
-          type: string
-          maxLength: 50
+          type: integer
+          enum:
+          - 0
+          - 1
+          - 2
+          - 3
+          - 4
+          - 5
           title: Role
-          default: soldier
+          description: Vai trò 0..5 (mặc định 4 = Cá nhân)
+          default: 4
+        rank:
+          type: string
+          maxLength: 100
+          minLength: 1
+          title: Rank
+          description: Cấp bậc quân hàm
+        position:
+          type: string
+          maxLength: 150
+          minLength: 1
+          title: Position
+          description: Chức danh công tác
         unit_id:
-          anyOf:
-          - type: integer
-          - type: 'null'
+          type: integer
           title: Unit Id
+          description: Đơn vị làm việc - bắt buộc
         directive_channel_access:
           type: boolean
           title: Directive Channel Access
@@ -5823,7 +9982,80 @@ components:
       - username
       - password
       - full_name
+      - rank
+      - position
+      - unit_id
       title: UserCreate
+      description: 'Tao tai khoan truc tiep (chi huy/admin). Chi cap cho can bo/QNCN
+        da co bien che
+
+
+        thuc te -> bat buoc ghi ro cap bac, chuc danh, don vi cong tac ngay khi tao.'
+    UserImportResult:
+      properties:
+        total_rows:
+          type: integer
+          title: Total Rows
+        success_count:
+          type: integer
+          title: Success Count
+        error_count:
+          type: integer
+          title: Error Count
+        errors:
+          items:
+            $ref: '#/components/schemas/UserImportRowError'
+          type: array
+          title: Errors
+          default: []
+        created_usernames:
+          items:
+            type: string
+          type: array
+          title: Created Usernames
+          default: []
+      type: object
+      required:
+      - total_rows
+      - success_count
+      - error_count
+      title: UserImportResult
+    UserImportRowError:
+      properties:
+        row_index:
+          type: integer
+          title: Row Index
+        username:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Username
+        error:
+          type: string
+          title: Error
+      type: object
+      required:
+      - row_index
+      - error
+      title: UserImportRowError
+    UserInfoUpdate:
+      properties:
+        rank:
+          type: string
+          maxLength: 100
+          minLength: 1
+          title: Rank
+        position:
+          type: string
+          maxLength: 150
+          minLength: 1
+          title: Position
+      type: object
+      required:
+      - rank
+      - position
+      title: UserInfoUpdate
+      description: Bo sung / sua cap bac + chuc danh cho mot tai khoan (chi huy/admin).
     UserOut:
       properties:
         id:
@@ -5836,8 +10068,21 @@ components:
           type: string
           title: Full Name
         role:
-          type: string
+          type: integer
           title: Role
+        role_label:
+          type: string
+          title: Role Label
+        rank:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Rank
+        position:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Position
         is_active:
           type: boolean
           title: Is Active
@@ -5872,6 +10117,7 @@ components:
       - username
       - full_name
       - role
+      - role_label
       - is_active
       - clearance
       - unit_id
@@ -5880,6 +10126,79 @@ components:
       - is_system
       - must_change_password
       title: UserOut
+    UserPage:
+      properties:
+        items:
+          items:
+            $ref: '#/components/schemas/UserOut'
+          type: array
+          title: Items
+        total:
+          type: integer
+          title: Total
+        skip:
+          type: integer
+          title: Skip
+        limit:
+          type: integer
+          title: Limit
+      type: object
+      required:
+      - items
+      - total
+      - skip
+      - limit
+      title: UserPage
+      description: Ket qua phan trang cho GET /users/.
+    UserPermissionsOut:
+      properties:
+        user_id:
+          type: integer
+          title: User Id
+        username:
+          type: string
+          title: Username
+        full_name:
+          type: string
+          title: Full Name
+        role:
+          type: integer
+          title: Role
+        role_label:
+          type: string
+          title: Role Label
+        branch:
+          type: string
+          title: Branch
+        branch_label:
+          type: string
+          title: Branch Label
+        unit_id:
+          anyOf:
+          - type: integer
+          - type: 'null'
+          title: Unit Id
+        unit_name:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Unit Name
+        permissions:
+          additionalProperties:
+            type: boolean
+          type: object
+          title: Permissions
+      type: object
+      required:
+      - user_id
+      - username
+      - full_name
+      - role
+      - role_label
+      - branch
+      - branch_label
+      - permissions
+      title: UserPermissionsOut
     ValidationError:
       properties:
         loc:

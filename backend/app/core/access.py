@@ -2,11 +2,13 @@
 
 3 muc:
   - cong_khai : ai cung xem duoc (ke ca khach chua dang nhap)
-  - noi_bo    : moi tai khoan da kich hoat (soldier tro len)
+  - noi_bo    : moi tai khoan da kich hoat
   - mat       : chi commander HOAC user duoc cap quyen (User.clearance = True)
 """
 
 from typing import Optional
+
+from app.core.roles import is_command
 
 CLASSIFICATIONS = ("cong_khai", "noi_bo", "mat")
 DEFAULT_CLASSIFICATION = "noi_bo"
@@ -15,7 +17,7 @@ DEFAULT_CLASSIFICATION = "noi_bo"
 def has_secret_clearance(user) -> bool:
     if user is None:
         return False
-    return user.role == "commander" or bool(getattr(user, "clearance", False))
+    return is_command(user) or bool(getattr(user, "clearance", False))
 
 
 def allowed_classifications(user) -> list[str]:
@@ -40,8 +42,8 @@ def can_view_classification(classification: str, user: Optional[object]) -> bool
 # --- Kenh han che: cap quyen bang co tren tung User (khong theo don vi) ---
 
 def is_command_level(user) -> bool:
-    """Ban chi huy Lu doan / quan tri: role `commander` hoac `admin`."""
-    return user is not None and user.role in ("commander", "admin")
+    """Bac chi huy day du (vai tro 0..3) - tuong duong `commander`/`admin` cu."""
+    return is_command(user)
 
 
 def can_access_directive_channel(user) -> bool:
@@ -56,6 +58,18 @@ def can_access_command_channel(user) -> bool:
     (dung `has_secret_clearance`). Khong dung co `command_channel_access` nua.
     """
     return has_secret_clearance(user) or is_command_level(user)
+
+
+def command_thread_scope(user) -> str | None:
+    """Pham vi luong `Kenh chuyen BCH & Cap uy` (`command_threads`) ma `user` duoc xem.
+
+    - `"all"`    : BCH/admin - thay moi luong bat ke co duoc gan lam thanh vien hay khong.
+    - `"member"` : chi thay luong da duoc gan lam thanh vien (bang `command_thread_members`).
+    - `None`     : khong co quyen vao kenh (thieu `has_secret_clearance`).
+    """
+    if not can_access_command_channel(user):
+        return None
+    return "all" if is_command_level(user) else "member"
 
 
 def directive_thread_scope(user):

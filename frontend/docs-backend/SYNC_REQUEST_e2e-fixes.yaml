@@ -1,0 +1,125 @@
+# ============================================================================
+# BÀN GIAO CHO FRONTEND  —  Đợt kiểm thử E2E + sửa lỗi giao diện + làm lại tài liệu
+# ----------------------------------------------------------------------------
+# File này KHÔNG kèm thay đổi hợp đồng API. openapi.yaml giữ nguyên v7.0.0
+# (76 path / 116 operation) như sau đợt gỡ "Giao ban trực tuyến"
+# (xem SYNC_REQUEST_remove-giao-ban.yaml).
+#
+# Nội dung: các sửa đổi đã áp THẲNG vào frontend/src trong đợt kiểm thử —
+# FE pull về, build lại là dùng được; không cần backend làm gì thêm.
+# ============================================================================
+
+meta:
+  tieu_de: "Sửa 5 lỗi giao diện phát hiện khi kiểm thử E2E + làm lại HDSD/báo cáo"
+  nguoi_gui: "Backend (phiên kiểm thử)"
+  ngay: "2026-09-03"
+  api_version: "7.0.0  (KHÔNG đổi)"
+  trang_thai: "Đã sửa trực tiếp trong frontend/src + đã build frontend/dist. FE chỉ cần pull + build lại."
+
+# ---------------------------------------------------------------------------
+# 1. HỢP ĐỒNG API
+# ---------------------------------------------------------------------------
+hop_dong_api:
+  thay_doi: "Không có."
+  openapi_yaml: "v7.0.0 — bản trong docs-backend/ đã khớp bản gốc dự án."
+  changelog: "Không thêm mục mới (mục cuối vẫn là v7.0.0 — gỡ Giao ban trực tuyến)."
+  types_can_sua: "Không. Mọi interface trong frontend/src/types/ giữ nguyên."
+  api_layer_can_sua: "Không. frontend/src/api/ giữ nguyên."
+
+# ---------------------------------------------------------------------------
+# 2. FILE FRONTEND ĐÃ SỬA TRONG ĐỢT NÀY  (chỉ FE, sửa lỗi hiển thị)
+# ---------------------------------------------------------------------------
+file_frontend_da_sua:
+  - path: "frontend/src/components/PortalLayout.tsx"
+    loai: "Sửa lỗi build"
+    mo_ta: >
+      Bỏ 2 biến khai báo thừa `username`, `hasClearance` khỏi destructure
+      `useAuth()` (phần dùng chúng đã bị comment ở bản đang phát triển) —
+      trước đó `tsc -b` (bước `pnpm build`) fail, không tạo được bản phát hành.
+    luu_y_FE: >
+      Nếu định KHÔI PHỤC hiển thị tên tài khoản / chip "Quyền xem MẬT" trên
+      header thì thêm lại 2 biến này vào destructure cùng lúc bỏ comment JSX
+      tương ứng (đề xuất số 5 mục 5 bên dưới).
+
+  - path: "frontend/src/App.css"
+    loai: "Sửa lỗi CSS (4 chỗ)"
+    mo_ta: |
+      a) `.tab-bar .tab` (+ `.tab.active`) và `.thread-item`: THÊM `color`
+         tường minh. Rule chung `button { color:#fff }` (dòng ~859) tràn vào
+         các <button> dùng làm tab / dòng danh sách trên nền sáng -> chữ trắng
+         trên nền trắng: MẤT tiêu đề tab và tiêu đề luồng ở `/kenh-chi-huy`
+         và `/chi-dao-bao-cao`. Nay `.tab` = var(--text-muted), `.tab.active`
+         + `.thread-item` = var(--text-main).
+      b) `.news-thumb` (thẻ tin PostsPage): đổi thành `.news-article .news-thumb`
+         / `.news-article .news-thumb img` / `.news-article .news-thumb-ph`.
+         Trước đó trùng tên với `.news-thumb` của dải "tin liên quan" trang
+         công khai (khai báo lại `width: calc(...)/4`) -> thumbnail PostsPage
+         bị bóp còn ~25% bề rộng.
+      c) `.news-article.is-open .news-thumb`: thêm `max-height:340px` và
+         `...:has(.news-thumb-ph){display:none}` — bài mở đọc toàn văn mà
+         không có ảnh bìa trước đây dựng khung rỗng cao ~600px.
+      d) `.news-article.is-open.news-lead`: ép `flex-direction:column` — bài
+         tiêu điểm khi mở đọc chuyển từ 2 cột (ảnh trái / chữ phải) về 1 cột,
+         hết cột trống thừa bên cạnh.
+      e) Thêm `.news-featured--noimg` (dùng bởi NewsBlock, xem dưới).
+
+  - path: "frontend/src/components/NewsBlock.tsx"
+    loai: "Sửa bố cục khi thiếu ảnh"
+    mo_ta: |
+      - Thêm biến `noImages` = mọi item đều không có `imageUrl` -> render
+        DANH SÁCH GỌN (`ul.widget-list.news-textlist`) thay vì thẻ ảnh lớn.
+        Khắc phục khối "Giáo dục chính trị" ở Bảng tin dựng khung ảnh rỗng
+        cao ~560px (education material không bao giờ có ảnh bìa).
+      - `FeaturedCard`: khi `!item.imageUrl` -> KHÔNG render `.news-featured__media`
+        nữa; thêm class `news-featured--noimg`; hiện category dạng `.news-kicker`
+        trên tiêu đề.
+
+files_frontend_KHONG_dung:
+  - "frontend/src/App.tsx — chỉ có thay đổi từ đợt gỡ Giao ban (route /giao-ban)."
+  - "Không đụng src/pages/*, src/api/*, src/types/*, src/context/* trong đợt này."
+
+# ---------------------------------------------------------------------------
+# 3. TÀI SẢN MỚI TỪ BACKEND  (không phải FE code, để FE biết)
+# ---------------------------------------------------------------------------
+tai_san_moi:
+  - "backend/scripts/e2e_full_walkthrough.py — kiểm thử đầu-cuối trên trình duyệt thật + chụp ảnh. Chạy từ backend/, cần backend chạy ở :8000 phục vụ frontend/dist. PYTHONUTF8=1."
+  - "docs/E2E_REPORT.md — bảng Đạt/Không đạt (lần gần nhất 41/41) + danh sách lỗi đã sửa + đề xuất."
+  - "docs/screenshots_khai_thac/*.png — ~70 ảnh chụp thật (bộ tên mới: 00_*, 01_*, 10_*..). Bộ tên cũ vẫn còn trong thư mục, có thể dọn."
+  - "docs/HUONG_DAN_SU_DUNG.docx — HDSD làm lại, nhúng ảnh thật (không còn mockup)."
+  - "BAO_CAO_THUYET_MINH_SANG_KIEN.md/.docx — cập nhật v7.0.0 + mục 2.7 (bộ E2E) + mục 3.6 (kết quả + đề xuất)."
+
+# ---------------------------------------------------------------------------
+# 4. VIỆC FE NÊN LÀM SAU KHI PULL
+# ---------------------------------------------------------------------------
+fe_checklist:
+  - "pnpm build  ->  phải xanh (trước đó fail ở PortalLayout.tsx)."
+  - "Mở /kenh-chi-huy và /chi-dao-bao-cao: thấy rõ tiêu đề tab + tiêu đề luồng."
+  - "Mở /bang-tin: khối 'Giáo dục chính trị' là danh sách gọn; không còn khung ảnh rỗng lớn ở bài tiêu điểm không ảnh."
+  - "Mở /tin-tuc: thumbnail thẻ tin đúng kích thước; mở 1 bài (không ảnh) -> không có khung ảnh rỗng, bố cục 1 cột."
+  - "Không có regression ở UsersPage (dùng chung .pg-btn/.page-num — không bị đụng)."
+
+# ---------------------------------------------------------------------------
+# 5. ĐỀ XUẤT CẢI TIẾN CHO FE  (từ báo cáo, chưa làm — ưu tiên từ trên xuống)
+# ---------------------------------------------------------------------------
+de_xuat_fe:
+  - so: 1
+    van_de: "Nhãn vai trò role 4 = 'Cá nhân' (frontend/src/types/user.ts ROLE_LABELS[4]) lệch mô tả CLAUDE.md ('Cán bộ...')."
+    goi_y: "Phối hợp BE chốt thuật ngữ, sửa đồng bộ ROLE_LABELS (FE) + app/core/roles.py (BE)."
+  - so: 2
+    van_de: "/kenh-chi-huy: tài khoản KHÔNG có 'Quyền xem MẬT' vẫn thấy form 'Tạo luồng' + ô nhập (BE chặn 403 đúng)."
+    goi_y: "KenhChiHuyPage.tsx: khi bị 403 -> ẩn toàn bộ panel tạo luồng + danh sách, chỉ để lại thông báo không đủ quyền."
+  - so: 3
+    van_de: "/danh-ba (DanhBaPage.tsx): hiện 2 thông báo 'trống' chồng nhau (panel trái + phải)."
+    goi_y: "Chỉ hiện 1 empty-state khi chưa có bộ danh bạ."
+  - so: 4
+    van_de: "/lich-truc: nút 'Phê duyệt lịch trực' / 'Trả lại' hiện cả khi 'Chưa có bảng trực'; nút 'Tải file gốc Tham mưu' nhãn 'Sắp có'."
+    goi_y: "Disable/ẩn khi chưa có bảng trực; ẩn nút 'Sắp có' tới khi hoàn thiện."
+  - so: 5
+    van_de: "Header chỉ hiện nhãn vai trò, không hiện tên tài khoản (PortalLayout.tsx dòng ~139-140, phần username đang comment)."
+    goi_y: "Khôi phục hiển thị {username} + role (dễ nhận biết trên máy dùng chung); nhớ thêm lại biến vào destructure."
+  - so: 6
+    van_de: "Một số chunk JS > 500 KB (pptx-preview ~1.2MB, xlsx ~424KB, index ~575KB)."
+    goi_y: "Lazy-load các thư viện xem file (docx/xlsx/pptx) theo route/onDemand; cân nhắc dynamic import."
+  - so: 7
+    van_de: "Lẫn dấu '-' và '–' trong khẩu hiệu / tiêu đề (vd slogan header)."
+    goi_y: "Chuẩn hoá dùng '–' (en dash) nhất quán."

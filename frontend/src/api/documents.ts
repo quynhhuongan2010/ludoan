@@ -25,8 +25,8 @@ export const documentsApi = {
   get: (id: number) => apiClient.get<DocumentItem>(`/documents/${id}`),
   create: (data: DocumentFormData, file: File) =>
     apiClient.postForm<DocumentItem>('/documents', toForm(data, file)),
-  update: (id: number, data: DocumentFormData) =>
-    apiClient.putForm<DocumentItem>(`/documents/${id}`, toForm(data)),
+  update: (id: number, data: DocumentFormData, file?: File) =>
+    apiClient.putForm<DocumentItem>(`/documents/${id}`, toForm(data, file)),
   remove: (id: number) => apiClient.delete<void>(`/documents/${id}`),
 
   /** Tai file ve qua fetch co kem JWT (ton trong bac phan loai), tra Blob. */

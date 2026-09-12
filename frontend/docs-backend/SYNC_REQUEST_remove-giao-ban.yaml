@@ -1,0 +1,91 @@
+# ============================================================================
+# YÊU CẦU ĐỒNG BỘ HỢP ĐỒNG API  (Backend  ->  Frontend)
+# Module: "Giao ban trực tuyến / Cuộc họp BCH & Cấp uỷ"  —  GỠ BỎ HOÀN TOÀN
+# ----------------------------------------------------------------------------
+# Nguồn sự thật là openapi.yaml (đã xuất lại, phiên bản 7.0.0). File này liệt kê
+# những gì FE phải xoá/sửa để khớp hợp đồng mới. Xoá endpoint => MAJOR bump.
+# ============================================================================
+
+meta:
+  tieu_de: "Gỡ bỏ tính năng Giao ban trực tuyến khỏi hợp đồng API"
+  nguoi_gui: "Backend"
+  ngay: "2026-09-03"
+  api_version_truoc: "6.4.0"
+  api_version_sau: "7.0.0"
+  loai_thay_doi: "MAJOR — xoá toàn bộ router command-meetings"
+  so_luong: "83 path / 127 operation  ->  76 path / 116 operation  (giảm 7 path / 11 operation)"
+  trang_thai: "Backend đã xoá code + xuất lại openapi.yaml + ghi openapi.CHANGELOG.md. FE cần dọn theo."
+
+# ---------------------------------------------------------------------------
+# 1. ENDPOINT ĐÃ BỊ XOÁ  (mọi lời gọi tới các path này nay trả 404)
+# ---------------------------------------------------------------------------
+endpoint_da_xoa:
+  - "GET    /command-meetings"
+  - "POST   /command-meetings"
+  - "GET    /command-meetings/{meeting_id}"
+  - "PUT    /command-meetings/{meeting_id}"
+  - "DELETE /command-meetings/{meeting_id}"
+  - "POST   /command-meetings/{meeting_id}/minutes"
+  - "POST   /command-meetings/{meeting_id}/attachment"
+  - "GET    /command-meetings/{meeting_id}/download"
+  - "POST   /command-meetings/{meeting_id}/attendees"
+  - "DELETE /command-meetings/{meeting_id}/attendees/{user_id}"
+  - "PATCH  /command-meetings/{meeting_id}/attendees/{user_id}"
+
+# ---------------------------------------------------------------------------
+# 2. SCHEMA ĐÃ BỊ XOÁ trong openapi.yaml
+# ---------------------------------------------------------------------------
+schema_da_xoa:
+  - CommandMeetingCreate
+  - CommandMeetingUpdate
+  - CommandMeetingOut
+  - CommandMeetingDetailOut
+  - AttendeeOut
+  - AttendanceUpdate
+  - InviteRequest
+  - MinutesRequest
+  - Body_upload_attachment_command_meetings__meeting_id__attachment_post
+
+# ---------------------------------------------------------------------------
+# 3. FILE FRONTEND BACKEND ĐÃ XOÁ SẴN TRONG ĐỢT NÀY
+#    (đã commit cùng thay đổi backend — FE chỉ cần build lại)
+# ---------------------------------------------------------------------------
+file_frontend_da_xoa:
+  - "frontend/src/pages/GiaoBanTrucTuyenPage.tsx"
+  - "frontend/src/api/commandMeetings.ts"
+  - "frontend/src/types/commandMeeting.ts"
+  - "frontend/src/config/meetingPresets.ts"
+  - "frontend/src/components/DevicePreCheck.tsx  (chỉ trang Giao ban dùng)"
+
+file_frontend_da_sua:
+  - path: "frontend/src/App.tsx"
+    sua: "Bỏ import GiaoBanTrucTuyenPage + <Route path='/giao-ban'>."
+  - path: "frontend/src/config/unit.ts"
+    sua: >
+      Bỏ mục menu { label: 'Giao ban trực tuyến', to: '/giao-ban' } trong nhóm
+      'Kênh chỉ huy (MẬT)'. Nhóm này còn đúng 1 mục: 'Trao đổi – Công văn'.
+  - path: "frontend/src/App.css"
+    sua: >
+      Xoá block '/* ===== Giao ban truc tuyen — hinh thuc hop + kiem tra thiet bi
+      ===== */' (preset-radios, device-check, mic-meter...). Block phân trang
+      (pagination-bar, pg-btn, page-num) GIỮ LẠI — dùng chung với Pagination.tsx;
+      chỉ bỏ các selector tiền tố '.meeting-*'.
+  - path: "frontend/src/pages/HuongDanPage.tsx"
+    sua: "Bỏ 3 chỗ nhắc 'Giao ban trực tuyến' (bảng phân quyền + ghi chú mật + mục mất điện)."
+
+# ---------------------------------------------------------------------------
+# 4. VIỆC FE PHẢI KIỂM TRA SAU KHI PULL
+# ---------------------------------------------------------------------------
+fe_checklist:
+  - "npx tsc --noEmit  -> không còn tham chiếu commandMeeting/GiaoBanTrucTuyen."
+  - "grep -rn '/giao-ban\\|commandMeeting\\|DevicePreCheck' src/  -> rỗng."
+  - "Chạy app, đăng nhập tài khoản có quyền MẬT -> menu 'Kênh chỉ huy (MẬT)' chỉ còn 'Trao đổi – Công văn', không có link gãy."
+  - "Đối chiếu openapi.yaml v7.0.0 (bản trong docs-backend/) — không còn tag 'command-meetings'."
+
+# ---------------------------------------------------------------------------
+# 5. GHI CHÚ CƠ SỞ DỮ LIỆU (không ảnh hưởng FE, để BE biết)
+# ---------------------------------------------------------------------------
+ghi_chu_db:
+  - "Model command_meeting đã gỡ khỏi app/main.py; create_all không tạo lại."
+  - "2 bảng cũ command_meetings + command_meeting_attendees (nếu có) là bảng chết."
+  - "Dọn tay: backend/scripts/drop_command_meetings.py (idempotent)."

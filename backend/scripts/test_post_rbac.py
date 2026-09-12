@@ -32,11 +32,13 @@ def mk_user(uname, role, clearance=False):
              role=role, is_active=True, clearance=clearance)
     db.add(u); db.commit(); db.refresh(u); return u
 
-commander = mk_user("cmd", "commander")
-officer   = mk_user("off", "officer")
-officer2  = mk_user("off2", "officer")
-soldier   = mk_user("sol", "soldier")
-cleared   = mk_user("clr", "soldier", clearance=True)
+# role: so nguyen 0..5 (xem app/core/roles.py). 1 = Lu truong (bac chi huy),
+# 4 = Ca nhan (dang duoc noi dung), 5 = Nguoi dung (chi xem).
+commander = mk_user("cmd", 1)
+officer   = mk_user("off", 4)
+officer2  = mk_user("off2", 4)
+soldier   = mk_user("sol", 5)
+cleared   = mk_user("clr", 5, clearance=True)
 
 def mk_post(title, author, status, classification):
     p = Post(title=title, category="huan_luyen", content="...",
@@ -107,6 +109,32 @@ except HTTPException as e:
 p = post_service.create_post(db, PostCreate(title="mat-by-cleared", category="huan_luyen",
                                             content="c", classification="mat"), cleared)
 check("cleared-create-mat-status", p.status, "cho_duyet")
+
+# --- ban nhap (nhap) + gui duyet (submit) + slug ---
+d = post_service.create_post(db, PostCreate(title="Bản nháp đầu tiên", category="huan_luyen",
+                                            content="c"), officer, as_draft=True)
+check("draft-create-status", d.status, "nhap")
+check("draft-slug-tu-sinh", d.slug, "ban-nhap-dau-tien")
+# slug trung -> them hau to
+d2 = post_service.create_post(db, PostCreate(title="Bản nháp đầu tiên", category="huan_luyen",
+                                             content="c"), officer, as_draft=True)
+check("draft-slug-trung-them-hau-to", d2.slug, "ban-nhap-dau-tien-2")
+# officer khac khong xem duoc ban nhap
+check("draft-an-voi-nguoi-khac",
+      "Bản nháp đầu tiên" in titles(post_service.list_posts(db, officer2)), False)
+# gui duyet: nhap -> cho_duyet (officer)
+s = post_service.submit_post(db, d.id, officer)
+check("submit-officer -> cho_duyet", s.status, "cho_duyet")
+# gui duyet lai khi da o cho_duyet -> 409
+try:
+    post_service.submit_post(db, d.id, officer)
+    check("submit-lai-409", "no raise", "HTTPException 409")
+except HTTPException as e:
+    check("submit-lai-409", e.status_code, 409)
+# commander submit ban nhap cua minh -> da_duyet luon
+dc = post_service.create_post(db, PostCreate(title="Nháp của chỉ huy", category="huan_luyen",
+                                             content="c"), commander, as_draft=True)
+check("commander-submit -> da_duyet", post_service.submit_post(db, dc.id, commander).status, "da_duyet")
 
 print()
 print("KET QUA:", "TAT CA PASS" if not fails else f"{len(fails)} FAIL: {fails}")

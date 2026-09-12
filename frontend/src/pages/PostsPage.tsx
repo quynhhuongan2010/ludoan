@@ -1,26 +1,26 @@
-import { useEffect, useState, type FormEvent } from 'react'
+import { useEffect, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { ApiError } from '../api/client'
 import { postsApi } from '../api/posts'
 import { ClassificationBadge } from '../components/ClassificationBadge'
+import { EmptyState } from '../components/EmptyState'
+import { Icon } from '../components/Icon'
+import { Pagination } from '../components/Pagination'
+import { RichContent } from '../components/RichContent'
 import { useAuth } from '../context/AuthContext'
+import { useConfirm } from '../context/ConfirmContext'
+import { usePagination } from '../hooks/usePagination'
 import { CLASSIFICATION_LABELS, CLASSIFICATION_ORDER, type Classification } from '../types/common'
+import { excerptFromHtml } from '../utils/richContent'
 import {
   POST_CATEGORY_LABELS,
   POST_STATUS_LABELS,
   type Post,
   type PostCategory,
-  type PostCreate,
 } from '../types/post'
 
 const categories = Object.keys(POST_CATEGORY_LABELS) as PostCategory[]
-const emptyForm: PostCreate = {
-  title: '',
-  category: 'huan_luyen',
-  content: '',
-  cover_image_url: '',
-  classification: 'noi_bo',
-  is_featured: false,
-}
+const PAGE_SIZE_OPTIONS = [6, 9, 12, 24]
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL ?? 'http://127.0.0.1:8000'
 
@@ -29,21 +29,30 @@ function imgSrc(url: string): string {
 }
 
 export function PostsPage() {
+  const navigate = useNavigate()
   const { canEditContent, isCommander, hasClearance, userId } = useAuth()
+  const confirm = useConfirm()
 
   const [posts, setPosts] = useState<Post[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [filterCategory, setFilterCategory] = useState<PostCategory | ''>('')
   const [filterClass, setFilterClass] = useState<Classification | ''>('')
-
-  const [form, setForm] = useState<PostCreate>(emptyForm)
-  const [editingId, setEditingId] = useState<number | null>(null)
-  const [submitting, setSubmitting] = useState(false)
-  const [showForm, setShowForm] = useState(false)
+  const [openId, setOpenId] = useState<number | null>(null)
   const [reviewNote, setReviewNote] = useState('')
 
-  // Bac phan loai user duoc phep chon khi dang bai
+  const {
+    page,
+    pageSize,
+    pageCount,
+    total,
+    pageItems,
+    setPageIndex,
+    setPageSize,
+    showPagination,
+  } = usePagination(posts, 9, `${filterCategory}|${filterClass}`)
+
+  // Bac phan loai user duoc phep loc khi xem danh sach
   const allowedClasses: Classification[] = CLASSIFICATION_ORDER.filter(
     (c) => c !== 'mat' || isCommander || hasClearance,
   )
@@ -66,53 +75,26 @@ export function PostsPage() {
     return isCommander || post.author_id === userId
   }
 
-  function startCreate() {
-    setEditingId(null)
-    setForm(emptyForm)
-    setShowForm(true)
-  }
-
-  function startEdit(post: Post) {
-    setEditingId(post.id)
-    setForm({
-      title: post.title,
-      category: post.category,
-      content: post.content,
-      cover_image_url: post.cover_image_url ?? '',
-      classification: post.classification,
-      is_featured: post.is_featured,
-    })
-    setShowForm(true)
-  }
-
-  function cancelForm() {
-    setShowForm(false)
-    setEditingId(null)
-    setForm(emptyForm)
-  }
-
-  async function handleSubmit(event: FormEvent) {
-    event.preventDefault()
+  async function handleSubmitForReview(id: number) {
     setError(null)
-    setSubmitting(true)
     try {
-      const payload: PostCreate = { ...form, cover_image_url: form.cover_image_url || null }
-      if (editingId !== null) {
-        const updated = await postsApi.update(editingId, payload)
-        setPosts((prev) => prev.map((p) => (p.id === editingId ? updated : p)))
-      } else {
-        const created = await postsApi.create(payload)
-        setPosts((prev) => [created, ...prev])
-      }
-      cancelForm()
+      const updated = await postsApi.submit(id)
+      setPosts((prev) => prev.map((p) => (p.id === id ? updated : p)))
     } catch (err) {
-      setError(err instanceof ApiError ? err.message : 'Không thể lưu bài viết')
-    } finally {
-      setSubmitting(false)
+      setError(err instanceof ApiError ? err.message : 'Không thể gửi duyệt')
     }
   }
 
   async function handleDelete(id: number) {
+    const post = posts.find((p) => p.id === id)
+    const ok = await confirm({
+      message: (
+        <>
+          Xoá bài viết <strong>{post?.title ?? `#${id}`}</strong>? Thao tác này không thể hoàn tác.
+        </>
+      ),
+    })
+    if (!ok) return
     setError(null)
     try {
       await postsApi.remove(id)
@@ -173,89 +155,12 @@ export function PostsPage() {
           ))}
         </select>
 
-        {canEditContent && !showForm ? (
-          <button type="button" onClick={startCreate}>
-            Đăng bài mới
+        {canEditContent ? (
+          <button type="button" className="btn-create" onClick={() => navigate('/tin-tuc/moi')}>
+            <Icon name="plus" size={15} /> Đăng bài mới
           </button>
         ) : null}
       </div>
-
-      {showForm ? (
-        <form onSubmit={handleSubmit} className="entity-form">
-          <label>
-            Tiêu đề
-            <input
-              type="text"
-              maxLength={255}
-              value={form.title}
-              onChange={(e) => setForm((f) => ({ ...f, title: e.target.value }))}
-              required
-            />
-          </label>
-          <label>
-            Danh mục
-            <select
-              value={form.category}
-              onChange={(e) => setForm((f) => ({ ...f, category: e.target.value as PostCategory }))}
-            >
-              {categories.map((c) => (
-                <option key={c} value={c}>
-                  {POST_CATEGORY_LABELS[c]}
-                </option>
-              ))}
-            </select>
-          </label>
-          <label>
-            Bậc truy cập
-            <select
-              value={form.classification}
-              onChange={(e) =>
-                setForm((f) => ({ ...f, classification: e.target.value as Classification }))
-              }
-            >
-              {allowedClasses.map((c) => (
-                <option key={c} value={c}>
-                  {CLASSIFICATION_LABELS[c]}
-                </option>
-              ))}
-            </select>
-          </label>
-          <label className="checkbox-row">
-            <input
-              type="checkbox"
-              checked={form.is_featured}
-              onChange={(e) => setForm((f) => ({ ...f, is_featured: e.target.checked }))}
-            />
-            Nổi bật (hiển thị ở trang công khai — chỉ có tác dụng với bài Công khai đã duyệt)
-          </label>
-          <label>
-            Ảnh bìa (URL)
-            <input
-              type="text"
-              value={form.cover_image_url ?? ''}
-              onChange={(e) => setForm((f) => ({ ...f, cover_image_url: e.target.value }))}
-              placeholder="https://... hoặc để trống rồi tải ảnh sau khi lưu"
-            />
-          </label>
-          <label>
-            Nội dung
-            <textarea
-              rows={6}
-              value={form.content}
-              onChange={(e) => setForm((f) => ({ ...f, content: e.target.value }))}
-              required
-            />
-          </label>
-          <div className="form-actions">
-            <button type="submit" disabled={submitting}>
-              {editingId !== null ? 'Cập nhật' : 'Đăng bài'}
-            </button>
-            <button type="button" onClick={cancelForm}>
-              Huỷ
-            </button>
-          </div>
-        </form>
-      ) : null}
 
       {error ? (
         <p role="alert" className="form-error">
@@ -266,74 +171,150 @@ export function PostsPage() {
       {loading ? (
         <p>Đang tải...</p>
       ) : posts.length === 0 ? (
-        <p>Chưa có tin nào.</p>
+        <EmptyState icon="newspaper" message="Chưa có tin nào." />
       ) : (
-        <div className="post-list">
-          {posts.map((post) => (
-            <article key={post.id} className="post-card">
-              {post.cover_image_url ? <img src={imgSrc(post.cover_image_url)} alt="" /> : null}
-              <div className="post-card-body">
-                <div className="badge-row">
-                  <span className="post-category">{POST_CATEGORY_LABELS[post.category]}</span>
-                  <ClassificationBadge value={post.classification} />
-                  <span className={`status-badge status-${post.status}`}>
-                    {POST_STATUS_LABELS[post.status]}
-                  </span>
-                  {post.is_featured ? <span className="tag-inline">★ Nổi bật</span> : null}
-                </div>
-                <h2>{post.title}</h2>
-                <p className="post-meta">
-                  Đăng bởi {post.author_full_name} · {new Date(post.created_at).toLocaleDateString('vi-VN')}
-                </p>
-                {post.status === 'tra_lai' && post.review_note ? (
-                  <p className="form-error">Chỉ huy trả lại: {post.review_note}</p>
-                ) : null}
-                <p style={{ whiteSpace: 'pre-wrap' }}>{post.content}</p>
-
-                {canManage(post) ? (
-                  <div className="row-actions">
-                    <button type="button" onClick={() => startEdit(post)}>
-                      Sửa
-                    </button>
-                    <label className="btn-file">
-                      Đổi ảnh bìa
-                      <input
-                        type="file"
-                        accept="image/*"
-                        hidden
-                        onChange={(e) => {
-                          const f = e.target.files?.[0]
-                          if (f) handleThumbnail(post.id, f)
-                          e.target.value = ''
-                        }}
-                      />
-                    </label>
-                    <button type="button" onClick={() => handleDelete(post.id)}>
-                      Xoá
-                    </button>
+        <>
+          <div className="news-board">
+            {pageItems.map((post, idx) => {
+              const open = openId === post.id
+              const isLead = idx === 0 && page === 0 && !filterCategory
+              const excerpt = post.summary?.trim() || excerptFromHtml(post.content, isLead ? 320 : 150)
+              return (
+                <article
+                  key={post.id}
+                  className={`news-article${isLead ? ' news-lead' : ''}${open ? ' is-open' : ''}`}
+                >
+                  <div className="news-thumb">
+                    {post.cover_image_url ? (
+                      <img src={imgSrc(post.cover_image_url)} alt="" />
+                    ) : (
+                      <div className="news-thumb-ph" aria-hidden="true">
+                        <Icon name="newspaper" size={isLead ? 40 : 24} />
+                      </div>
+                    )}
                   </div>
-                ) : null}
+                  <div className="news-body">
+                    <div className="news-kicker-row">
+                      <span className="news-kicker">{POST_CATEGORY_LABELS[post.category]}</span>
+                      <ClassificationBadge value={post.classification} />
+                      <span className={`status-badge status-${post.status}`}>
+                        {POST_STATUS_LABELS[post.status]}
+                      </span>
+                      {post.is_featured ? <span className="tag-inline">★ Nổi bật</span> : null}
+                    </div>
+                    <h2 className="news-headline">
+                      <button type="button" onClick={() => setOpenId(open ? null : post.id)}>
+                        {post.title}
+                      </button>
+                    </h2>
+                    <p className="news-meta">
+                      Đăng bởi {post.author_full_name} ·{' '}
+                      {new Date(post.created_at).toLocaleDateString('vi-VN')}
+                    </p>
+                    {post.status === 'tra_lai' && post.review_note ? (
+                      <p className="form-error">Chỉ huy trả lại: {post.review_note}</p>
+                    ) : null}
 
-                {isCommander && post.status !== 'da_duyet' ? (
-                  <div className="review-bar">
-                    <input
-                      type="text"
-                      placeholder="Lý do trả lại (nếu có)"
-                      value={reviewNote}
-                      onChange={(e) => setReviewNote(e.target.value)}
-                    />
-                    <button type="button" onClick={() => handleReview(post.id, 'da_duyet')}>
-                      Duyệt đăng
-                    </button>
-                    <button type="button" onClick={() => handleReview(post.id, 'tra_lai')}>
-                      Trả lại
-                    </button>
+                    {open ? (
+                      <>
+                        <RichContent html={post.content} />
+                        {post.tags.length ? (
+                          <p className="cms-preview-tags">
+                            {post.tags.map((t) => (
+                              <span key={t} className="tag-inline">
+                                #{t}
+                              </span>
+                            ))}
+                          </p>
+                        ) : null}
+                        <button type="button" className="news-more" onClick={() => setOpenId(null)}>
+                          Thu gọn ▲
+                        </button>
+                      </>
+                    ) : (
+                      <>
+                        <p className="news-excerpt">{excerpt}</p>
+                        <button
+                          type="button"
+                          className="news-more"
+                          onClick={() => setOpenId(post.id)}
+                        >
+                          Đọc tiếp →
+                        </button>
+                      </>
+                    )}
+
+                    {canManage(post) ? (
+                      <div className="row-actions news-actions">
+                        <button
+                          type="button"
+                          className="btn-edit"
+                          onClick={() => navigate(`/tin-tuc/${post.id}/sua`)}
+                        >
+                          <Icon name="edit" /> Sửa
+                        </button>
+                        {post.status === 'nhap' || post.status === 'tra_lai' ? (
+                          <button
+                            type="button"
+                            className="btn-approve"
+                            onClick={() => handleSubmitForReview(post.id)}
+                          >
+                            <Icon name="send" /> Gửi duyệt
+                          </button>
+                        ) : null}
+                        <label className="btn-file">
+                          <Icon name="upload" size={14} /> Đổi ảnh bìa
+                          <input
+                            type="file"
+                            accept="image/*"
+                            hidden
+                            onChange={(e) => {
+                              const f = e.target.files?.[0]
+                              if (f) handleThumbnail(post.id, f)
+                              e.target.value = ''
+                            }}
+                          />
+                        </label>
+                        <button type="button" className="btn-delete" onClick={() => handleDelete(post.id)}>
+                          <Icon name="trash" /> Xoá
+                        </button>
+                      </div>
+                    ) : null}
+
+                    {isCommander && post.status !== 'da_duyet' && post.status !== 'nhap' ? (
+                      <div className="review-bar">
+                        <input
+                          type="text"
+                          placeholder="Lý do trả lại (nếu có)"
+                          value={reviewNote}
+                          onChange={(e) => setReviewNote(e.target.value)}
+                        />
+                        <button type="button" className="btn-approve" onClick={() => handleReview(post.id, 'da_duyet')}>
+                          <Icon name="check" /> Duyệt đăng
+                        </button>
+                        <button type="button" className="btn-reject" onClick={() => handleReview(post.id, 'tra_lai')}>
+                          <Icon name="undo" /> Trả lại
+                        </button>
+                      </div>
+                    ) : null}
                   </div>
-                ) : null}
-              </div>
-            </article>
-          ))}
-        </div>
+                </article>
+              )
+            })}
+          </div>
+          {showPagination ? (
+            <Pagination
+              page={page}
+              pageCount={pageCount}
+              total={total}
+              pageSize={pageSize}
+              onPage={setPageIndex}
+              onPageSize={setPageSize}
+              pageSizeOptions={PAGE_SIZE_OPTIONS}
+              itemLabel="bài viết"
+            />
+          ) : null}
+        </>
       )}
     </section>
   )

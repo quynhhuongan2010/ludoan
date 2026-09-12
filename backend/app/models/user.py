@@ -2,6 +2,7 @@ from sqlalchemy import Boolean, Column, ForeignKey, Integer, String
 from sqlalchemy.orm import relationship
 
 from app.core.database import Base
+from app.core.roles import ROLE_NGUOI_DUNG, role_label
 from app.models.unit import Unit
 
 
@@ -12,7 +13,14 @@ class User(Base):
     username = Column(String(50), unique=True, nullable=False, index=True)
     hashed_password = Column(String(255), nullable=False)
     full_name = Column(String(100), nullable=False)
-    role = Column(String(50), nullable=False, default="soldier")
+    # Vai tro: so nguyen 0..5 (xem app/core/roles.py). Mac dinh 5 = "Nguoi dung".
+    role = Column(Integer, nullable=False, default=ROLE_NGUOI_DUNG, server_default=str(ROLE_NGUOI_DUNG))
+    # Cap bac quan ham (vd "Thieu ta", "Thuong uy QNCN") - o nhap tu do.
+    # Cot DB dat ten "military_rank" vi "rank" la tu khoa dat trong MySQL 8
+    # (ham window RANK()); thuoc tinh Python/schema van goi la `rank`.
+    rank = Column("military_rank", String(100), nullable=True)
+    # Chuc danh cong tac (vd "Tro ly Tham muu", "Dai doi truong").
+    position = Column(String(150), nullable=True)
     is_active = Column(Boolean, nullable=False, default=True)
     # Duoc commander cap quyen xem noi dung phan loai "mat"
     clearance = Column(Boolean, nullable=False, server_default="0")
@@ -31,3 +39,8 @@ class User(Base):
     @property
     def unit_name(self) -> str | None:
         return self.unit.name if self.unit is not None else None
+
+    @property
+    def role_label(self) -> str:
+        """Ten hien thi cua vai tro (vd "Lữ trưởng - Chính uỷ"). Phuc vu FE."""
+        return role_label(self.role)

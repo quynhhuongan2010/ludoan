@@ -5,6 +5,7 @@ from sqlalchemy.orm import Session
 
 from app.api.deps import get_current_user, require_roles
 from app.core.database import get_db
+from app.core.roles import COMMAND_ROLES
 from app.models.user import User
 from app.schemas.directive import DirectiveAckReport, DirectiveCreate, DirectiveOut
 from app.services import directive_service
@@ -20,7 +21,7 @@ router = APIRouter(
     "",
     response_model=DirectiveOut,
     status_code=status.HTTP_201_CREATED,
-    dependencies=[Depends(require_roles("commander"))],
+    dependencies=[Depends(require_roles(*COMMAND_ROLES))],
 )
 def create_directive(
     directive_in: DirectiveCreate,
@@ -54,7 +55,7 @@ def get_directive(
     "/{directive_id}",
     response_model=DirectiveOut,
     status_code=status.HTTP_200_OK,
-    dependencies=[Depends(require_roles("commander"))],
+    dependencies=[Depends(require_roles(*COMMAND_ROLES))],
 )
 def update_directive(
     directive_id: int,
@@ -68,7 +69,7 @@ def update_directive(
 @router.delete(
     "/{directive_id}",
     status_code=status.HTTP_204_NO_CONTENT,
-    dependencies=[Depends(require_roles("commander"))],
+    dependencies=[Depends(require_roles(*COMMAND_ROLES))],
 )
 def delete_directive(
     directive_id: int,
@@ -96,7 +97,7 @@ def acknowledge_directive(
     "/{directive_id}/acknowledgements",
     response_model=DirectiveAckReport,
     status_code=status.HTTP_200_OK,
-    dependencies=[Depends(require_roles("commander"))],
+    dependencies=[Depends(require_roles(*COMMAND_ROLES))],
 )
 def get_acknowledgement_report(
     directive_id: int,

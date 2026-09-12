@@ -1,5 +1,6 @@
 from sqlalchemy.orm import Session
 
+from app.core.roles import COMMAND_ROLES
 from app.models.user import User
 
 
@@ -20,6 +21,14 @@ def list_all(
     return query.order_by(User.id.desc()).offset(skip).limit(limit).all()
 
 
+def count_filtered(db: Session, is_active: bool | None = None) -> int:
+    """Dem tong so user khop bo loc (dung cho phan trang GET /users/)."""
+    query = db.query(User)
+    if is_active is not None:
+        query = query.filter(User.is_active.is_(is_active))
+    return query.count()
+
+
 def list_active(db: Session) -> list[User]:
     return db.query(User).filter(User.is_active.is_(True)).all()
 
@@ -29,9 +38,9 @@ def count(db: Session) -> int:
 
 
 def count_active_commanders(db: Session, exclude_id: int | None = None) -> int:
-    """Dem tai khoan bac chi huy (commander HOAC admin) dang hoat dong."""
+    """Dem tai khoan bac chi huy day du (vai tro 0..3) dang hoat dong."""
     query = db.query(User).filter(
-        User.role.in_(("commander", "admin")), User.is_active.is_(True)
+        User.role.in_(COMMAND_ROLES), User.is_active.is_(True)
     )
     if exclude_id is not None:
         query = query.filter(User.id != exclude_id)
@@ -49,6 +58,8 @@ def create(
     hashed_password: str,
     full_name: str,
     role: str,
+    rank: str | None = None,
+    position: str | None = None,
     unit_id: int | None = None,
     directive_channel_access: bool = False,
     command_channel_access: bool = False,
@@ -59,6 +70,8 @@ def create(
         hashed_password=hashed_password,
         full_name=full_name,
         role=role,
+        rank=rank,
+        position=position,
         unit_id=unit_id,
         directive_channel_access=directive_channel_access,
         command_channel_access=command_channel_access,
@@ -75,3 +88,8 @@ def save(db: Session, user: User) -> User:
     db.commit()
     db.refresh(user)
     return user
+
+
+def delete(db: Session, user: User) -> None:
+    db.delete(user)
+    db.commit()

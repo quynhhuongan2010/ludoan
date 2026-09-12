@@ -1,24 +1,34 @@
-import { useEffect, useRef, useState, type FormEvent } from 'react'
+import { useEffect, useMemo, useRef, useState, type FormEvent } from 'react'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 import { ApiError } from '../api/client'
 import { commandThreadsApi, officialDispatchesApi } from '../api/commandDispatches'
+import { usersApi } from '../api/users'
+import { EmptyState } from '../components/EmptyState'
 import { Icon } from '../components/Icon'
+import { LeadershipWorkdeskSection } from '../components/LeadershipWorkdeskSection'
+import { Pagination } from '../components/Pagination'
 import { useAuth } from '../context/AuthContext'
+import { useConfirm } from '../context/ConfirmContext'
 import { useDraftAutosave } from '../hooks/useDraftAutosave'
 import {
   DISPATCH_DIRECTION_LABELS,
   DISPATCH_STATUS_LABELS,
+  DOC_TYPE_LABELS,
+  DOC_VISIBILITY_LABELS,
+  SECURITY_LEVEL_LABELS,
+  URGENCY_LABELS,
   type CommandThread,
   type CommandThreadDetail,
+  type CommandThreadDocument,
+  type CommandThreadMinutes,
   type DispatchDirection,
-  type DispatchFormValues,
   type DispatchStatus,
+  type DocType,
+  type DocVisibility,
   type OfficialDispatch,
   type OfficialDispatchDetail,
 } from '../types/commandDispatch'
-
-const API_BASE = import.meta.env.VITE_API_BASE_URL ?? 'http://127.0.0.1:8000'
-const fileUrl = (url: string | null) =>
-  url && url.startsWith('/static') ? `${API_BASE}${url}` : url ?? ''
+import type { User } from '../types/user'
 
 function when(iso: string | null): string {
   return iso
@@ -34,11 +44,36 @@ function fmtDate(iso: string | null): string {
   return iso ? new Date(iso).toLocaleDateString('vi-VN') : '—'
 }
 
+const PAGE_SIZE_OPTIONS = [5, 10, 20]
+
+const TAB_LABELS = {
+  'chi-dao': 'Bàn làm việc Chỉ đạo BCH',
+  'hop-ban': 'Họp bàn BCH & Cấp uỷ',
+  'cong-van': 'Sổ công văn mật',
+} as const
+
 export function KenhChiHuyPage() {
-  const [tab, setTab] = useState<'hop-ban' | 'cong-van'>('hop-ban')
+  const navigate = useNavigate()
+  const [params, setParams] = useSearchParams()
+  const rawTab = params.get('tab')
+  const tab: 'chi-dao' | 'hop-ban' | 'cong-van' =
+    rawTab === 'hop-ban' ? 'hop-ban' : rawTab === 'cong-van' ? 'cong-van' : 'chi-dao'
+  const setTab = (t: 'chi-dao' | 'hop-ban' | 'cong-van') =>
+    setParams(t === 'chi-dao' ? {} : { tab: t }, { replace: true })
 
   return (
     <section className="kenh-chi-huy">
+      <div className="crumb-bar">
+        <button type="button" className="btn-back" onClick={() => navigate(-1)}>
+          <Icon name="arrow-left" size={16} /> Quay lại
+        </button>
+        <nav className="breadcrumb" aria-label="breadcrumb">
+          <span>Kênh chỉ huy (MẬT)</span>
+          <Icon name="chevron-right" size={12} />
+          <span className="current">{TAB_LABELS[tab]}</span>
+        </nav>
+      </div>
+
       <h1>
         Kênh chuyên Ban Chỉ huy &amp; Cấp uỷ{' '}
         <span className="mat-chip">
@@ -51,6 +86,13 @@ export function KenhChiHuyPage() {
       </p>
 
       <div className="tab-bar">
+        <button
+          type="button"
+          className={tab === 'chi-dao' ? 'tab active' : 'tab'}
+          onClick={() => setTab('chi-dao')}
+        >
+          <Icon name="star" size={13} /> Bàn làm việc Chỉ đạo BCH
+        </button>
         <button
           type="button"
           className={tab === 'hop-ban' ? 'tab active' : 'tab'}
@@ -67,7 +109,13 @@ export function KenhChiHuyPage() {
         </button>
       </div>
 
-      {tab === 'hop-ban' ? <CommandThreadsTab /> : <DispatchLedgerTab />}
+      {tab === 'chi-dao' ? (
+        <LeadershipWorkdeskSection />
+      ) : tab === 'hop-ban' ? (
+        <CommandThreadsTab />
+      ) : (
+        <DispatchLedgerTab />
+      )}
     </section>
   )
 }
@@ -75,16 +123,44 @@ export function KenhChiHuyPage() {
 // ------------------------------------------------------------------ Tab 1: threads
 function CommandThreadsTab() {
   const { isCommander, userId } = useAuth()
+  const confirm = useConfirm()
   const [threads, setThreads] = useState<CommandThread[]>([])
+  const [users, setUsers] = useState<User[]>([])
   const [activeId, setActiveId] = useState<number | null>(null)
   const [detail, setDetail] = useState<CommandThreadDetail | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+
   const [newTitle, setNewTitle] = useState('')
+  const [newMemberIds, setNewMemberIds] = useState<number[]>([])
   const [body, setBody] = useState('')
   const [file, setFile] = useState<File | null>(null)
   const [busy, setBusy] = useState(false)
   const fileRef = useRef<HTMLInputElement | null>(null)
+
+  // Thanh phan (thanh vien) cua luong dang mo
+  const [addMemberId, setAddMemberId] = useState('')
+  const [memberBusy, setMemberBusy] = useState(false)
+
+  // Kho van ban cua luong dang mo
+  const [documents, setDocuments] = useState<CommandThreadDocument[]>([])
+  const [docTitle, setDocTitle] = useState('')
+  const [docVisibility, setDocVisibility] = useState<DocVisibility>('chung')
+  const [docFile, setDocFile] = useState<File | null>(null)
+  const [uploadingDoc, setUploadingDoc] = useState(false)
+  const [downloadingDocId, setDownloadingDocId] = useState<number | null>(null)
+  const docFileRef = useRef<HTMLInputElement | null>(null)
+
+  // Bien ban thao luan (tu ghep tu lich su tin nhan)
+  const [minutesList, setMinutesList] = useState<CommandThreadMinutes[]>([])
+  const [generatingMinutes, setGeneratingMinutes] = useState(false)
+  const [openMinutesId, setOpenMinutesId] = useState<number | null>(null)
+
+  // Tim kiem + loc + phan trang danh sach luong (client-side)
+  const [threadSearch, setThreadSearch] = useState('')
+  const [threadStatusFilter, setThreadStatusFilter] = useState<'' | 'open' | 'closed'>('')
+  const [pageSize, setPageSize] = useState(10)
+  const [currentPage, setCurrentPage] = useState(0)
 
   // Tu dong luu ban nhap tin nhan theo tung luong (tranh mat noi dung khi
   // tai lai trang hoac chuyen qua lai giua cac luong).
@@ -96,17 +172,46 @@ function CommandThreadsTab() {
 
   function reload() {
     setLoading(true)
-    commandThreadsApi
-      .list()
-      .then(setThreads)
+    Promise.all([
+      commandThreadsApi.list(),
+      isCommander ? usersApi.list({ active: true }).then((p) => p.items) : Promise.resolve<User[]>([]),
+    ])
+      .then(([ts, us]) => {
+        setThreads(ts)
+        setUsers(us)
+      })
       .catch((e: unknown) => setError(e instanceof ApiError ? e.message : 'Không tải được danh sách'))
       .finally(() => setLoading(false))
   }
-  useEffect(reload, [])
+  useEffect(reload, [isCommander])
+
+  const filteredThreads = useMemo(() => {
+    const kw = threadSearch.trim().toLowerCase()
+    return threads.filter((t) => {
+      if (threadStatusFilter === 'open' && t.is_closed) return false
+      if (threadStatusFilter === 'closed' && !t.is_closed) return false
+      if (!kw) return true
+      return t.title.toLowerCase().includes(kw)
+    })
+  }, [threads, threadSearch, threadStatusFilter])
+
+  const threadTotal = filteredThreads.length
+  const threadPageCount = Math.max(1, Math.ceil(threadTotal / pageSize))
+  const threadPage = Math.min(currentPage, threadPageCount - 1)
+  const threadPageItems = filteredThreads.slice(
+    threadPage * pageSize,
+    threadPage * pageSize + pageSize,
+  )
+
+  useEffect(() => {
+    setCurrentPage(0)
+  }, [threadSearch, threadStatusFilter, pageSize])
 
   useEffect(() => {
     if (activeId == null) {
       setDetail(null)
+      setDocuments([])
+      setMinutesList([])
       return
     }
     commandThreadsApi
@@ -116,15 +221,25 @@ function CommandThreadsTab() {
         setThreads((prev) => prev.map((t) => (t.id === d.id ? { ...t, unread_count: 0 } : t)))
       })
       .catch((e: unknown) => setError(e instanceof ApiError ? e.message : 'Không mở được luồng'))
+    commandThreadsApi
+      .listDocuments(activeId)
+      .then(setDocuments)
+      .catch(() => setDocuments([]))
+    commandThreadsApi
+      .listMinutes(activeId)
+      .then(setMinutesList)
+      .catch(() => setMinutesList([]))
+    setOpenMinutesId(null)
   }, [activeId])
 
   async function createThread(e: FormEvent) {
     e.preventDefault()
     setError(null)
     try {
-      const t = await commandThreadsApi.create(newTitle)
+      const t = await commandThreadsApi.create(newTitle, newMemberIds)
       setThreads((p) => [t, ...p])
       setNewTitle('')
+      setNewMemberIds([])
       setActiveId(t.id)
     } catch (err) {
       setError(err instanceof ApiError ? err.message : 'Không tạo được luồng')
@@ -163,6 +278,141 @@ function CommandThreadsTab() {
     }
   }
 
+  async function addMember() {
+    if (!detail || !addMemberId) return
+    setMemberBusy(true)
+    setError(null)
+    try {
+      const d = await commandThreadsApi.addMembers(detail.id, [Number(addMemberId)])
+      setDetail(d)
+      setAddMemberId('')
+      reload()
+    } catch (err) {
+      setError(err instanceof ApiError ? err.message : 'Không gán được thành phần')
+    } finally {
+      setMemberBusy(false)
+    }
+  }
+
+  async function removeMember(userIdToRemove: number) {
+    if (!detail) return
+    const member = detail.members.find((m) => m.user_id === userIdToRemove)
+    const ok = await confirm({
+      title: 'Xác nhận gỡ thành phần',
+      confirmText: 'Gỡ',
+      message: (
+        <>
+          Gỡ <strong>{member?.full_name ?? 'thành viên này'}</strong> khỏi thành phần trao đổi của
+          luồng này?
+        </>
+      ),
+    })
+    if (!ok) return
+    setMemberBusy(true)
+    setError(null)
+    try {
+      await commandThreadsApi.removeMember(detail.id, userIdToRemove)
+      setDetail((d) =>
+        d ? { ...d, members: d.members.filter((m) => m.user_id !== userIdToRemove) } : d,
+      )
+      reload()
+    } catch (err) {
+      setError(err instanceof ApiError ? err.message : 'Không gỡ được thành phần')
+    } finally {
+      setMemberBusy(false)
+    }
+  }
+
+  async function uploadDoc(e: FormEvent) {
+    e.preventDefault()
+    if (!activeId || !docFile) return
+    setUploadingDoc(true)
+    setError(null)
+    try {
+      const doc = await commandThreadsApi.uploadDocument(activeId, docTitle, docVisibility, docFile)
+      setDocuments((prev) => [doc, ...prev])
+      setDocTitle('')
+      setDocVisibility('chung')
+      setDocFile(null)
+      if (docFileRef.current) docFileRef.current.value = ''
+    } catch (err) {
+      setError(err instanceof ApiError ? err.message : 'Không tải lên được văn bản')
+    } finally {
+      setUploadingDoc(false)
+    }
+  }
+
+  async function downloadDoc(doc: CommandThreadDocument) {
+    if (!activeId) return
+    setDownloadingDocId(doc.id)
+    setError(null)
+    try {
+      const blob = await commandThreadsApi.downloadDocument(activeId, doc.id)
+      const url = URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = doc.file_name
+      a.click()
+      URL.revokeObjectURL(url)
+    } catch (err) {
+      setError(err instanceof ApiError ? err.message : 'Không tải được tệp')
+    } finally {
+      setDownloadingDocId(null)
+    }
+  }
+
+  async function downloadMsgAttachment(messageId: number) {
+    if (!activeId) return
+    setError(null)
+    try {
+      const blob = await commandThreadsApi.downloadMessageAttachment(activeId, messageId)
+      const url = URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = `tep-tin-nhan-${messageId}`
+      a.click()
+      URL.revokeObjectURL(url)
+    } catch (err) {
+      setError(err instanceof ApiError ? err.message : 'Không tải được tệp đính kèm')
+    }
+  }
+
+  async function removeDoc(doc: CommandThreadDocument) {
+    if (!activeId) return
+    const ok = await confirm({
+      message: (
+        <>
+          Xoá văn bản <strong>{doc.title}</strong>? Thao tác này không thể hoàn tác.
+        </>
+      ),
+    })
+    if (!ok) return
+    setError(null)
+    try {
+      await commandThreadsApi.removeDocument(activeId, doc.id)
+      setDocuments((prev) => prev.filter((d) => d.id !== doc.id))
+    } catch (err) {
+      setError(err instanceof ApiError ? err.message : 'Không xoá được văn bản')
+    }
+  }
+
+  async function generateMinutes() {
+    if (!activeId) return
+    setGeneratingMinutes(true)
+    setError(null)
+    try {
+      const m = await commandThreadsApi.generateMinutes(activeId)
+      setMinutesList((prev) => [m, ...prev])
+      setOpenMinutesId(m.id)
+    } catch (err) {
+      setError(err instanceof ApiError ? err.message : 'Không tạo được biên bản')
+    } finally {
+      setGeneratingMinutes(false)
+    }
+  }
+
+  const notMembers = detail ? users.filter((u) => !detail.members.some((m) => m.user_id === u.id)) : []
+
   return (
     <>
       {error ? (
@@ -170,27 +420,81 @@ function CommandThreadsTab() {
           {error}
         </p>
       ) : null}
-      <form onSubmit={createThread} className="entity-form inline-form">
-        <input
-          type="text"
-          placeholder="Tiêu đề luồng trao đổi mới"
-          maxLength={255}
-          value={newTitle}
-          onChange={(e) => setNewTitle(e.target.value)}
-          required
-        />
-        <button type="submit">Tạo luồng</button>
+      <form onSubmit={createThread} className="entity-form">
+        <label>
+          Tiêu đề luồng trao đổi mới
+          <input
+            type="text"
+            placeholder="VD: Trao đổi phương án huấn luyện quý IV"
+            maxLength={255}
+            value={newTitle}
+            onChange={(e) => setNewTitle(e.target.value)}
+            required
+          />
+        </label>
+        {isCommander ? (
+          <fieldset className="unit-picker member-picker">
+            <legend>
+              Thành phần (tuỳ chọn — bạn luôn tự động có trong luồng do mình tạo)
+            </legend>
+            {users
+              .filter((u) => u.id !== userId)
+              .map((u) => (
+                <label key={u.id} className="switch-cell">
+                  <input
+                    type="checkbox"
+                    checked={newMemberIds.includes(u.id)}
+                    onChange={(e) =>
+                      setNewMemberIds((prev) =>
+                        e.target.checked ? [...prev, u.id] : prev.filter((x) => x !== u.id),
+                      )
+                    }
+                  />
+                  {u.full_name} ({u.username})
+                </label>
+              ))}
+          </fieldset>
+        ) : (
+          <p className="state-note">
+            Luồng chỉ hiện với thành phần được gán. Sau khi tạo, nhờ Ban chỉ huy gán thêm người
+            tham gia nếu cần.
+          </p>
+        )}
+        <div className="form-actions">
+          <button type="submit" className="btn-submit">
+            Tạo luồng
+          </button>
+        </div>
       </form>
 
-      <div className="chi-dao-grid">
-        <aside className="thread-list">
-          {loading ? (
-            <p>Đang tải...</p>
-          ) : threads.length === 0 ? (
-            <p className="state-note">Chưa có luồng nào.</p>
-          ) : (
-            <ul>
-              {threads.map((t) => (
+      <div className="list-panel">
+        <div className="list-toolbar">
+          <input
+            type="search"
+            placeholder="Tìm theo tiêu đề luồng..."
+            value={threadSearch}
+            onChange={(e) => setThreadSearch(e.target.value)}
+          />
+          <select
+            value={threadStatusFilter}
+            onChange={(e) => setThreadStatusFilter(e.target.value as '' | 'open' | 'closed')}
+          >
+            <option value="">Tất cả trạng thái</option>
+            <option value="open">Đang mở</option>
+            <option value="closed">Đã đóng</option>
+          </select>
+        </div>
+
+        {loading ? (
+          <p className="state-note">Đang tải...</p>
+        ) : threads.length === 0 ? (
+          <EmptyState icon="clipboard" message="Hiện chưa có luồng trao đổi nào" />
+        ) : threadTotal === 0 ? (
+          <EmptyState icon="search" message="Không có luồng nào khớp bộ lọc / từ khoá" />
+        ) : (
+          <>
+            <ul className="entity-rows">
+              {threadPageItems.map((t) => (
                 <li key={t.id}>
                   <button
                     type="button"
@@ -202,7 +506,7 @@ function CommandThreadsTab() {
                       {t.is_closed ? ' (đã đóng)' : ''}
                     </span>
                     <span className="thread-meta">
-                      {t.message_count} tin · {when(t.last_message_at)}
+                      {t.message_count} tin · {t.member_count} thành phần · {when(t.last_message_at)}
                     </span>
                     {t.unread_count > 0 ? (
                       <span className="badge-unread">{t.unread_count}</span>
@@ -211,14 +515,23 @@ function CommandThreadsTab() {
                 </li>
               ))}
             </ul>
-          )}
-        </aside>
+            <Pagination
+              page={threadPage}
+              pageCount={threadPageCount}
+              total={threadTotal}
+              pageSize={pageSize}
+              onPage={setCurrentPage}
+              onPageSize={setPageSize}
+              pageSizeOptions={PAGE_SIZE_OPTIONS}
+              itemLabel="luồng"
+            />
+          </>
+        )}
+      </div>
 
-        <div className="thread-view">
-          {!detail ? (
-            <p className="state-note">Chọn một luồng để xem nội dung.</p>
-          ) : (
-            <>
+      {detail ? (
+        <div className="thread-view entity-detail">
+          <>
               <div className="thread-view-head">
                 <div>
                   <h2>{detail.title}</h2>
@@ -230,6 +543,45 @@ function CommandThreadsTab() {
                   </button>
                 ) : null}
               </div>
+
+              <div className="block-section">
+                <strong>Thành phần ({detail.members.length})</strong>
+                <div className="member-chips">
+                  {detail.members.map((m) => (
+                    <span key={m.user_id} className="chip">
+                      {m.full_name}
+                      {m.unit_name ? <em> · {m.unit_name}</em> : null}
+                      {isCommander && m.user_id !== detail.created_by_id ? (
+                        <button
+                          type="button"
+                          className="chip-remove"
+                          title="Gỡ khỏi thành phần"
+                          disabled={memberBusy}
+                          onClick={() => removeMember(m.user_id)}
+                        >
+                          <Icon name="x" size={11} />
+                        </button>
+                      ) : null}
+                    </span>
+                  ))}
+                </div>
+                {isCommander && notMembers.length > 0 ? (
+                  <div className="inline-form">
+                    <select value={addMemberId} onChange={(e) => setAddMemberId(e.target.value)}>
+                      <option value="">— Gán thêm thành phần —</option>
+                      {notMembers.map((u) => (
+                        <option key={u.id} value={u.id}>
+                          {u.full_name} ({u.username})
+                        </option>
+                      ))}
+                    </select>
+                    <button type="button" disabled={memberBusy || !addMemberId} onClick={addMember}>
+                      Gán
+                    </button>
+                  </div>
+                ) : null}
+              </div>
+
               <div className="message-scroll">
                 {detail.messages.map((m) => (
                   <div key={m.id} className={m.sender_id === userId ? 'msg msg-own' : 'msg'}>
@@ -238,9 +590,26 @@ function CommandThreadsTab() {
                     </div>
                     {m.body ? <p className="msg-body">{m.body}</p> : null}
                     {m.attachment_url ? (
-                      <a href={fileUrl(m.attachment_url)} target="_blank" rel="noreferrer">
-                        <Icon name="clipboard" size={12} /> Tệp đính kèm
-                      </a>
+                      <button
+                        type="button"
+                        className="btn-text-link"
+                        style={{
+                          background: 'none',
+                          border: 'none',
+                          color: 'var(--primary, #0f5132)',
+                          cursor: 'pointer',
+                          padding: 0,
+                          font: 'inherit',
+                          fontSize: '0.85rem',
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: '4px',
+                          textDecoration: 'underline',
+                        }}
+                        onClick={() => downloadMsgAttachment(m.id)}
+                      >
+                        <Icon name="clipboard" size={12} /> Tệp đính kèm (Bảo mật)
+                      </button>
                     ) : null}
                   </div>
                 ))}
@@ -270,40 +639,136 @@ function CommandThreadsTab() {
                   </div>
                 </form>
               )}
-            </>
-          )}
+
+              <div className="block-section">
+                <strong>Kho văn bản ({documents.length})</strong>
+                {documents.length === 0 ? (
+                  <p className="state-note">Chưa có văn bản nào được chia sẻ trong luồng.</p>
+                ) : (
+                  <ul className="doc-list">
+                    {documents.map((doc) => (
+                      <li key={doc.id} className="doc-row">
+                        <div className="doc-row-main">
+                          <span className="doc-title">{doc.title}</span>
+                          <span className={`chip ${doc.visibility === 'rieng' ? 'chip-mat' : ''}`}>
+                            {DOC_VISIBILITY_LABELS[doc.visibility]}
+                          </span>
+                        </div>
+                        <span className="thread-meta">
+                          {doc.file_name} · {doc.uploaded_by_full_name} · {when(doc.created_at)}
+                        </span>
+                        <div className="row-actions">
+                          <button
+                            type="button"
+                            className="btn-approve"
+                            disabled={downloadingDocId === doc.id}
+                            onClick={() => downloadDoc(doc)}
+                          >
+                            <Icon name="download" size={12} />{' '}
+                            {downloadingDocId === doc.id ? 'Đang tải...' : 'Tải về'}
+                          </button>
+                          {isCommander || doc.uploaded_by_id === userId ? (
+                            <button type="button" className="btn-delete" onClick={() => removeDoc(doc)}>
+                              <Icon name="trash" /> Xoá
+                            </button>
+                          ) : null}
+                        </div>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+                {!detail.is_closed ? (
+                  <form onSubmit={uploadDoc} className="inline-form doc-upload-form">
+                    <input
+                      type="text"
+                      placeholder="Tiêu đề văn bản (bỏ trống = lấy tên tệp)"
+                      maxLength={255}
+                      value={docTitle}
+                      onChange={(e) => setDocTitle(e.target.value)}
+                    />
+                    <select
+                      value={docVisibility}
+                      onChange={(e) => setDocVisibility(e.target.value as DocVisibility)}
+                    >
+                      <option value="chung">Chung (cả luồng xem)</option>
+                      <option value="rieng">Riêng (chỉ tôi + BCH)</option>
+                    </select>
+                    <input
+                      ref={docFileRef}
+                      type="file"
+                      required
+                      onChange={(e) => setDocFile(e.target.files?.[0] ?? null)}
+                    />
+                    <button type="submit" disabled={uploadingDoc || !docFile}>
+                      {uploadingDoc ? 'Đang tải lên...' : 'Chia sẻ văn bản'}
+                    </button>
+                  </form>
+                ) : null}
+              </div>
+
+              <div className="block-section">
+                <strong>Biên bản thảo luận</strong>
+                <p className="state-note">
+                  Tự động ghép toàn bộ tin nhắn của luồng (kèm văn bản dùng chung) thành 1 bản
+                  biên bản có cấu trúc — không dùng AI.
+                </p>
+                <div className="form-actions">
+                  <button type="button" disabled={generatingMinutes} onClick={generateMinutes}>
+                    {generatingMinutes ? 'Đang tạo...' : 'Tạo biên bản'}
+                  </button>
+                </div>
+                {minutesList.length === 0 ? (
+                  <p className="state-note">Chưa có biên bản nào được tạo.</p>
+                ) : (
+                  <ul className="minutes-list">
+                    {minutesList.map((m) => (
+                      <li key={m.id} className="minutes-item">
+                        <button
+                          type="button"
+                          className="minutes-item-head"
+                          onClick={() => setOpenMinutesId((id) => (id === m.id ? null : m.id))}
+                        >
+                          <span>
+                            Biên bản #{m.id} — {when(m.generated_at)} · {m.message_count} tin nhắn
+                          </span>
+                          <span className="thread-meta">bởi {m.generated_by_full_name}</span>
+                        </button>
+                        {openMinutesId === m.id ? (
+                          <pre className="minutes-content">{m.content}</pre>
+                        ) : null}
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
+          </>
         </div>
-      </div>
+      ) : null}
     </>
   )
 }
 
 // ------------------------------------------------------------------ Tab 2: dispatch ledger
-const emptyDispatch: DispatchFormValues = {
-  direction: 'den',
-  dispatch_number: '',
-  summary: '',
-  issuing_org: '',
-  receiving_org: '',
-  issued_date: '',
-  received_date: '',
-  status: 'moi',
-  note: '',
-}
-
 function DispatchLedgerTab() {
   const { isCommander } = useAuth()
+  const confirm = useConfirm()
+  const navigate = useNavigate()
   const [list, setList] = useState<OfficialDispatch[]>([])
   const [activeId, setActiveId] = useState<number | null>(null)
   const [detail, setDetail] = useState<OfficialDispatchDetail | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
-  const [form, setForm] = useState<DispatchFormValues>(emptyDispatch)
-  const [formFile, setFormFile] = useState<File | null>(null)
-  const [editing, setEditing] = useState<number | null>(null)
   const [busy, setBusy] = useState(false)
   const [ackNote, setAckNote] = useState('')
+
+  // Tim kiem + loc + phan trang so cong van (client-side)
+  const [dispatchSearch, setDispatchSearch] = useState('')
+  const [directionFilter, setDirectionFilter] = useState<'' | DispatchDirection>('')
+  const [docTypeFilter, setDocTypeFilter] = useState<'' | DocType>('')
+  const [statusFilter, setStatusFilter] = useState<'' | DispatchStatus>('')
+  const [pageSize, setPageSize] = useState(10)
+  const [currentPage, setCurrentPage] = useState(0)
 
   function reload() {
     setLoading(true)
@@ -314,6 +779,35 @@ function DispatchLedgerTab() {
       .finally(() => setLoading(false))
   }
   useEffect(reload, [])
+
+  const filteredList = useMemo(() => {
+    const kw = dispatchSearch.trim().toLowerCase()
+    return list.filter((d) => {
+      if (directionFilter && d.direction !== directionFilter) return false
+      if (docTypeFilter && d.doc_type !== docTypeFilter) return false
+      if (statusFilter && d.status !== statusFilter) return false
+      if (!kw) return true
+      return (
+        d.dispatch_number.toLowerCase().includes(kw) ||
+        d.summary.toLowerCase().includes(kw) ||
+        (d.issuing_org ?? '').toLowerCase().includes(kw) ||
+        (d.receiving_org ?? '').toLowerCase().includes(kw) ||
+        (d.signer ?? '').toLowerCase().includes(kw)
+      )
+    })
+  }, [list, dispatchSearch, directionFilter, docTypeFilter, statusFilter])
+
+  const dispatchTotal = filteredList.length
+  const dispatchPageCount = Math.max(1, Math.ceil(dispatchTotal / pageSize))
+  const dispatchPage = Math.min(currentPage, dispatchPageCount - 1)
+  const dispatchPageItems = filteredList.slice(
+    dispatchPage * pageSize,
+    dispatchPage * pageSize + pageSize,
+  )
+
+  useEffect(() => {
+    setCurrentPage(0)
+  }, [dispatchSearch, directionFilter, docTypeFilter, statusFilter, pageSize])
 
   useEffect(() => {
     if (activeId == null) {
@@ -326,46 +820,15 @@ function DispatchLedgerTab() {
       .catch((e: unknown) => setError(e instanceof ApiError ? e.message : 'Không mở được công văn'))
   }, [activeId])
 
-  function startEdit(d: OfficialDispatchDetail) {
-    setEditing(d.id)
-    setForm({
-      direction: d.direction,
-      dispatch_number: d.dispatch_number,
-      summary: d.summary,
-      issuing_org: d.issuing_org ?? '',
-      receiving_org: d.receiving_org ?? '',
-      issued_date: d.issued_date ?? '',
-      received_date: d.received_date ?? '',
-      status: d.status,
-      note: d.note ?? '',
-    })
-    setFormFile(null)
-  }
-
-  async function submitForm(e: FormEvent) {
-    e.preventDefault()
-    setBusy(true)
-    setError(null)
-    try {
-      const saved =
-        editing != null
-          ? await officialDispatchesApi.update(editing, form, formFile)
-          : await officialDispatchesApi.create(form, formFile)
-      setForm(emptyDispatch)
-      setFormFile(null)
-      setEditing(null)
-      reload()
-      setActiveId(saved.id)
-      setDetail(saved)
-    } catch (err) {
-      setError(err instanceof ApiError ? err.message : 'Không lưu được công văn')
-    } finally {
-      setBusy(false)
-    }
-  }
-
   async function remove(d: OfficialDispatch) {
-    if (!window.confirm(`Xoá công văn số ${d.dispatch_number}?`)) return
+    const ok = await confirm({
+      message: (
+        <>
+          Xoá công văn số <strong>{d.dispatch_number}</strong>? Thao tác này không thể hoàn tác.
+        </>
+      ),
+    })
+    if (!ok) return
     try {
       await officialDispatchesApi.remove(d.id)
       setActiveId(null)
@@ -414,135 +877,70 @@ function DispatchLedgerTab() {
       ) : null}
 
       {isCommander ? (
-        <form onSubmit={submitForm} className="entity-form">
-          <h2>{editing != null ? `Sửa công văn #${editing}` : 'Vào sổ công văn mới'}</h2>
-          <div className="form-row">
-            <label>
-              Chiều
-              <select
-                value={form.direction}
-                onChange={(e) =>
-                  setForm((f) => ({ ...f, direction: e.target.value as DispatchDirection }))
-                }
-              >
-                {(Object.keys(DISPATCH_DIRECTION_LABELS) as DispatchDirection[]).map((d) => (
-                  <option key={d} value={d}>
-                    {DISPATCH_DIRECTION_LABELS[d]}
-                  </option>
-                ))}
-              </select>
-            </label>
-            <label>
-              Số / ký hiệu
-              <input
-                type="text"
-                maxLength={80}
-                value={form.dispatch_number}
-                onChange={(e) => setForm((f) => ({ ...f, dispatch_number: e.target.value }))}
-                required
-              />
-            </label>
-            <label>
-              Trạng thái
-              <select
-                value={form.status}
-                onChange={(e) => setForm((f) => ({ ...f, status: e.target.value as DispatchStatus }))}
-              >
-                {(Object.keys(DISPATCH_STATUS_LABELS) as DispatchStatus[]).map((s) => (
-                  <option key={s} value={s}>
-                    {DISPATCH_STATUS_LABELS[s]}
-                  </option>
-                ))}
-              </select>
-            </label>
-          </div>
-          <label>
-            Trích yếu
-            <input
-              type="text"
-              maxLength={500}
-              value={form.summary}
-              onChange={(e) => setForm((f) => ({ ...f, summary: e.target.value }))}
-              required
-            />
-          </label>
-          <div className="form-row">
-            <label>
-              Cơ quan ban hành
-              <input
-                type="text"
-                value={form.issuing_org}
-                onChange={(e) => setForm((f) => ({ ...f, issuing_org: e.target.value }))}
-              />
-            </label>
-            <label>
-              Nơi nhận
-              <input
-                type="text"
-                value={form.receiving_org}
-                onChange={(e) => setForm((f) => ({ ...f, receiving_org: e.target.value }))}
-              />
-            </label>
-          </div>
-          <div className="form-row">
-            <label>
-              Ngày ban hành
-              <input
-                type="date"
-                value={form.issued_date}
-                onChange={(e) => setForm((f) => ({ ...f, issued_date: e.target.value }))}
-              />
-            </label>
-            <label>
-              Ngày đến
-              <input
-                type="date"
-                value={form.received_date}
-                onChange={(e) => setForm((f) => ({ ...f, received_date: e.target.value }))}
-              />
-            </label>
-          </div>
-          <label>
-            Ghi chú / nội dung
-            <textarea
-              rows={2}
-              value={form.note}
-              onChange={(e) => setForm((f) => ({ ...f, note: e.target.value }))}
-            />
-          </label>
-          <label>
-            Tệp đính kèm {editing != null ? '(để trống nếu giữ nguyên)' : ''}
-            <input type="file" onChange={(e) => setFormFile(e.target.files?.[0] ?? null)} />
-          </label>
-          <div className="form-actions">
-            <button type="submit" disabled={busy}>
-              {editing != null ? 'Lưu thay đổi' : 'Vào sổ'}
-            </button>
-            {editing != null ? (
-              <button
-                type="button"
-                onClick={() => {
-                  setEditing(null)
-                  setForm(emptyDispatch)
-                  setFormFile(null)
-                }}
-              >
-                Huỷ
-              </button>
-            ) : null}
-          </div>
-        </form>
+        <div className="actions-bar">
+          <button
+            type="button"
+            className="btn-create"
+            onClick={() => navigate('/kenh-chi-huy/cong-van/moi')}
+          >
+            <Icon name="upload" size={16} /> Vào sổ công văn
+          </button>
+        </div>
       ) : null}
 
-      <div className="chi-dao-grid">
-        <aside className="thread-list">
-          {loading ? (
-            <p>Đang tải...</p>
-          ) : list.length === 0 ? (
-            <p className="state-note">Sổ chưa có công văn nào.</p>
-          ) : (
-            <ul>
-              {list.map((d) => (
+      <div className="list-panel">
+        <div className="list-toolbar">
+          <input
+            type="search"
+            placeholder="Tìm theo số/ký hiệu, trích yếu, cơ quan, người ký..."
+            value={dispatchSearch}
+            onChange={(e) => setDispatchSearch(e.target.value)}
+          />
+          <select
+            value={directionFilter}
+            onChange={(e) => setDirectionFilter(e.target.value as '' | DispatchDirection)}
+          >
+            <option value="">Cả 2 chiều</option>
+            {(Object.keys(DISPATCH_DIRECTION_LABELS) as DispatchDirection[]).map((d) => (
+              <option key={d} value={d}>
+                {DISPATCH_DIRECTION_LABELS[d]}
+              </option>
+            ))}
+          </select>
+          <select
+            value={docTypeFilter}
+            onChange={(e) => setDocTypeFilter(e.target.value as '' | DocType)}
+          >
+            <option value="">Mọi loại văn bản</option>
+            {(Object.keys(DOC_TYPE_LABELS) as DocType[]).map((d) => (
+              <option key={d} value={d}>
+                {DOC_TYPE_LABELS[d]}
+              </option>
+            ))}
+          </select>
+          <select
+            value={statusFilter}
+            onChange={(e) => setStatusFilter(e.target.value as '' | DispatchStatus)}
+          >
+            <option value="">Tất cả trạng thái</option>
+            {(Object.keys(DISPATCH_STATUS_LABELS) as DispatchStatus[]).map((s) => (
+              <option key={s} value={s}>
+                {DISPATCH_STATUS_LABELS[s]}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        {loading ? (
+          <p className="state-note">Đang tải...</p>
+        ) : list.length === 0 ? (
+          <EmptyState icon="clipboard" message="Sổ chưa có công văn nào" />
+        ) : dispatchTotal === 0 ? (
+          <EmptyState icon="search" message="Không có công văn nào khớp bộ lọc / từ khoá" />
+        ) : (
+          <>
+            <ul className="entity-rows">
+              {dispatchPageItems.map((d) => (
                 <li key={d.id}>
                   <button
                     type="button"
@@ -550,61 +948,87 @@ function DispatchLedgerTab() {
                     onClick={() => setActiveId(d.id)}
                   >
                     <span className="thread-title">
-                      {d.dispatch_number} — {d.summary}
+                      [{DOC_TYPE_LABELS[d.doc_type]}] {d.dispatch_number} — {d.summary}
                     </span>
                     <span className="thread-meta">
                       {DISPATCH_DIRECTION_LABELS[d.direction]} ·{' '}
                       <span className={`status-chip st-${d.status}`}>
                         {DISPATCH_STATUS_LABELS[d.status]}
                       </span>{' '}
-                      · ký nhận {d.acknowledged_count}/{d.recipient_count}
+                      · {SECURITY_LEVEL_LABELS[d.security_level]}
+                      {d.urgency !== 'thuong' ? ` · ${URGENCY_LABELS[d.urgency]}` : ''} · ký nhận{' '}
+                      {d.acknowledged_count}/{d.recipient_count}
                     </span>
                   </button>
                 </li>
               ))}
             </ul>
-          )}
-        </aside>
+            <Pagination
+              page={dispatchPage}
+              pageCount={dispatchPageCount}
+              total={dispatchTotal}
+              pageSize={pageSize}
+              onPage={setCurrentPage}
+              onPageSize={setPageSize}
+              pageSizeOptions={PAGE_SIZE_OPTIONS}
+              itemLabel="công văn"
+            />
+          </>
+        )}
+      </div>
 
-        <div className="thread-view">
-          {!detail ? (
-            <p className="state-note">Chọn một công văn để xem chi tiết.</p>
-          ) : (
-            <>
+      {detail ? (
+        <div className="thread-view entity-detail">
+          <>
               <div className="thread-view-head">
                 <div>
                   <h2>
-                    {detail.dispatch_number} — {detail.summary}
+                    [{DOC_TYPE_LABELS[detail.doc_type]}] {detail.dispatch_number} — {detail.summary}
                   </h2>
                   <p className="thread-meta">
                     {DISPATCH_DIRECTION_LABELS[detail.direction]} ·{' '}
                     <span className={`status-chip st-${detail.status}`}>
                       {DISPATCH_STATUS_LABELS[detail.status]}
                     </span>{' '}
-                    · vào sổ bởi {detail.created_by_full_name}
+                    · Độ mật: {SECURITY_LEVEL_LABELS[detail.security_level]} · Độ khẩn:{' '}
+                    {URGENCY_LABELS[detail.urgency]} · vào sổ bởi {detail.created_by_full_name}
                   </p>
                 </div>
                 {isCommander ? (
                   <div className="row-actions">
-                    <button type="button" onClick={() => startEdit(detail)}>
-                      Sửa
+                    <button
+                      type="button"
+                      className="btn-edit"
+                      onClick={() => navigate(`/kenh-chi-huy/cong-van/${detail.id}/sua`)}
+                    >
+                      <Icon name="edit" /> Sửa
                     </button>
-                    <button type="button" onClick={() => remove(detail)}>
-                      Xoá
+                    <button type="button" className="btn-delete" onClick={() => remove(detail)}>
+                      <Icon name="trash" /> Xoá
                     </button>
                   </div>
                 ) : null}
               </div>
 
               <dl className="profile-facts">
+                <dt>Loại văn bản</dt>
+                <dd>{DOC_TYPE_LABELS[detail.doc_type]}</dd>
                 <dt>Cơ quan ban hành</dt>
                 <dd>{detail.issuing_org ?? '—'}</dd>
                 <dt>Nơi nhận</dt>
                 <dd>{detail.receiving_org ?? '—'}</dd>
+                <dt>Người ký</dt>
+                <dd>{detail.signer ?? '—'}</dd>
                 <dt>Ngày ban hành</dt>
                 <dd>{fmtDate(detail.issued_date)}</dd>
                 <dt>Ngày đến</dt>
                 <dd>{fmtDate(detail.received_date)}</dd>
+                <dt>Hạn xử lý</dt>
+                <dd>{fmtDate(detail.deadline)}</dd>
+                <dt>Số tờ</dt>
+                <dd>{detail.page_count ?? '—'}</dd>
+                <dt>Số hồ sơ lưu trữ</dt>
+                <dd>{detail.archive_ref ?? '—'}</dd>
               </dl>
               {detail.note ? <p className="msg-body">{detail.note}</p> : null}
               {detail.attachment_url ? (
@@ -653,10 +1077,9 @@ function DispatchLedgerTab() {
                   </tbody>
                 </table>
               </div>
-            </>
-          )}
+          </>
         </div>
-      </div>
+      ) : null}
     </>
   )
 }

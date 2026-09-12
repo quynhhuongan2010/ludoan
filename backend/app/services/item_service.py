@@ -17,7 +17,7 @@ def list_items(db: Session, skip: int = 0, limit: int = 100) -> list[Item]:
 def get_item_or_404(db: Session, item_id: int) -> Item:
     item = item_repository.get(db, item_id)
     if item is None:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Item not found")
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Không tìm thấy mục")
     return item
 
 

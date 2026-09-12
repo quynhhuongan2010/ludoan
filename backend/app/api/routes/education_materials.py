@@ -5,6 +5,7 @@ from sqlalchemy.orm import Session
 
 from app.api.deps import get_current_user, require_roles
 from app.core.database import get_db
+from app.core.roles import CONTENT_ROLES
 from app.models.user import User
 from app.schemas.education_material import EducationMaterialCreate, EducationMaterialOut
 from app.services import education_material_service
@@ -20,7 +21,7 @@ router = APIRouter(
     "",
     response_model=EducationMaterialOut,
     status_code=status.HTTP_201_CREATED,
-    dependencies=[Depends(require_roles("officer", "commander"))],
+    dependencies=[Depends(require_roles(*CONTENT_ROLES))],
 )
 def create_material(
     material_in: EducationMaterialCreate,
@@ -49,7 +50,7 @@ def get_material(material_id: int, db: Session = Depends(get_db)):
     "/{material_id}",
     response_model=EducationMaterialOut,
     status_code=status.HTTP_200_OK,
-    dependencies=[Depends(require_roles("officer", "commander"))],
+    dependencies=[Depends(require_roles(*CONTENT_ROLES))],
 )
 def update_material(
     material_id: int,
@@ -63,7 +64,7 @@ def update_material(
 @router.delete(
     "/{material_id}",
     status_code=status.HTTP_204_NO_CONTENT,
-    dependencies=[Depends(require_roles("officer", "commander"))],
+    dependencies=[Depends(require_roles(*CONTENT_ROLES))],
 )
 def delete_material(
     material_id: int,

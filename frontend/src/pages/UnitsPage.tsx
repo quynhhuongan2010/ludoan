@@ -1,7 +1,11 @@
 import { useEffect, useState, type FormEvent } from 'react'
 import { ApiError } from '../api/client'
 import { unitsApi } from '../api/units'
+import { Field } from '../components/Field'
 import { Icon } from '../components/Icon'
+import { Modal } from '../components/Modal'
+import { useConfirm } from '../context/ConfirmContext'
+import { useRequiredFields } from '../hooks/useRequiredFields'
 import { UNIT_KIND_LABELS, type Unit, type UnitCreate, type UnitKind } from '../types/unit'
 
 const KINDS = Object.keys(UNIT_KIND_LABELS) as UnitKind[]
@@ -20,6 +24,16 @@ export function UnitsPage() {
   const [form, setForm] = useState<UnitCreate>(emptyForm)
   const [submitting, setSubmitting] = useState(false)
   const [busyId, setBusyId] = useState<number | null>(null)
+  const [showAdd, setShowAdd] = useState(false)
+  const confirm = useConfirm()
+  const req = useRequiredFields(['name'] as const)
+
+  function openAdd() {
+    setForm(emptyForm)
+    setError(null)
+    req.reset()
+    setShowAdd(true)
+  }
 
   function loadUnits() {
     setLoading(true)
@@ -37,11 +51,13 @@ export function UnitsPage() {
   async function handleCreate(event: FormEvent) {
     event.preventDefault()
     setError(null)
+    if (!req.validate({ name: form.name })) return
     setSubmitting(true)
     try {
       const created = await unitsApi.create({ ...form, description: form.description || null })
       setUnits((prev) => [...prev, created])
       setForm(emptyForm)
+      setShowAdd(false)
     } catch (err) {
       setError(err instanceof ApiError ? err.message : 'Không thể tạo đơn vị')
     } finally {
@@ -69,7 +85,14 @@ export function UnitsPage() {
   }
 
   async function remove(u: Unit) {
-    if (!window.confirm(`Xoá đơn vị "${u.name}"?`)) return
+    const ok = await confirm({
+      message: (
+        <>
+          Xoá đơn vị <strong>{u.name}</strong>? Thao tác này không thể hoàn tác.
+        </>
+      ),
+    })
+    if (!ok) return
     setError(null)
     setBusyId(u.id)
     try {
@@ -97,46 +120,64 @@ export function UnitsPage() {
         luồng ở Kênh Chỉ đạo – Báo cáo. Không xoá được đơn vị khi vẫn còn tài khoản trực thuộc.
       </p>
 
-      <form onSubmit={handleCreate} className="entity-form">
-        <h2>Thêm đơn vị</h2>
-        <label>
-          Tên đơn vị
-          <input
-            type="text"
-            maxLength={120}
-            value={form.name}
-            onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
-            required
-          />
-        </label>
-        <label>
-          Loại đơn vị
-          <select
-            value={form.unit_kind}
-            onChange={(e) => setForm((f) => ({ ...f, unit_kind: e.target.value as UnitKind }))}
-          >
-            {KINDS.map((k) => (
-              <option key={k} value={k}>
-                {UNIT_KIND_LABELS[k]}
-              </option>
-            ))}
-          </select>
-        </label>
-        <label>
-          Mô tả (tuỳ chọn)
-          <input
-            type="text"
-            maxLength={255}
-            value={form.description ?? ''}
-            onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))}
-          />
-        </label>
-        <div className="form-actions">
-          <button type="submit" disabled={submitting}>
-            Thêm đơn vị
-          </button>
-        </div>
-      </form>
+      <div className="actions-bar">
+        <button type="button" className="btn-create" onClick={openAdd}>
+          <Icon name="plus" size={16} /> Thêm đơn vị
+        </button>
+      </div>
+
+      {showAdd ? (
+        <Modal title="Thêm đơn vị" onClose={() => setShowAdd(false)}>
+          <form onSubmit={handleCreate} className="entity-form">
+            <Field label="Tên đơn vị" required req={req} name="name">
+              <input
+                type="text"
+                maxLength={120}
+                value={form.name}
+                onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
+                onBlur={(e) => req.mark('name', e.target.value)}
+                required
+                autoFocus
+              />
+            </Field>
+            <label>
+              Loại đơn vị
+              <select
+                value={form.unit_kind}
+                onChange={(e) => setForm((f) => ({ ...f, unit_kind: e.target.value as UnitKind }))}
+              >
+                {KINDS.map((k) => (
+                  <option key={k} value={k}>
+                    {UNIT_KIND_LABELS[k]}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label>
+              Mô tả (tuỳ chọn)
+              <input
+                type="text"
+                maxLength={255}
+                value={form.description ?? ''}
+                onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))}
+              />
+            </label>
+            {error ? (
+              <p role="alert" className="form-note form-error">
+                {error}
+              </p>
+            ) : null}
+            <div className="form-actions">
+              <button type="submit" className="btn-submit" disabled={submitting}>
+                {submitting ? 'Đang thêm...' : 'Thêm đơn vị'}
+              </button>
+              <button type="button" className="btn-cancel" onClick={() => setShowAdd(false)}>
+                Huỷ
+              </button>
+            </div>
+          </form>
+        </Modal>
+      ) : null}
 
       {loading ? (
         <p>Đang tải...</p>
@@ -185,10 +226,11 @@ export function UnitsPage() {
                 <td className="row-actions">
                   <button
                     type="button"
+                    className="btn-delete"
                     disabled={busyId === u.id || u.user_count > 0}
                     onClick={() => remove(u)}
                   >
-                    Xoá
+                    <Icon name="trash" /> Xoá
                   </button>
                 </td>
               </tr>

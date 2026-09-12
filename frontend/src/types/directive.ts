@@ -1,4 +1,5 @@
 import type { Classification } from './common'
+import type { Role } from './user'
 
 export type DirectiveStatus = 'nhap' | 'da_ban_hanh'
 
@@ -31,7 +32,7 @@ export interface DirectiveCreate {
 export interface DirectiveAckUser {
   user_id: number
   full_name: string
-  role: string
+  role: Role
   acknowledged_at: string | null
 }
 

@@ -26,11 +26,13 @@ if not exist ".env" (
 
 call venv\Scripts\activate.bat
 
-if not exist "..\frontend\dist\index.html" (
-    echo [CANH BAO] Chua tim thay ban build giao dien tai frontend\dist
+set "FE_DIST=..\fe-ludoan\dist\index.html"
+if not exist "%FE_DIST%" set "FE_DIST=..\frontend\dist\index.html"
+if not exist "%FE_DIST%" (
+    echo [CANH BAO] Chua tim thay ban build giao dien tai fe-ludoan\dist
     echo He thong van chay duoc o che do API ^(/docs^) nhung se khong hien
     echo giao dien nguoi dung. De build giao dien, chay:
-    echo   cd frontend ^&^& npm install ^&^& npm run build
+    echo   cd fe-ludoan ^&^& npm install ^&^& npm run build
     echo.
 )
 

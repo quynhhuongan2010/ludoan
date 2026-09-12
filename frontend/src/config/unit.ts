@@ -4,7 +4,7 @@
 export const UNIT = {
   shortName: 'CỔNG THÔNG TIN ĐIỆN TỬ',
   fullName: 'LỮ ĐOÀN THÔNG TIN 21 – BỘ ĐỘI BIÊN PHÒNG',
-  slogan: 'TRUNG THÀNH – MƯU TRÍ – KỊP THỜI – CHÍNH XÁC – BÍ MẬT',
+  slogan: 'KỊP THỜI - CHÍNH XÁC – BÍ MẬT – AN TOÀN',
   bannerSlogan: 'QUYẾT TÂM XÂY DỰNG ĐƠN VỊ VỮNG MẠNH TOÀN DIỆN "MẪU MỰC, TIÊU BIỂU"',
   copyrightOwner: 'Ban Chỉ huy Lữ đoàn Thông tin 21',
 }
@@ -12,7 +12,7 @@ export const UNIT = {
 export const CONTACT = {
   hotlineLabel: 'Trực ban tác chiến',
   hotline: '069.xxxx.xxxx',
-  address: 'Khu vực đóng quân Lữ đoàn Thông tin 21',
+  address: 'Số 32 Đường Cầu Diễn, Phường Phúc Diễn, Quận Bắc Từ Liêm, Hà Nội',
   internalPhone: 'xxx-xxx',
   email: 'vanphong@ld21.bdbp.vn',
 }
@@ -24,26 +24,49 @@ export const CONTACT = {
 //   commandChannel      -> chi user co quyen Kenh chuyen BCH + Cap uy
 export interface NavEntry {
   label: string
-  to: string
+  to?: string
   commanderOnly?: boolean
   adminOnly?: boolean
   directiveChannel?: boolean
   commandChannel?: boolean
+  children?: NavEntry[]
 }
 
 export const NAV: NavEntry[] = [
-  { label: 'Bảng tin', to: '/bang-tin' },
-  { label: 'Tin tức – Hoạt động', to: '/tin-tuc' },
-  { label: 'Thông báo – Lịch trực', to: '/thong-bao' },
-  { label: 'Văn bản – Tài liệu', to: '/van-ban' },
+  {
+    label: 'Bản tin',
+    children: [
+      { label: 'Bảng tin', to: '/bang-tin' },
+      { label: 'Tin tức – Hoạt động', to: '/tin-tuc' },
+      { label: 'Thông báo nội bộ', to: '/thong-bao' },
+      { label: 'Danh bạ điện thoại', to: '/danh-ba' },
+    ],
+  },
   { label: 'Giáo dục chính trị', to: '/giao-duc-chinh-tri' },
-  { label: 'Chỉ thị – Nhiệm vụ', to: '/chi-thi-nhiem-vu' },
-  { label: 'Chỉ đạo – Báo cáo', to: '/chi-dao-bao-cao', directiveChannel: true },
-  { label: 'Giao nhiệm vụ', to: '/giao-nhiem-vu', directiveChannel: true },
-  { label: 'Kênh chỉ huy (MẬT)', to: '/kenh-chi-huy', commandChannel: true },
-  { label: 'Giao ban trực tuyến', to: '/giao-ban', commandChannel: true },
-  { label: 'Hồ sơ cá nhân', to: '/ho-so' },
+  { label: 'Văn bản – Tài liệu', to: '/van-ban' },
+  {
+    label: 'Điều hành – Nhiệm vụ',
+    children: [
+      { label: 'Chỉ thị – Nhiệm vụ', to: '/chi-thi-nhiem-vu' },
+      { label: 'Lịch trực – Kíp trực', to: '/lich-truc' },
+      { label: 'Tin nhắn tác chiến', to: '/tin-nhan' },
+      { label: 'Chỉ đạo – Báo cáo', to: '/chi-dao-bao-cao', directiveChannel: true },
+      { label: 'Giao nhiệm vụ', to: '/giao-nhiem-vu', directiveChannel: true },
+    ],
+  },
+  {
+    label: 'Kênh chỉ huy (MẬT)',
+    children: [
+      { label: 'Trao đổi – Công văn', to: '/kenh-chi-huy', commandChannel: true },
+    ],
+  },
+  {
+    label: 'Quản trị',
+    children: [
+      { label: 'Quản lý người dùng', to: '/quan-ly-nguoi-dung', commanderOnly: true },
+      { label: 'Quản lý đơn vị', to: '/quan-ly-don-vi', adminOnly: true },
+      { label: 'Nhật ký an ninh', to: '/nhat-ky-an-ninh', commanderOnly: true },
+    ],
+  },
   { label: 'Hướng dẫn sử dụng', to: '/huong-dan' },
-  { label: 'Quản lý người dùng', to: '/quan-ly-nguoi-dung', commanderOnly: true },
-  { label: 'Quản lý đơn vị', to: '/quan-ly-don-vi', adminOnly: true },
 ]

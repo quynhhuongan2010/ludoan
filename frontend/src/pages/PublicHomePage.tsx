@@ -8,11 +8,12 @@ import { ANNOUNCEMENT_PRIORITY_LABELS } from '../types/announcement'
 import { DOCUMENT_CATEGORY_LABELS } from '../types/document'
 import { POST_CATEGORY_LABELS } from '../types/post'
 import type { PublicHome } from '../types/home'
+import { stripHtml } from '../utils/richContent'
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL ?? 'http://127.0.0.1:8000'
 
-function excerpt(text: string, max = 200): string {
-  const clean = text.replace(/\s+/g, ' ').trim()
+function excerpt(html: string, max = 200): string {
+  const clean = stripHtml(html).replace(/\s+/g, ' ').trim()
   return clean.length > max ? `${clean.slice(0, max)}…` : clean
 }
 

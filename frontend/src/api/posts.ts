@@ -20,8 +20,12 @@ export const postsApi = {
     return apiClient.get<Post[]>(`/posts${qs ? `?${qs}` : ''}`)
   },
   get: (id: number) => apiClient.get<Post>(`/posts/${id}`),
-  create: (post: PostCreate) => apiClient.post<Post>('/posts', post),
-  update: (id: number, post: PostCreate) => apiClient.put<Post>(`/posts/${id}`, post),
+  create: (post: PostCreate, asDraft = false) =>
+    apiClient.post<Post>(`/posts${asDraft ? '?as_draft=true' : ''}`, post),
+  update: (id: number, post: PostCreate, asDraft = false) =>
+    apiClient.put<Post>(`/posts/${id}${asDraft ? '?as_draft=true' : ''}`, post),
+  /** Chuyển bài từ nháp / bị trả lại sang chờ duyệt (hoặc đã duyệt nếu là chỉ huy). */
+  submit: (id: number) => apiClient.post<Post>(`/posts/${id}/submit`, {}),
   review: (id: number, payload: PostReview) => apiClient.post<Post>(`/posts/${id}/review`, payload),
   uploadThumbnail: (id: number, file: File) => {
     const fd = new FormData()

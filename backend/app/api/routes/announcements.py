@@ -5,6 +5,7 @@ from sqlalchemy.orm import Session
 
 from app.api.deps import get_current_user, get_optional_user, require_roles
 from app.core.database import get_db
+from app.core.roles import CONTENT_ROLES
 from app.models.user import User
 from app.schemas.announcement import AnnouncementCreate, AnnouncementOut
 from app.services import announcement_service
@@ -16,7 +17,7 @@ router = APIRouter(prefix="/announcements", tags=["announcements"])
     "",
     response_model=AnnouncementOut,
     status_code=status.HTTP_201_CREATED,
-    dependencies=[Depends(require_roles("officer", "commander"))],
+    dependencies=[Depends(require_roles(*CONTENT_ROLES))],
 )
 def create_announcement(
     ann_in: AnnouncementCreate,
@@ -51,7 +52,7 @@ def get_announcement(
     "/{ann_id}",
     response_model=AnnouncementOut,
     status_code=status.HTTP_200_OK,
-    dependencies=[Depends(require_roles("officer", "commander"))],
+    dependencies=[Depends(require_roles(*CONTENT_ROLES))],
 )
 def update_announcement(
     ann_id: int,
@@ -65,7 +66,7 @@ def update_announcement(
 @router.delete(
     "/{ann_id}",
     status_code=status.HTTP_204_NO_CONTENT,
-    dependencies=[Depends(require_roles("officer", "commander"))],
+    dependencies=[Depends(require_roles(*CONTENT_ROLES))],
 )
 def delete_announcement(
     ann_id: int,

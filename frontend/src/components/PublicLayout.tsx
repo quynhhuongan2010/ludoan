@@ -10,11 +10,12 @@ export function PublicLayout({ children }: { children: ReactNode }) {
         <div className="container header-content">
           <div className="unit-brand">
             <span className="unit-logo" aria-hidden="true">
-              <Icon name="star" size={40} />
+              <img src="/logo-bdbp.png" alt="" onError={(e) => (e.currentTarget.style.display = 'none')} />
+              <Icon name="star" size={40} className="unit-logo-fallback" />
             </span>
             <div className="unit-titles">
-              <h1>{UNIT.shortName}</h1>
-              <p className="unit-full">{UNIT.fullName}</p>
+              <p className="unit-kicker">{UNIT.shortName}</p>
+              <h1>{UNIT.fullName}</h1>
               <p className="unit-slogan">{UNIT.slogan}</p>
             </div>
           </div>

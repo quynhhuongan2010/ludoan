@@ -1,0 +1,174 @@
+// ============================================================================
+// YÊU CẦU ĐỒNG BỘ HỢP ĐỒNG API  (Frontend  ->  Backend)
+// Module: "Bảng tin / Giáo dục chính trị"  —  component BangTinModule
+// ----------------------------------------------------------------------------
+// File này KHÔNG phải openapi.yaml. Đây là bản mô tả những gì FE vừa dựng
+// nhưng CHƯA có trong hợp đồng API, để BE đối chiếu -> chỉnh schema/endpoint
+// -> chạy `python scripts/export_openapi.py` -> ghi `openapi.CHANGELOG.md`.
+// ============================================================================
+
+meta:
+  ti: "Đồng bộ hợp đồng cho module Bảng tin / Giáo dục chính trị"
+  nguoi_gui: "Frontend"
+  ngay: "2026-09-03"
+  trang_thai: "FE mới dựng component, CHƯA nối API (đang chạy bằng mockArticles)"
+  can_BE_lam: "Chốt các quyết định ở mục `quyet_dinh_can_chot`, sửa schema tương ứng, xuất lại openapi.yaml + changelog"
+
+# ---------------------------------------------------------------------------
+# 1. FILE FRONTEND ĐÃ THAY ĐỔI TRONG ĐỢT NÀY (chỉ FE, không đụng BE)
+# ---------------------------------------------------------------------------
+files_frontend_thay_doi:
+  - path: "frontend/src/components/BangTinModule.tsx"
+    loai: "Tạo mới"
+    mo_ta: >
+      Component Master-Detail hoàn chỉnh: panel trái (tìm kiếm + lọc chuyên mục +
+      danh sách bài, cuộn độc lập) / panel phải (breadcrumb + tiêu đề + meta-bar +
+      thân bài + ảnh có chú thích + tài liệu đính kèm). Kèm form soạn thảo (modal)
+      và phân quyền Viết/Sửa/Xoá theo vai trò. Có sẵn `mockArticles` (4 bài) để test.
+  - path: "frontend/src/components/BangTinModule.css"
+    loai: "Tạo mới"
+    mo_ta: "CSS đóng gói, mọi class tiền tố `bt-`; sửa lỗi vỡ font tiếng Việt + lỗi bố cục dồn sang phải."
+
+khac_phuc_ky_thuat_trong_FE:
+  - "Lỗi tách dấu tiếng Việt (NFD): hàm normalizeVI() chạy String.normalize('NFC') ở mọi chỗ render text."
+  - "Font stack: 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif + antialiased."
+  - "Bố cục: CSS grid `340px minmax(0,1fr)` + min-width:0 ở panel phải (chống tràn/đẩy layout)."
+  - "Tiêu đề bài viết chỉ render 1 lần (bỏ trùng lặp)."
+
+# ---------------------------------------------------------------------------
+# 2. HỢP ĐỒNG DỮ LIỆU MÀ COMPONENT ĐANG GIẢ ĐỊNH
+#    (BE đối chiếu với schema hiện có: EducationMaterialOut / PostOut)
+# ---------------------------------------------------------------------------
+entity_de_xuat_anh_xa: "education_materials  (tái sử dụng, KHÔNG tạo bảng mới)"
+
+hop_dong_component_can:
+  Article:
+    id: "integer"
+    title: "string"
+    category: "enum (xem mục quyet_dinh 2)"
+    publishedAt: "string (ISO date) — hiện FE map từ created_at"
+    author: "string — hiện FE map từ author_full_name"
+    status: "enum: da_duyet | cho_duyet | nhap  (xem quyet_dinh 4)"
+    isPinned: "boolean  (xem quyet_dinh 5)"
+    summary: "string | null  (xem quyet_dinh 3)"
+    body: "ArticleBlock[]  — khối cấu trúc (xem quyet_dinh 1)"
+    attachments: "Attachment[]  (xem quyet_dinh 6)"
+  ArticleBlock:
+    kieu: "paragraph | heading(level 2|3) | list(ordered?) | quote | image(src,alt,caption?)"
+  Attachment:
+    id: "string"
+    name: "string"
+    url: "string (đường dẫn tải, /static/... hoặc tuyệt đối)"
+    size: "string | null (vd '1,2 MB')"
+
+# ---------------------------------------------------------------------------
+# 3. BẢNG ĐỐI CHIẾU TỪNG TRƯỜNG  (current = openapi.yaml hiện tại)
+# ---------------------------------------------------------------------------
+doi_chieu_truong:
+  - truong: "id"
+    hien_tai: "có (int)"
+    can: "giữ nguyên"
+    hanh_dong: "không đổi"
+  - truong: "title"
+    hien_tai: "có (str)"
+    can: "giữ nguyên"
+    hanh_dong: "không đổi — đề xuất BE normalize('NFC') khi ghi"
+  - truong: "category"
+    hien_tai: "enum: hoc_tap_chinh_tri_quan_su | tuyen_truyen | phap_luat_bien_gioi | lich_su_truyen_thong"
+    can: "FE component đang dùng bộ khác (tuyen_truyen | van_ban_chi_dao | hoat_dong | lich_su_truyen_thong)"
+    hanh_dong: "QUYẾT ĐỊNH 2 — mặc định: FE đổi về đúng enum backend, BE KHÔNG cần sửa"
+  - truong: "content"
+    hien_tai: "str (HTML)"
+    can: "component render theo khối; hiện chỉ dùng cho mock"
+    hanh_dong: "QUYẾT ĐỊNH 1 — mặc định: giữ HTML, FE render bằng RichContent; BE KHÔNG cần sửa"
+  - truong: "summary"
+    hien_tai: "KHÔNG có ở education_materials (posts thì có)"
+    can: "string | null, hiển thị ở card danh sách"
+    hanh_dong: "QUYẾT ĐỊNH 3 — nếu đồng ý: BE thêm cột `summary VARCHAR NULL` (additive)"
+  - truong: "is_pinned"
+    hien_tai: "KHÔNG có"
+    can: "boolean, dùng để ghim bài lên đầu danh sách + sort"
+    hanh_dong: "QUYẾT ĐỊNH 5 — nếu đồng ý: BE thêm `is_pinned BOOL DEFAULT 0` + sort ghim→mới nhất"
+  - truong: "status / review_note / reviewed_by_id / reviewed_at"
+    hien_tai: "KHÔNG có ở education_materials (posts có luồng duyệt đầy đủ)"
+    can: "component có hiển thị chip trạng thái duyệt"
+    hanh_dong: "QUYẾT ĐỊNH 4 — nếu Bảng tin cần luồng duyệt như posts: BE bổ sung 4 cột + endpoint /review; nếu KHÔNG: FE ẩn chip trạng thái"
+  - truong: "attachment_url"
+    hien_tai: "1 file, str | null"
+    can: "component hỗ trợ nhiều file (mảng)"
+    hanh_dong: "QUYẾT ĐỊNH 6 — giai đoạn 1: giữ 1 file, FE tự bọc thành mảng 1 phần tử. Nhiều file = việc sau"
+  - truong: "period_label"
+    hien_tai: "có (str | null)"
+    can: "component chưa dùng"
+    hanh_dong: "không đổi — FE sẽ hiển thị nếu có"
+  - truong: "author_full_name / author_id / created_at"
+    hien_tai: "có"
+    can: "component map sang author / publishedAt"
+    hanh_dong: "không đổi — FE tự map"
+  - truong: "updated_at"
+    hien_tai: "kiểm tra: có thể chưa có"
+    can: "không bắt buộc"
+    hanh_dong: "tuỳ BE"
+
+# ---------------------------------------------------------------------------
+# 4. CÁC QUYẾT ĐỊNH CẦN BE/CHỈ HUY CHỐT  (kèm khuyến nghị của FE)
+# ---------------------------------------------------------------------------
+quyet_dinh_can_chot:
+  - so: 1
+    van_de: "Định dạng nội dung: HTML (như hiện tại) hay khối cấu trúc JSON?"
+    khuyen_nghi_FE: "Giữ HTML. FE render bằng component RichContent sẵn có. Mô hình khối chỉ là nội bộ của form soạn thảo."
+    tac_dong_neu_theo_khuyen_nghi: "BE không phải sửa gì."
+  - so: 2
+    van_de: "Bộ enum `category` cho Bảng tin."
+    khuyen_nghi_FE: "FE đổi component về đúng 4 giá trị EducationCategory hiện có. Nếu nghiệp vụ cần thêm 'van_ban_chi_dao' / 'hoat_dong' thì BE mở rộng enum (additive)."
+    tac_dong_neu_theo_khuyen_nghi: "BE không phải sửa gì (trừ khi muốn thêm giá trị)."
+  - so: 3
+    van_de: "Thêm trường `summary` cho education_materials?"
+    khuyen_nghi_FE: "Nên thêm — card danh sách cần dòng tóm tắt. Cột additive, backfill NULL."
+    tac_dong: "BE: +1 cột + cập nhật EducationMaterialCreate/Out."
+  - so: 4
+    van_de: "Bảng tin có cần luồng DUYỆT bài (như posts) không?"
+    khuyen_nghi_FE: "Nếu đối tượng đăng gồm cả role=4 (cán bộ) thì NÊN có duyệt: thêm status + review_note + reviewed_by_id + reviewed_at + POST /education-materials/{id}/review. Nếu chỉ chỉ huy đăng thì bỏ qua, FE ẩn chip."
+    tac_dong: "Lớn hơn — cần chốt trước khi FE nối API."
+  - so: 5
+    van_de: "Thêm `is_pinned` để ghim bài?"
+    khuyen_nghi_FE: "Nên thêm — hữu ích cho tin quan trọng. Cột additive default false + sort ghim trước."
+    tac_dong: "BE: +1 cột + sort trong repository.list."
+  - so: 6
+    van_de: "1 file đính kèm hay nhiều file?"
+    khuyen_nghi_FE: "Giai đoạn 1 giữ `attachment_url` (1 file). FE tự bọc thành mảng. Nhiều file làm sau nếu cần."
+    tac_dong: "BE không phải sửa gì."
+  - so: 7
+    van_de: "Ánh xạ vai trò RBAC."
+    khuyen_nghi_FE: >
+      FE quy đổi role số của dự án -> vai trò component:
+      role 0..3 -> 'ADMIN' (toàn quyền), role 4 -> 'EDITOR' (đăng/sửa),
+      role >=5 -> 'VIEWER' (chỉ xem). Enforce thật vẫn ở BE qua can_post_content.
+    tac_dong: "BE không phải sửa gì — chỉ xác nhận cách hiểu đúng."
+  - so: 8
+    van_de: "Chuẩn hoá Unicode ở nguồn."
+    khuyen_nghi_FE: "BE nên .normalize('NFC') cho title/content/summary khi ghi, để dữ liệu sạch từ gốc (FE đã tự chuẩn hoá khi hiển thị nhưng nên phòng cả 2 lớp)."
+    tac_dong: "BE: 1 dòng ở service create/update."
+
+# ---------------------------------------------------------------------------
+# 5. VIỆC BE PHẢI LÀM SAU KHI CHỐT  (theo quy tắc dự án)
+# ---------------------------------------------------------------------------
+be_action_items:
+  - "Chốt 8 quyết định ở trên (phối hợp chỉ huy nếu cần cho QĐ 4)."
+  - "Sửa app/models + app/schemas + app/repositories + app/services + routes theo quyết định (đúng 3 tầng)."
+  - "Nếu thêm cột vào bảng cũ: viết script migrate idempotent trong backend/scripts/."
+  - "Chạy: python scripts/export_openapi.py  -> cập nhật openapi.yaml ở gốc dự án."
+  - "Ghi biên bản vào openapi.CHANGELOG.md, version khớp API_VERSION trong app/main.py."
+  - "Báo lại FE version openapi mới + danh sách trường thay đổi để FE cập nhật src/types/educationMaterial.ts và nối BangTinModule vào EducationPage."
+
+# ---------------------------------------------------------------------------
+# 6. PHƯƠNG ÁN DỰ PHÒNG NẾU BE GIỮ NGUYÊN SCHEMA
+# ---------------------------------------------------------------------------
+fe_fallback_neu_BE_khong_doi:
+  - "category: FE đổi component sang 4 giá trị EducationCategory hiện có."
+  - "body: FE render content HTML bằng RichContent, bỏ mô hình khối ở chế độ đọc."
+  - "summary: FE tự cắt trích đoạn từ content (excerptFromHtml) như EducationPage đang làm."
+  - "status: FE ẩn hoàn toàn chip trạng thái."
+  - "isPinned: FE ẩn badge 'Ghim', chỉ sort theo created_at."
+  - "attachments: FE bọc attachment_url thành mảng 1 phần tử."
+  => "Trong trường hợp này BE KHÔNG cần tạo file openapi mới cho đợt này."

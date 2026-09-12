@@ -2,7 +2,10 @@ import { useState, type FormEvent } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { ApiError } from '../api/client'
 import { profileApi } from '../api/profile'
+import { Field } from '../components/Field'
+import { PasswordInput } from '../components/PasswordInput'
 import { useAuth } from '../context/AuthContext'
+import { useRequiredFields } from '../hooks/useRequiredFields'
 
 /**
  * Man hinh buoc doi mat khau lan dau (tai khoan do admin cap / vua duoc reset).
@@ -18,10 +21,12 @@ export function ChangePasswordPage() {
   const [confirm, setConfirm] = useState('')
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const req = useRequiredFields(['currentPassword', 'newPassword', 'confirm'] as const)
 
   async function handleSubmit(event: FormEvent) {
     event.preventDefault()
     setError(null)
+    if (!req.validate({ currentPassword, newPassword, confirm })) return
     if (newPassword !== confirm) {
       setError('Mật khẩu xác nhận không khớp')
       return
@@ -58,33 +63,30 @@ export function ChangePasswordPage() {
         ) : null}
 
         <form onSubmit={handleSubmit} className="entity-form">
-          <label>
-            Mật khẩu hiện tại
-            <input
-              type="password"
+          <Field label="Mật khẩu hiện tại" required req={req} name="currentPassword">
+            <PasswordInput
               value={currentPassword}
               onChange={(e) => setCurrentPassword(e.target.value)}
+              onBlur={(e) => req.mark('currentPassword', e.target.value)}
               required
             />
-          </label>
-          <label>
-            Mật khẩu mới
-            <input
-              type="password"
+          </Field>
+          <Field label="Mật khẩu mới" required req={req} name="newPassword">
+            <PasswordInput
               value={newPassword}
               onChange={(e) => setNewPassword(e.target.value)}
+              onBlur={(e) => req.mark('newPassword', e.target.value)}
               required
             />
-          </label>
-          <label>
-            Xác nhận mật khẩu mới
-            <input
-              type="password"
+          </Field>
+          <Field label="Xác nhận mật khẩu mới" required req={req} name="confirm">
+            <PasswordInput
               value={confirm}
               onChange={(e) => setConfirm(e.target.value)}
+              onBlur={(e) => req.mark('confirm', e.target.value)}
               required
             />
-          </label>
+          </Field>
           <div className="form-actions">
             <button type="submit" disabled={submitting}>
               Đổi mật khẩu &amp; tiếp tục

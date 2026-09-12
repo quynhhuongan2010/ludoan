@@ -219,16 +219,18 @@ function KienTruc() {
             </tr>
             <tr>
               <td><code>officer</code></td>
-              <td>Cán bộ, sĩ quan/QNCN phòng ban, đại đội</td>
+              <td>Cán bộ, sĩ quan/QNCN phòng ban, đại đội (mặc định khi tự đăng ký)</td>
               <td>Đăng/biên tập Tin tức – Hoạt động và Giáo dục chính trị; chỉ xem Chỉ thị – Nhiệm vụ.</td>
-            </tr>
-            <tr>
-              <td><code>soldier</code></td>
-              <td>Chiến sĩ (mặc định khi đăng ký)</td>
-              <td>Chỉ xem các nội dung được phép; không đăng/sửa.</td>
             </tr>
           </tbody>
         </table>
+        <p>
+          Chỉ cán bộ và quân nhân chuyên nghiệp (QNCN) có biên chế thực tế mới được cấp tài
+          khoản mạng nội bộ — không còn vai trò &quot;Chiến sĩ&quot;. Mọi tài khoản (tự đăng ký
+          hoặc chỉ huy tạo trực tiếp) đều phải có đủ <strong>Cấp bậc</strong>,{' '}
+          <strong>Chức danh</strong> và <strong>Đơn vị công tác</strong> trước khi kích hoạt được
+          (<code>POST /users/{'{id}'}/activate</code> trả về 409 nếu còn thiếu).
+        </p>
         <p>
           Xác thực bằng <strong>JWT</strong> (token có hạn {'24 giờ'} — cấu hình
           <code> JWT_EXPIRE_MINUTES</code>). Quyền được <em>bắt buộc thực thi ở tầng Backend</em>;
@@ -264,7 +266,7 @@ function KienTruc() {
           </tbody>
         </table>
         <p className="guide-note">
-          Kênh chuyên Ban Chỉ huy &amp; Cấp uỷ, Sổ công văn mật và Giao ban trực tuyến đều gắn cứng
+          Kênh chuyên Ban Chỉ huy &amp; Cấp uỷ và Sổ công văn mật đều gắn cứng
           bậc <code>mat</code> — không đủ quyền sẽ nhận lỗi 403 ngay tại máy chủ.
         </p>
       </Block>
@@ -460,8 +462,8 @@ function MayTram() {
         <p>
           Các form soạn thảo nội dung dài — <strong>ban hành Chỉ thị</strong>, trao đổi/báo cáo trong{' '}
           <strong>Kênh Chỉ đạo – Báo cáo</strong>, <strong>Giao nhiệm vụ</strong> (tạo nhiệm vụ + nộp
-          báo cáo tiến độ), <strong>Kênh chuyên BCH &amp; Cấp uỷ</strong> và <strong>biên bản Giao
-          ban trực tuyến</strong> — đều <strong>tự động lưu bản nháp</strong> ngay trên trình duyệt
+          báo cáo tiến độ) và <strong>Kênh chuyên BCH &amp; Cấp uỷ</strong> — đều{' '}
+          <strong>tự động lưu bản nháp</strong> ngay trên trình duyệt
           của máy trạm trong lúc đang gõ (không cần bấm nút lưu riêng).
         </p>
         <ul className="guide-list">
@@ -501,7 +503,7 @@ function MayTram() {
             <tr><td>Giáo dục chính trị</td><td>Mọi tài khoản đã đăng nhập</td><td><code>officer</code>, <code>commander</code></td></tr>
             <tr><td>Chỉ thị – Nhiệm vụ</td><td>Mọi tài khoản (bản đã ban hành)</td><td>Chỉ <code>commander</code></td></tr>
             <tr><td>Kênh Chỉ đạo – Báo cáo / Giao nhiệm vụ</td><td>Tài khoản có cờ kênh chỉ đạo (+ <code>commander</code>/<code>admin</code>)</td><td>Giao/duyệt: <code>commander</code>/<code>admin</code>; nộp báo cáo: đơn vị được giao</td></tr>
-            <tr><td>Kênh chỉ huy (MẬT) / Giao ban trực tuyến</td><td>Có <code>clearance</code> hoặc <code>commander</code>/<code>admin</code></td><td>Vào sổ/đóng luồng/ghi biên bản: <code>commander</code>/<code>admin</code></td></tr>
+            <tr><td>Kênh chỉ huy (MẬT)</td><td>Có <code>clearance</code> hoặc <code>commander</code>/<code>admin</code></td><td>Vào sổ/đóng luồng: <code>commander</code>/<code>admin</code></td></tr>
             <tr><td>Quản lý người dùng</td><td><code>commander</code>/<code>admin</code></td><td><code>commander</code>/<code>admin</code></td></tr>
             <tr><td>Quản lý đơn vị</td><td><code>admin</code></td><td><code>admin</code></td></tr>
             <tr><td>Hồ sơ cá nhân</td><td>Chủ tài khoản</td><td>Chủ tài khoản (đổi họ tên, đổi mật khẩu)</td></tr>
@@ -515,7 +517,8 @@ function MayTram() {
       <Block title="Quy trình quản trị tài khoản (dành cho chỉ huy / quản trị)">
         <ul className="guide-list">
           <li>Xem danh sách chờ duyệt: <em>Quản lý người dùng</em> → lọc tài khoản chưa kích hoạt.</li>
-          <li>Kích hoạt / khoá tài khoản; đổi vai trò (soldier → officer → commander).</li>
+          <li>Bổ sung Cấp bậc, Chức danh và Đơn vị công tác cho tài khoản chờ duyệt (bắt buộc).</li>
+          <li>Kích hoạt / khoá tài khoản; đổi vai trò (officer → commander).</li>
           <li>Cấp/thu quyền xem <strong>MẬT</strong> (<code>clearance</code>); cấp cờ vào <strong>Kênh Chỉ đạo – Báo cáo</strong>.</li>
           <li>Gán <strong>đơn vị</strong> cho tài khoản để phục vụ giao nhiệm vụ / nhận báo cáo theo đầu mối.</li>
           <li>Cấp lại mật khẩu (tài khoản đó sẽ bị buộc đổi ở lần đăng nhập kế tiếp).</li>
@@ -564,7 +567,7 @@ taskkill /PID <PID> /F`}</Code>
         <p><strong>Triệu chứng:</strong> API trả <code>403 Forbidden</code>; nút thao tác không hiện hoặc bấm vào báo không đủ quyền.</p>
         <p><strong>Kiểm tra theo thứ tự:</strong></p>
         <ul className="guide-list">
-          <li>Vai trò tài khoản có đúng không (soldier/officer/commander/admin)? Sửa tại <em>Quản lý người dùng → đổi vai trò</em>.</li>
+          <li>Vai trò tài khoản có đúng không (officer/commander/admin)? Sửa tại <em>Quản lý người dùng → đổi vai trò</em>.</li>
           <li>Nội dung/kênh ở bậc <strong>MẬT</strong>? Tài khoản cần cờ <code>clearance = true</code> hoặc là <code>commander</code>/<code>admin</code>.</li>
           <li>Kênh Chỉ đạo – Báo cáo: tài khoản cần cờ <code>directive_channel_access</code>.</li>
           <li>Sửa/xoá nội dung của người khác: chỉ tác giả hoặc <code>commander</code> mới được phép.</li>
@@ -594,12 +597,12 @@ taskkill /PID <PID> /F`}</Code>
       </Block>
 
       <Block title="4.7 — Mất điện / mất mạng LAN đột ngột giữa buổi làm việc">
-        <p><strong>Nguy cơ:</strong> đang soạn Chỉ thị, báo cáo, biên bản họp... thì mất điện hoặc rớt mạng trước khi kịp gửi/lưu.</p>
+        <p><strong>Nguy cơ:</strong> đang soạn Chỉ thị, báo cáo, nội dung trao đổi trong kênh... thì mất điện hoặc rớt mạng trước khi kịp gửi/lưu.</p>
         <p><strong>Đã được bảo vệ sẵn:</strong></p>
         <ul className="guide-list">
           <li>
             Nội dung đang gõ ở các form Chỉ thị, Kênh Chỉ đạo – Báo cáo, Giao nhiệm vụ, Kênh chuyên BCH
-            &amp; Cấp uỷ, biên bản Giao ban đã được <strong>tự động lưu bản nháp</strong> trên trình
+            &amp; Cấp uỷ đã được <strong>tự động lưu bản nháp</strong> trên trình
             duyệt máy trạm (xem tab 3 — mục "Tự động lưu bản nháp"). Bật lại máy/mạng, mở lại đúng
             trang đó, nội dung sẽ tự khôi phục.
           </li>

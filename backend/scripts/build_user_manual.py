@@ -66,7 +66,6 @@ FULL_MENU = [
     "Chỉ đạo – Báo cáo",
     "Giao nhiệm vụ",
     "Kênh chỉ huy (MẬT)",
-    "Giao ban trực tuyến",
     "Hồ sơ cá nhân",
     "Quản lý người dùng",
     "Quản lý đơn vị",
@@ -428,7 +427,7 @@ def img_command_channel():
     badge(d, 465, cy + 20, 2)
 
     def det(d, rb, top):
-        d.text((rb[0] + 20, top), "Giao ban Cấp uỷ tuần 35", font=F_LBL_B, fill=INK)
+        d.text((rb[0] + 20, top), "Họp bàn Cấp uỷ tuần 35", font=F_LBL_B, fill=INK)
         for i, (who, msg) in enumerate([("Chính uỷ", "Đề nghị các đồng chí cho ý kiến về…"),
                                         ("Phó Lữ trưởng", "Nhất trí phương án 1.")]):
             rrect(d, [rb[0] + 20, top + 36 + i * 76, rb[0] + 520, top + 36 + i * 76 + 60], 8,
@@ -442,7 +441,7 @@ def img_command_channel():
         badge(d, rb[0] + 300, yy + 26, 4)
 
     _list_detail(d, cy + 60, "Các luồng trao đổi", [
-        ("Giao ban Cấp uỷ tuần 35", "5 tin"),
+        ("Họp bàn Cấp uỷ tuần 35", "5 tin"),
         ("Chủ trương công tác Quý IV", "2 tin"),
     ], 0, "Nội dung", det)
     badge(d, 60, cy + 80, 3)
@@ -472,41 +471,6 @@ def img_dispatch():
     bx = button(d, tb[0] + 20, ry + 6, "Ký nhận đã tiếp thu")
     button(d, bx, ry + 6, "Tải tệp công văn", primary=False, n=4)
     save(im, "12b_so_cong_van")
-
-
-def img_meeting():
-    im, d = new_canvas()
-    cy = chrome(d, "Giao ban trực tuyến  (MẬT)", active="Giao ban trực tuyến")
-    fb = [36, cy, W - 36, cy + 260]
-    top = panel(d, fb, "Tạo cuộc họp / giao ban  (chỉ huy)")
-    field(d, fb[0] + 24, top, 460, "Tiêu đề", "Giao ban tuần 36")
-    field(d, fb[0] + 504, top, 300, "Bắt đầu", "02/09/2026 08:00")
-    badge(d, fb[0] + 830, top + 22, 1)
-    y = field(d, fb[0] + 24, top + 78, 460, "Liên kết phòng trực tuyến", "https://…")
-    field(d, fb[0] + 504, top + 78, 300, "Địa điểm", "Phòng họp A")
-    badge(d, fb[0] + 490, y - 66, 2)
-    button(d, fb[0] + 24, y + 6, "Tạo cuộc họp", n=3)
-
-    def det(d, rb, top):
-        d.text((rb[0] + 20, top), "Giao ban tuần 36 — 02/09 08:00", font=F_LBL_B, fill=INK)
-        rrect(d, [rb[2] - 250, top - 4, rb[2] - 30, top + 30], 6, fill=(30, 111, 52))
-        d.text((rb[2] - 234, top + 3), "» Vào phòng trực tuyến", font=F_SMALL, fill=(255, 255, 255))
-        badge(d, rb[2] - 30, top + 13, 4)
-        y = area(d, rb[0] + 20, top + 44, rb[2] - rb[0] - 40, 90, "Biên bản / kết luận", "Nhập kết luận cuộc họp…")
-        bx = button(d, rb[0] + 20, y + 4, "Lưu biên bản")
-        button(d, bx, y + 4, "Lưu & kết thúc họp", primary=False, n=5)
-        y2 = table(d, rb[0] + 20, y + 60, rb[2] - rb[0] - 40,
-                   ["Họ tên", "Điểm danh", "Lý do vắng"],
-                   [["Tiểu đoàn 1 – Đ/c A", "Có mặt", ""],
-                    ["Đại đội 5 – Đ/c B", "Vắng mặt", "Đi công tác"]],
-                   colw=[380, 220, 400])
-        badge(d, rb[0] + 480, y + 78, 6)
-
-    _list_detail(d, cy + 280, "Lịch giao ban", [
-        ("Giao ban tuần 36", "Sắp diễn ra · 02/09"),
-        ("Họp Cấp uỷ tháng 8", "Đã kết thúc"),
-    ], 0, "Chi tiết cuộc họp", det)
-    save(im, "13_giao_ban")
 
 
 def img_users():
@@ -579,7 +543,7 @@ def img_menu_officer():
            menu=["Bảng tin", "Tin tức – Hoạt động", "Thông báo – Lịch trực", "Văn bản – Tài liệu",
                  "Giáo dục chính trị", "Chỉ thị – Nhiệm vụ", "Chỉ đạo – Báo cáo", "Giao nhiệm vụ", "Hồ sơ cá nhân"])
     d.text((36, 260), "Tài khoản Cán bộ được cấp quyền Kênh Chỉ đạo: thấy thêm “Chỉ đạo – Báo cáo”, “Giao nhiệm vụ”.", font=F_LBL, fill=INK)
-    d.text((36, 292), "KHÔNG thấy: Kênh chỉ huy (MẬT), Giao ban trực tuyến, Quản lý người dùng, Quản lý đơn vị.", font=F_LBL, fill=RED)
+    d.text((36, 292), "KHÔNG thấy: Kênh chỉ huy (MẬT), Quản lý người dùng, Quản lý đơn vị.", font=F_LBL, fill=RED)
     badge(d, W - 60, 149, 1)
     save(im, "17_menu_can_bo")
 
@@ -620,7 +584,6 @@ def generate_images():
     img_assignment()
     img_command_channel()
     img_dispatch()
-    img_meeting()
     img_users()
     img_units()
     img_profile()
@@ -629,7 +592,23 @@ def generate_images():
 
 
 if __name__ == "__main__":
-    generate_images()
+    import sys
+
+    # Tu v7.0.0: HDSD dung ANH CHUP THAT tu he thong (docs/screenshots_khai_thac/,
+    # sinh boi scripts/e2e_full_walkthrough.py) thay cho mockup ve tay.
+    # Chay lai mockup cu:  python scripts/build_user_manual.py --mockups
+    if "--mockups" in sys.argv:
+        generate_images()
+
+    shots = ROOT / "docs" / "screenshots_khai_thac"
+    n_shots = len(list(shots.glob("*.png"))) if shots.is_dir() else 0
+    if n_shots < 20:
+        print(
+            f"CANH BAO: chi thay {n_shots} anh o {shots}.\n"
+            "  -> Chay truoc:  venv/Scripts/python.exe scripts/e2e_full_walkthrough.py\n"
+            "     (can backend chay o http://127.0.0.1:8000)."
+        )
+
     from _manual_docx import build_docx  # noqa: E402
 
     build_docx()

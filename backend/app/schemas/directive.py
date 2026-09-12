@@ -35,7 +35,7 @@ class DirectiveOut(BaseModel):
 class DirectiveAckUser(BaseModel):
     user_id: int
     full_name: str
-    role: str
+    role: int
     acknowledged_at: datetime | None = None
 
 

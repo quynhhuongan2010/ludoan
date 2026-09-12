@@ -6,6 +6,7 @@ from sqlalchemy.orm import Session
 
 from app.api.deps import get_current_user, get_optional_user, require_roles
 from app.core.database import get_db
+from app.core.roles import DOCUMENT_MANAGE_ROLES
 from app.models.user import User
 from app.schemas.document import DocumentOut
 from app.services import document_service
@@ -17,7 +18,7 @@ router = APIRouter(prefix="/documents", tags=["documents"])
     "",
     response_model=DocumentOut,
     status_code=status.HTTP_201_CREATED,
-    dependencies=[Depends(require_roles("officer", "commander"))],
+    dependencies=[Depends(require_roles(*DOCUMENT_MANAGE_ROLES))],
 )
 def upload_document(
     title: str = Form(..., max_length=255),
@@ -73,7 +74,7 @@ def download_document(
     "/{doc_id}",
     response_model=DocumentOut,
     status_code=status.HTTP_200_OK,
-    dependencies=[Depends(require_roles("officer", "commander"))],
+    dependencies=[Depends(require_roles(*DOCUMENT_MANAGE_ROLES))],
 )
 def update_document(
     doc_id: int,
@@ -81,6 +82,7 @@ def update_document(
     category: str = Form(...),
     description: Optional[str] = Form(None),
     classification: str = Form("noi_bo"),
+    file: Optional[UploadFile] = File(None),
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
@@ -91,6 +93,7 @@ def update_document(
         description=description,
         category=category,
         classification=classification,
+        file=file,
         current_user=current_user,
     )
 
@@ -98,7 +101,7 @@ def update_document(
 @router.delete(
     "/{doc_id}",
     status_code=status.HTTP_204_NO_CONTENT,
-    dependencies=[Depends(require_roles("officer", "commander"))],
+    dependencies=[Depends(require_roles(*DOCUMENT_MANAGE_ROLES))],
 )
 def delete_document(
     doc_id: int,

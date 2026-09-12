@@ -5,6 +5,7 @@ from fastapi import HTTPException, UploadFile, status
 from sqlalchemy.orm import Session
 
 from app.core.access import allowed_classifications, can_view_classification, has_secret_clearance
+from app.core.roles import can_manage_documents
 from app.core.config import settings
 from app.core.uploads import DOCUMENT_EXTENSIONS, delete_upload, save_upload
 from app.models.document import Document
@@ -35,6 +36,11 @@ def _to_out(doc: Document) -> DocumentOut:
 
 
 def _validate(category: str, classification: str, current_user: User) -> None:
+    if not can_manage_documents(current_user):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Chỉ Quản trị hệ thống, Lữ trưởng/Chính uỷ, Lữ phó/Phó chính uỷ mới được quản lý Văn bản – Tài liệu",
+        )
     if category not in VALID_CATEGORIES:
         raise HTTPException(
             status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
@@ -99,7 +105,7 @@ def list_documents(
 def _get_visible_or_404(db: Session, doc_id: int, current_user: Optional[User]) -> Document:
     doc = document_repository.get_with_uploader(db, doc_id)
     if doc is None or not can_view_classification(doc.classification, current_user):
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Document not found")
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Không tìm thấy tài liệu")
     return doc
 
 
@@ -124,27 +130,40 @@ def update_document(
     description: Optional[str],
     category: str,
     classification: str,
+    file: Optional[UploadFile] = None,
     current_user: User,
 ) -> DocumentOut:
     _validate(category, classification, current_user)
     doc = document_repository.get_with_uploader(db, doc_id)
     if doc is None:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Document not found")
-    if current_user.role != "commander" and doc.uploaded_by_id != current_user.id:
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Not enough permissions")
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Không tìm thấy tài liệu")
     doc.title = title
     doc.description = description
     doc.category = category
     doc.classification = classification
-    return _to_out(document_repository.save(db, doc))
+    old_file_url: Optional[str] = None
+    if file is not None and file.filename:
+        saved = save_upload(file, subdir="documents", allowed_ext=DOCUMENT_EXTENSIONS)
+        old_file_url = doc.file_url
+        doc.file_url = saved.url
+        doc.file_name = saved.original_name
+        doc.file_size = saved.size
+        doc.content_type = saved.content_type
+    out = _to_out(document_repository.save(db, doc))
+    if old_file_url and old_file_url != doc.file_url:
+        delete_upload(old_file_url)
+    return out
 
 
 def delete_document(db: Session, doc_id: int, current_user: User) -> None:
+    if not can_manage_documents(current_user):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Chỉ Quản trị hệ thống, Lữ trưởng/Chính uỷ, Lữ phó/Phó chính uỷ mới được xoá Văn bản – Tài liệu",
+        )
     doc = document_repository.get_with_uploader(db, doc_id)
     if doc is None:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Document not found")
-    if current_user.role != "commander" and doc.uploaded_by_id != current_user.id:
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Not enough permissions")
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Không tìm thấy tài liệu")
     file_url = doc.file_url
     document_repository.delete(db, doc)
     delete_upload(file_url)

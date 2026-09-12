@@ -1,0 +1,7 @@
+KET QUA CHUP ANH: 47/47 dat
+
+KIEM CHUNG CHUC NANG:
+  [DAT] Đăng nhập quản trị qua giao diện
+  [DAT] Tự động lưu bản nháp khôi phục khớp 100%
+  [DAT] Cán bộ (role 4) nộp báo cáo nhiệm vụ
+  [DAT] Chỉ huy duyệt báo cáo, trạng thái nhiệm vụ tự cập nhật

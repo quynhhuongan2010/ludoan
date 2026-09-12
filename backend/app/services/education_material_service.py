@@ -3,6 +3,7 @@ from typing import Optional
 from fastapi import HTTPException, status
 from sqlalchemy.orm import Session
 
+from app.core.roles import is_command
 from app.models.education_material import EducationMaterial
 from app.models.user import User
 from app.repositories import education_material_repository
@@ -38,16 +39,16 @@ def list_materials(
 def get_material_or_404(db: Session, material_id: int) -> EducationMaterialOut:
     material = education_material_repository.get_with_author(db, material_id)
     if material is None:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Education material not found")
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Không tìm thấy tài liệu giáo dục")
     return _to_out(material)
 
 
 def _get_owned_or_404(db: Session, material_id: int, current_user: User) -> EducationMaterial:
     material = education_material_repository.get(db, material_id)
     if material is None:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Education material not found")
-    if current_user.role != "commander" and material.author_id != current_user.id:
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Not enough permissions")
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Không tìm thấy tài liệu giáo dục")
+    if not is_command(current_user) and material.author_id != current_user.id:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Không đủ quyền thực hiện thao tác này")
     return material
 
 

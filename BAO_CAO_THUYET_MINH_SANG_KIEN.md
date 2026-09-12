@@ -9,7 +9,7 @@
 | **Thời gian nghiên cứu & phát triển** | Tháng 05/2026 – Tháng 08/2026 |
 | **Phương pháp thực hiện** | Ứng dụng kỹ thuật Vibecoding kết hợp trí tuệ nhân tạo (AI-driven development): thiết kế kiến trúc 3 tầng chuẩn mực, tự động hoá quy trình Contract-First, kiểm thử toàn diện |
 | **Lĩnh vực áp dụng** | Công nghệ thông tin – Cải cách hành chính quân sự – Bảo mật thông tin |
-| **Phiên bản phần mềm tại thời điểm báo cáo** | API v1.9.1 |
+| **Phiên bản phần mềm tại thời điểm báo cáo** | API v7.0.0 |
 
 ---
 
@@ -81,8 +81,8 @@ Sáng kiến được thực hiện bằng phương pháp **Vibecoding** – ph�
    - `fast-api-mysql-auto-schema`: tự động sinh mã 3 tầng (model → schema → repository → service → route) theo cấu trúc chuẩn.
    - `contract-first-handshake`: quy trình 5 bước bắt buộc để đồng bộ hợp đồng API giữa Backend và Frontend.
 3. **Quy trình Contract-First:** sau mỗi thay đổi API, hệ thống xuất lại tệp hợp đồng `openapi.yaml`, ghi biên bản bàn giao vào `openapi.CHANGELOG.md` (đánh phiên bản khớp `API_VERSION`), rồi mới sinh kiểu dữ liệu và lớp gọi API phía Frontend → hai phía **luôn khớp nhau**, không lệch hợp đồng.
-4. **Kiểm thử toàn diện:** bộ kịch bản kiểm thử tự động (`backend/scripts/test_full_system.py`, `test_post_rbac.py`…) chạy lại toàn bộ luồng đăng nhập – phân quyền – nghiệp vụ – phân loại mật sau mỗi lần thay đổi, bảo đảm không phá vỡ chức năng cũ.
-5. **Sinh tài liệu tự động:** tài liệu hướng dẫn sử dụng (`docs/HUONG_DAN_SU_DUNG.docx`) và ảnh minh hoạ được sinh bằng script, luôn cập nhật theo phiên bản phần mềm.
+4. **Kiểm thử toàn diện:** bộ kịch bản kiểm thử tự động — `backend/scripts/test_full_system.py`, `test_post_rbac.py` (mức API) và `e2e_full_walkthrough.py` (mức giao diện, chạy trên trình duyệt thật) — chạy lại toàn bộ luồng đăng nhập – phân quyền – nghiệp vụ – phân loại mật sau mỗi lần thay đổi, bảo đảm không phá vỡ chức năng cũ.
+5. **Sinh tài liệu tự động từ ảnh chụp thật:** tài liệu hướng dẫn sử dụng (`docs/HUONG_DAN_SU_DUNG.docx`) được sinh bằng script, nhúng trực tiếp ảnh chụp màn hình thật của hệ thống đang chạy (`docs/screenshots_khai_thac/`) — chạy lại script là tài liệu khớp phiên bản phần mềm.
 
 **Giá trị của phương pháp:** một cá nhân, không có ê-kíp lập trình, vẫn hoàn thành một hệ thống nhiều phân hệ, chất lượng mã đồng đều, tài liệu đầy đủ, trong thời gian ngắn (khoảng 4 tháng), chi phí gần như bằng không.
 
@@ -112,7 +112,7 @@ Sáng kiến được thực hiện bằng phương pháp **Vibecoding** – ph�
 
 Việc lọc theo bậc mật thực hiện ở tầng Service: danh sách chỉ trả các mục người dùng được phép; truy cập trực tiếp một mục vượt quyền trả về 404 (không lộ sự tồn tại).
 
-### 2.5. Các tính năng cốt lõi (5 Phase đã hoàn thành)
+### 2.5. Các tính năng cốt lõi (các nhóm chức năng đã hoàn thành)
 
 #### Nhóm nền tảng (đã triển khai trước Phase 1)
 
@@ -140,9 +140,7 @@ Giao nhiệm vụ đến đơn vị hoặc cá nhân, có hạn nộp; đơn v�
 
 Không gian trao đổi gắn cứng bậc `mat`, chỉ dành cho người có quyền xem mật. Gồm: luồng họp bàn nội bộ; **Sổ công văn mật** (quản lý công văn đi/đến, số ký hiệu, trích yếu, trạng thái xử lý, tệp đính kèm) kèm **sổ ký nhận tiếp thu** của từng thành viên. Tệp công văn tải về qua kênh có kiểm soát quyền riêng, không đi qua `/static`.
 
-#### Phase 5 – Giao ban trực tuyến (MẬT)
-
-Quản lý lịch giao ban của Ban Chỉ huy & Cấp uỷ: thời gian, địa điểm, liên kết phòng họp (dùng hạ tầng họp sẵn có của đơn vị, hệ thống không tự dựng video), chương trình, biên bản/kết luận, tài liệu đính kèm. Mời – gỡ thành phần dự; điểm danh (có mặt / vắng mặt / chưa điểm danh), lý do vắng, ý kiến đóng góp — thành viên tự cập nhật phần của chính mình.
+> *Ghi chú phiên bản:* mô-đun "Giao ban trực tuyến" từng được phát triển thử nghiệm đã được **gỡ bỏ khỏi hệ thống** (openapi v7.0.0) do đơn vị thống nhất dùng hạ tầng họp trực tuyến sẵn có và quản lý lịch họp bằng công cụ hiện hành; việc gỡ bỏ giúp thu gọn phạm vi, giảm bề mặt cần bảo trì. Toàn bộ endpoint/schema liên quan đã được loại khỏi hợp đồng API và giao diện.
 
 ### 2.6. Khắc phục hạn chế vận hành thực tế: đóng gói 1-Click và bảo đảm an toàn dữ liệu
 
@@ -155,7 +153,7 @@ Qua rà soát vận hành thử tại đơn vị, sáng kiến bổ sung một n
 
 **b) Chống mất dữ liệu do rớt mạng LAN / mất điện khi đang soạn thảo**
 
-- Các form soạn thảo nội dung dài và quan trọng nhất — ban hành **Chỉ thị**, trao đổi/báo cáo trong **Kênh Chỉ đạo – Báo cáo**, tạo/nộp báo cáo tiến độ ở **Giao nhiệm vụ**, trao đổi trong **Kênh chuyên BCH & Cấp uỷ**, và **biên bản Giao ban trực tuyến** — được trang bị cơ chế **tự động lưu bản nháp** (autosave draft) ngay trên trình duyệt máy trạm trong lúc gõ, không cần thao tác lưu riêng.
+- Các form soạn thảo nội dung dài và quan trọng nhất — ban hành **Chỉ thị**, trao đổi/báo cáo trong **Kênh Chỉ đạo – Báo cáo**, tạo/nộp báo cáo tiến độ ở **Giao nhiệm vụ**, và trao đổi trong **Kênh chuyên BCH & Cấp uỷ** — được trang bị cơ chế **tự động lưu bản nháp** (autosave draft) ngay trên trình duyệt máy trạm trong lúc gõ, không cần thao tác lưu riêng.
 - Khi máy trạm bị tải lại trang, mất điện hoặc rớt mạng LAN đột ngột trước khi kịp bấm gửi/ban hành/lưu, mở lại đúng mục đó nội dung **tự khôi phục**; sau khi gửi/lưu thành công, bản nháp tạm được xoá để không bung lại nội dung cũ ở lần soạn sau. Đây là lưới an toàn tại **máy trạm**, không thay thế cho việc bấm gửi/lưu — dữ liệu chỉ thật sự an toàn khi máy chủ đã ghi nhận.
 
 **c) Sao lưu và phục hồi CSDL định kỳ, tự động**
@@ -163,6 +161,15 @@ Qua rà soát vận hành thử tại đơn vị, sáng kiến bổ sung một n
 - Script `backend/scripts/backup_db.py` sao lưu toàn bộ CSDL MySQL ra file **nén gzip** (`.sql.gz`) tại `backend/storage/backups/`, đọc thông tin kết nối từ `.env` (mật khẩu truyền qua biến môi trường tiến trình con, không hiện trên dòng lệnh hay Task Manager). Tự động giữ lại 14 bản gần nhất, xoá bớt bản cũ để không làm đầy ổ đĩa.
 - Có thể chạy tay hoặc đặt lịch **tự động hằng ngày** qua Windows Task Scheduler (hướng dẫn chi tiết trong tài liệu bàn giao) — bảo đảm luôn có bản sao lưu gần nhất, không phụ thuộc việc "nhớ ra để sao lưu".
 - Kèm lệnh phục hồi một bước (`backup_db.py --restore <file>.sql.gz`, có bước xác nhận trước khi ghi đè) để bộ phận kỹ thuật khôi phục nhanh khi máy chủ gặp sự cố (hỏng CSDL, ngắt điện đột ngột giữa lúc ghi).
+
+### 2.7. Bộ kiểm thử chức năng tự động toàn hệ thống và sinh tài liệu từ ảnh chụp thật
+
+Để bảo đảm chất lượng khi bàn giao và mỗi lần nâng cấp, sáng kiến bổ sung một công cụ kiểm thử đầu–cuối (end-to-end) chạy trên **trình duyệt thật**:
+
+- Script `backend/scripts/e2e_full_walkthrough.py` tự đăng nhập lần lượt bằng các vai trò (Quản trị, Chỉ huy, "Cá nhân", "Người dùng", và khách chưa đăng nhập), đi qua **toàn bộ màn hình** trong sơ đồ chức năng, thực hiện trọn các luồng nghiệp vụ chính (đăng bài → duyệt; giao nhiệm vụ → nộp báo cáo → duyệt; đổi mật khẩu lần đầu; gửi tin trong kênh; vào sổ công văn…), kiểm tra phân quyền (tài khoản thiếu quyền bị chặn đúng), rồi **chụp ảnh độ phân giải cao** từng màn hình.
+- Kết quả xuất ra `docs/E2E_REPORT.md` (bảng Đạt/Không đạt từng bước) và bộ ảnh trong `docs/screenshots_khai_thac/`.
+- **Tài liệu hướng dẫn sử dụng dùng chính bộ ảnh chụp thật này** thay cho hình vẽ mô phỏng — bảo đảm hình trong tài liệu luôn khớp với giao diện phần mềm đang chạy; chỉ cần chạy lại script là tài liệu cập nhật.
+- Ở lần chạy gần nhất: **41/41 bước Đạt**, và phát hiện – khắc phục **5 lỗi giao diện** (xem mục 3.6).
 
 ---
 
@@ -173,7 +180,7 @@ Qua rà soát vận hành thử tại đơn vị, sáng kiến bổ sung một n
 - **Rút ngắn luồng chỉ đạo – báo cáo:** chỉ thị, nhiệm vụ được ban hành và đến đơn vị **ngay lập tức**, thay cho quy trình qua nhiều khâu trung gian. Ban Chỉ huy theo dõi tiến độ giao – nhận – hoàn thành nhiệm vụ theo thời gian thực, đến từng đơn vị.
 - **Nắm chắc mức độ quán triệt:** với mỗi chỉ thị, hệ thống hiển thị danh sách đã/chưa "tiếp thu" theo từng quân nhân, giúp chỉ huy đôn đốc có trọng điểm.
 - **Giảm thời gian tra cứu:** văn bản, biểu mẫu, tài liệu giáo dục chính trị tập trung một nơi, luôn là bản mới nhất; cán bộ, chiến sĩ tự tra cứu không phải hỏi lại.
-- **Giảm giấy tờ:** tin bài, thông báo, báo cáo tiến độ, biên bản giao ban được lưu và luân chuyển dưới dạng số.
+- **Giảm giấy tờ:** tin bài, thông báo, báo cáo tiến độ, công văn được lưu và luân chuyển dưới dạng số.
 
 ### 3.2. Về bảo mật dữ liệu
 
@@ -199,6 +206,28 @@ Qua rà soát vận hành thử tại đơn vị, sáng kiến bổ sung một n
 ### 3.5. Khả năng nhân rộng
 
 Mô hình có thể áp dụng cho các đơn vị cùng cấp trong Bộ đội Biên phòng có nhu cầu và điều kiện hạ tầng mạng nội bộ tương tự. Cơ cấu đơn vị, quy ước vai trò và danh mục nội dung đều cấu hình được, không phải viết lại mã.
+
+### 3.6. Kết quả kiểm thử toàn diện và các cải tiến đã thực hiện
+
+Đợt kiểm thử đầu–cuối gần nhất (công cụ ở mục 2.7) đạt **41/41 bước**; qua rà soát ảnh chụp thật đã phát hiện và **khắc phục ngay 5 lỗi giao diện** — không phải lỗi nghiệp vụ, nhưng ảnh hưởng trải nghiệm:
+
+| Lỗi | Ảnh hưởng | Đã xử lý |
+|---|---|---|
+| Bản dựng giao diện không biên dịch được (khai báo biến thừa) | Không tạo được bản phát hành mới | Bỏ biến thừa, biên dịch sạch |
+| Quy tắc CSS chung cho nút tràn sang tiêu đề thẻ/luồng (chữ trắng trên nền trắng) | Mất tiêu đề tab và tiêu đề luồng ở "Kênh chỉ huy (MẬT)" và "Chỉ đạo – Báo cáo" | Chỉ định màu chữ tường minh cho tab và dòng danh sách |
+| Trùng tên lớp CSS `.news-thumb` giữa hai màn hình | Ảnh thu nhỏ ở trang Tin tức bị bóp méo | Giới hạn phạm vi lớp CSS theo từng màn hình |
+| Khối "Giáo dục chính trị" / bài tiêu điểm không có ảnh vẫn dựng khung ảnh rỗng cao ~560px | Trang Bảng tin trông như lỗi hiển thị | Chuyển sang danh sách gọn khi không có ảnh; bỏ khung ảnh khi thiếu ảnh |
+| Bài tiêu điểm khi mở đọc để nguyên bố cục 2 cột | Thừa một cột trống lớn bên cạnh nội dung | Tự chuyển về 1 cột khi mở đọc toàn văn |
+
+**Đề xuất cải tiến giai đoạn tiếp theo** (đã ghi nhận, chưa thực hiện — ưu tiên từ trên xuống):
+
+1. **Chuẩn hoá tên vai trò một đầu mối:** hiện role 4 hiển thị "Cá nhân", role 5 "Người dùng" ở cả máy chủ (`app/core/roles.py`) và giao diện — cần chốt thuật ngữ nghiệp vụ (ví dụ "Cán bộ nội dung" / "Tài khoản xem") rồi sửa đồng bộ một nơi, thống nhất với tài liệu.
+2. **Ẩn hẳn thao tác không dùng được:** với tài khoản không đủ "Quyền xem MẬT", trang "Kênh chỉ huy (MẬT)" vẫn hiện ô nhập và nút "Tạo luồng" (máy chủ vẫn chặn đúng, nhưng gây nhầm lẫn) — nên ẩn toàn bộ panel, chỉ để lại thông báo.
+3. **Gộp thông báo "trống" trùng lặp** ở trang Danh bạ điện thoại (đang hiện 2 dòng cùng ý).
+4. **Vô hiệu hoá nút chưa dùng được:** ở Lịch trực, nút "Phê duyệt / Trả lại" hiển thị cả khi chưa có bảng trực; nút "Tải file gốc Tham mưu" gắn nhãn "Sắp có" — nên ẩn cho tới khi hoàn thiện.
+5. **Hiển thị tên tài khoản đăng nhập trên thanh tiêu đề** (hiện chỉ hiện tên vai trò) để cán bộ dễ nhận biết đang dùng tài khoản nào trên máy chung.
+6. **Tách gói giao diện (code-splitting):** một số gói JavaScript > 500 KB — nên tách theo trang để rút ngắn thời gian tải lần đầu trên máy trạm cấu hình thấp.
+7. **Chuẩn hoá dấu gạch trong khẩu hiệu / tiêu đề** (đang lẫn `-` và `–`).
 
 ---
 
@@ -311,7 +340,7 @@ Lần đầu chạy Backend sẽ tự tạo bảng và seed tài khoản `admin`
 
 - **Sao lưu bổ sung tệp đính kèm:** định kỳ copy thư mục `backend/storage/uploads/` (tệp đính kèm/công văn) cùng `backend/storage/backups/` sang ổ đĩa/máy khác ngoài máy chủ chính — sao lưu tại chỗ không thay thế được sao lưu ngoài máy chủ (phòng máy chủ hỏng hoàn toàn).
 - **Sau mỗi lần thay đổi API:** chạy `python scripts/export_openapi.py` để xuất lại `openapi.yaml`, ghi biên bản vào `openapi.CHANGELOG.md`, rồi mới cập nhật Frontend.
-- **Kiểm thử hồi quy:** chạy `backend/scripts/test_full_system.py` trước khi đưa bản mới vào sử dụng.
+- **Kiểm thử hồi quy:** chạy `backend/scripts/test_full_system.py` (kiểm thử API) và `backend/scripts/e2e_full_walkthrough.py` (kiểm thử giao diện đầu–cuối + chụp ảnh, cần máy chủ đang chạy) trước khi đưa bản mới vào sử dụng; đối chiếu `docs/E2E_REPORT.md`.
 
 ---
 
@@ -327,6 +356,6 @@ Sáng kiến đã xây dựng thành công một Cổng thông tin nội bộ ho
 
 ---
 
-*Tài liệu kèm theo: `openapi.yaml` (hợp đồng API), `openapi.CHANGELOG.md` (biên bản thay đổi), `docs/HUONG_DAN_SU_DUNG.docx` (hướng dẫn sử dụng có ảnh minh hoạ), mã nguồn `backend/` và `frontend/`.*
+*Tài liệu kèm theo: `openapi.yaml` (hợp đồng API), `openapi.CHANGELOG.md` (biên bản thay đổi), `docs/HUONG_DAN_SU_DUNG.docx` (hướng dẫn sử dụng có ảnh chụp thật), `docs/E2E_REPORT.md` + `docs/screenshots_khai_thac/` (kết quả kiểm thử đầu–cuối và ảnh màn hình), mã nguồn `backend/` và `frontend/`.*
 
 **Người báo cáo: Lê Văn Quỳnh – Đại đội 5, Lữ đoàn Thông tin 21, Bộ đội Biên phòng**

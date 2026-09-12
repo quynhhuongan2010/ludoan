@@ -1,25 +1,21 @@
-import { useEffect, useState, type FormEvent } from 'react'
+import { useEffect, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { ApiError } from '../api/client'
 import { documentsApi } from '../api/documents'
 import { ClassificationBadge } from '../components/ClassificationBadge'
+import { EmptyState } from '../components/EmptyState'
+import { FileViewerModal } from '../components/FileViewer'
 import { Icon } from '../components/Icon'
+import { Pagination } from '../components/Pagination'
 import { useAuth } from '../context/AuthContext'
-import { CLASSIFICATION_LABELS, CLASSIFICATION_ORDER, type Classification } from '../types/common'
-import {
-  DOCUMENT_CATEGORY_LABELS,
-  type DocumentCategory,
-  type DocumentFormData,
-  type DocumentItem,
-} from '../types/document'
+import { useConfirm } from '../context/ConfirmContext'
+import { usePagination } from '../hooks/usePagination'
+import { canPreviewFile, openFileForView } from '../utils/fileKind'
+import { DOCUMENT_CATEGORY_LABELS, type DocumentCategory, type DocumentItem } from '../types/document'
+
+const PAGE_SIZE_OPTIONS = [10, 20, 50, 100]
 
 const categories = Object.keys(DOCUMENT_CATEGORY_LABELS) as DocumentCategory[]
-
-const emptyForm: DocumentFormData = {
-  title: '',
-  category: 'bieu_mau',
-  description: '',
-  classification: 'noi_bo',
-}
 
 function fileSize(bytes: number): string {
   if (bytes < 1024) return `${bytes} B`
@@ -32,24 +28,30 @@ function formatDate(iso: string): string {
 }
 
 export function DocumentsPage() {
-  const { canEditContent, isCommander, hasClearance, userId } = useAuth()
+  const { role } = useAuth()
+  const navigate = useNavigate()
+  const confirm = useConfirm()
+
+  // Trang Văn bản: chỉ role 0, 1, 2 mới được tải lên / sửa / xoá tài liệu.
+  const canEdit = role !== null && role <= 2
 
   const [docs, setDocs] = useState<DocumentItem[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [filterCategory, setFilterCategory] = useState<DocumentCategory | ''>('')
-
-  const [form, setForm] = useState<DocumentFormData>(emptyForm)
-  const [file, setFile] = useState<File | null>(null)
-  const [editingId, setEditingId] = useState<number | null>(null)
-  const [submitting, setSubmitting] = useState(false)
-  const [showForm, setShowForm] = useState(false)
   const [downloadingId, setDownloadingId] = useState<number | null>(null)
+  const [viewing, setViewing] = useState<DocumentItem | null>(null)
 
-  // Bac phan loai user duoc phep chon khi dang tai lieu (an MAT neu khong du quyen)
-  const allowedClasses: Classification[] = CLASSIFICATION_ORDER.filter(
-    (c) => c !== 'mat' || isCommander || hasClearance,
-  )
+  const {
+    page,
+    pageSize,
+    pageCount,
+    total,
+    pageItems,
+    setPageIndex,
+    setPageSize,
+    showPagination,
+  } = usePagination(docs, 20, filterCategory)
 
   function loadDocs() {
     setLoading(true)
@@ -64,62 +66,17 @@ export function DocumentsPage() {
 
   useEffect(loadDocs, [filterCategory])
 
-  function canManage(doc: DocumentItem) {
-    return isCommander || doc.uploaded_by_id === userId
-  }
-
-  function startCreate() {
-    setEditingId(null)
-    setForm(emptyForm)
-    setFile(null)
-    setShowForm(true)
-  }
-
-  function startEdit(doc: DocumentItem) {
-    setEditingId(doc.id)
-    setForm({
-      title: doc.title,
-      category: doc.category,
-      description: doc.description ?? '',
-      classification: doc.classification,
-    })
-    setFile(null)
-    setShowForm(true)
-  }
-
-  function cancelForm() {
-    setShowForm(false)
-    setEditingId(null)
-    setForm(emptyForm)
-    setFile(null)
-  }
-
-  async function handleSubmit(event: FormEvent) {
-    event.preventDefault()
-    setError(null)
-    setSubmitting(true)
-    try {
-      if (editingId !== null) {
-        const updated = await documentsApi.update(editingId, form)
-        setDocs((prev) => prev.map((d) => (d.id === editingId ? updated : d)))
-      } else {
-        if (!file) {
-          setError('Vui lòng chọn tệp để tải lên.')
-          setSubmitting(false)
-          return
-        }
-        const created = await documentsApi.create(form, file)
-        setDocs((prev) => [created, ...prev])
-      }
-      cancelForm()
-    } catch (err) {
-      setError(err instanceof ApiError ? err.message : 'Không thể lưu tài liệu')
-    } finally {
-      setSubmitting(false)
-    }
-  }
-
   async function handleDelete(id: number) {
+    const doc = docs.find((d) => d.id === id)
+    const ok = await confirm({
+      message: (
+        <>
+          Xoá tài liệu <strong>{doc?.title ?? `#${id}`}</strong>? Tệp đính kèm sẽ bị xoá và không thể
+          khôi phục.
+        </>
+      ),
+    })
+    if (!ok) return
     setError(null)
     try {
       await documentsApi.remove(id)
@@ -127,6 +84,11 @@ export function DocumentsPage() {
     } catch (err) {
       setError(err instanceof ApiError ? err.message : 'Không thể xoá tài liệu')
     }
+  }
+
+  function handleView(doc: DocumentItem) {
+    // PDF: mo tab moi xem truc tiep. Con lai: mo modal dung thu vien.
+    if (!openFileForView(doc.file_name, doc.file_url)) setViewing(doc)
   }
 
   async function handleDownload(doc: DocumentItem) {
@@ -166,84 +128,16 @@ export function DocumentsPage() {
           ))}
         </select>
 
-        {canEditContent && !showForm ? (
-          <button type="button" onClick={startCreate}>
-            Tải lên tài liệu
+        {canEdit ? (
+          <button
+            type="button"
+            className="btn-create"
+            onClick={() => navigate('/van-ban/moi')}
+          >
+            <Icon name="upload" size={16} /> Tải lên tài liệu
           </button>
         ) : null}
       </div>
-
-      {showForm ? (
-        <form onSubmit={handleSubmit} className="entity-form">
-          <label>
-            Tiêu đề
-            <input
-              type="text"
-              maxLength={255}
-              value={form.title}
-              onChange={(e) => setForm((f) => ({ ...f, title: e.target.value }))}
-              required
-            />
-          </label>
-          <label>
-            Loại văn bản
-            <select
-              value={form.category}
-              onChange={(e) => setForm((f) => ({ ...f, category: e.target.value as DocumentCategory }))}
-            >
-              {categories.map((c) => (
-                <option key={c} value={c}>
-                  {DOCUMENT_CATEGORY_LABELS[c]}
-                </option>
-              ))}
-            </select>
-          </label>
-          <label>
-            Bậc truy cập
-            <select
-              value={form.classification}
-              onChange={(e) =>
-                setForm((f) => ({ ...f, classification: e.target.value as Classification }))
-              }
-            >
-              {allowedClasses.map((c) => (
-                <option key={c} value={c}>
-                  {CLASSIFICATION_LABELS[c]}
-                </option>
-              ))}
-            </select>
-          </label>
-          <label>
-            Mô tả
-            <textarea
-              rows={3}
-              value={form.description}
-              onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))}
-            />
-          </label>
-          {editingId === null ? (
-            <label>
-              Tệp đính kèm (.pdf, .doc/.docx, .xls/.xlsx, .ppt/.pptx)
-              <input
-                type="file"
-                accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx"
-                onChange={(e) => setFile(e.target.files?.[0] ?? null)}
-                required
-              />
-            </label>
-          ) : (
-            <p className="state-note">Sửa thông tin mô tả — tệp gốc được giữ nguyên.</p>
-          )}
-          <div className="form-actions">
-            <button type="submit" disabled={submitting}>
-              {editingId !== null ? 'Cập nhật' : 'Tải lên'}
-            </button>
-            <button type="button" onClick={cancelForm}>
-              Huỷ
-            </button>
-          </div>
-        </form>
-      ) : null}
 
       {error ? (
         <p role="alert" className="form-error">
@@ -254,10 +148,11 @@ export function DocumentsPage() {
       {loading ? (
         <p>Đang tải...</p>
       ) : docs.length === 0 ? (
-        <p>Chưa có tài liệu nào.</p>
+        <EmptyState message="Chưa có tài liệu nào." />
       ) : (
+        <>
         <div className="post-list">
-          {docs.map((doc) => (
+          {pageItems.map((doc) => (
             <article key={doc.id} className="post-card">
               <div className="post-card-body">
                 <div className="badge-row">
@@ -271,21 +166,27 @@ export function DocumentsPage() {
                 </p>
                 {doc.description ? <p style={{ whiteSpace: 'pre-wrap' }}>{doc.description}</p> : null}
                 <div className="row-actions">
+                  {canPreviewFile(doc.file_name) ? (
+                    <button type="button" className="btn-view" onClick={() => handleView(doc)}>
+                      <Icon name="eye" /> Xem
+                    </button>
+                  ) : null}
                   <button
                     type="button"
+                    className="btn-approve"
                     onClick={() => handleDownload(doc)}
                     disabled={downloadingId === doc.id}
                   >
                     <Icon name="download" size={13} />{' '}
                     {downloadingId === doc.id ? 'Đang tải...' : 'Tải về'}
                   </button>
-                  {canManage(doc) ? (
+                  {canEdit ? (
                     <>
-                      <button type="button" onClick={() => startEdit(doc)}>
-                        Sửa
+                      <button type="button" className="btn-edit" onClick={() => navigate(`/van-ban/${doc.id}/sua`)}>
+                        <Icon name="edit" /> Sửa
                       </button>
-                      <button type="button" onClick={() => handleDelete(doc.id)}>
-                        Xoá
+                      <button type="button" className="btn-delete" onClick={() => handleDelete(doc.id)}>
+                        <Icon name="trash" /> Xoá
                       </button>
                     </>
                   ) : null}
@@ -294,7 +195,29 @@ export function DocumentsPage() {
             </article>
           ))}
         </div>
+        {showPagination ? (
+          <Pagination
+            page={page}
+            pageCount={pageCount}
+            total={total}
+            pageSize={pageSize}
+            onPage={setPageIndex}
+            onPageSize={setPageSize}
+            pageSizeOptions={PAGE_SIZE_OPTIONS}
+            itemLabel="tài liệu"
+          />
+        ) : null}
+        </>
       )}
+
+      {viewing ? (
+        <FileViewerModal
+          fileName={viewing.file_name}
+          fileUrl={viewing.file_url}
+          title={viewing.title}
+          onClose={() => setViewing(null)}
+        />
+      ) : null}
     </section>
   )
 }
