@@ -1,4 +1,6 @@
 import { useCallback, useEffect, useState, type FormEvent } from 'react'
+import DatePicker from 'react-datepicker'
+import 'react-datepicker/dist/react-datepicker.css'
 import { ApiError } from '../api/client'
 import { dutyShiftHandoversApi } from '../api/dutyShiftHandovers'
 import { EmptyState } from './EmptyState'
@@ -14,6 +16,18 @@ import {
 } from '../types/dutyShiftHandover'
 import type { DutySchedule } from '../types/dutySchedule'
 import type { Unit } from '../types/unit'
+
+/** 'YYYY-MM-DD' (kieu API) <-> Date cho react-datepicker */
+function isoToDate(iso: string): Date | null {
+  return iso ? new Date(`${iso}T00:00:00`) : null
+}
+function dateToIso(d: Date | null): string {
+  if (!d) return ''
+  const y = d.getFullYear()
+  const m = String(d.getMonth() + 1).padStart(2, '0')
+  const day = String(d.getDate()).padStart(2, '0')
+  return `${y}-${m}-${day}`
+}
 
 function formatDateTime(iso: string | null | undefined): string {
   if (!iso) return '—'
@@ -101,7 +115,11 @@ export function DutyShiftHandoverCreateModal({
   }
 
   return (
-    <Modal title="Lập biên bản bàn giao ca trực điện tử" onClose={onClose}>
+    <Modal
+      title="Lập biên bản bàn giao ca trực điện tử"
+      onClose={onClose}
+      closeOnOverlayClick={false}
+    >
       <form onSubmit={handleSubmit} className="entity-form space-y-4">
         <div className="p-3 bg-amber-50/50 dark:bg-amber-950/20 border border-amber-200/60 dark:border-amber-900/40 rounded text-sm">
           <p className="font-semibold text-amber-900 dark:text-amber-200">
@@ -293,7 +311,11 @@ export function DutyShiftHandoverDetailModal({
   const statusLabel = HANDOVER_STATUS_LABELS[handover.status]
 
   return (
-    <Modal title="Biên bản bàn giao ca trực &amp; Sổ nhật ký kíp trực" onClose={onClose}>
+    <Modal
+      title="Biên bản bàn giao ca trực &amp; Sổ nhật ký kíp trực"
+      onClose={onClose}
+      closeOnOverlayClick={false}
+    >
       <div className="space-y-4 max-h-[80vh] overflow-y-auto pr-1">
         {/* Tiêu đề & Thông tin cơ bản */}
         <div className="flex flex-wrap items-center justify-between gap-2 p-3 bg-slate-50 dark:bg-slate-900 border rounded">
@@ -579,73 +601,65 @@ export function DutyShiftHandoverTab({ units }: HandoverTabProps) {
   return (
     <div className="duty-print space-y-4">
       {/* Bộ lọc thanh công cụ */}
-      <div className="duty-toolbar no-print flex flex-wrap items-center justify-between gap-3 p-3 bg-white dark:bg-slate-900 border rounded-lg shadow-sm">
-        <div className="flex flex-wrap items-center gap-3">
-          <label className="flex items-center gap-1.5 text-xs font-medium">
-            <span>Từ ngày:</span>
-            <input
-              type="date"
-              className="px-2 py-1 border rounded text-xs dark:bg-slate-800"
-              value={filterDateFrom}
-              onChange={(e) => setFilterDateFrom(e.target.value)}
-            />
-          </label>
+      <div className="handover-toolbar no-print">
+        <div className="handover-filters">
+          <DatePicker
+            selected={isoToDate(filterDateFrom)}
+            onChange={(d) => setFilterDateFrom(dateToIso(d))}
+            dateFormat="dd/MM/yyyy"
+            placeholderText="Từ ngày"
+            aria-label="Từ ngày"
+            className="handover-date-field"
+            wrapperClassName="handover-date-wrap"
+            showIcon
+            icon={<Icon name="calendar" size={13} />}
+            isClearable
+          />
 
-          <label className="flex items-center gap-1.5 text-xs font-medium">
-            <span>Đến ngày:</span>
-            <input
-              type="date"
-              className="px-2 py-1 border rounded text-xs dark:bg-slate-800"
-              value={filterDateTo}
-              onChange={(e) => setFilterDateTo(e.target.value)}
-            />
-          </label>
+          <DatePicker
+            selected={isoToDate(filterDateTo)}
+            onChange={(d) => setFilterDateTo(dateToIso(d))}
+            dateFormat="dd/MM/yyyy"
+            placeholderText="Đến ngày"
+            aria-label="Đến ngày"
+            className="handover-date-field"
+            wrapperClassName="handover-date-wrap"
+            showIcon
+            icon={<Icon name="calendar" size={13} />}
+            isClearable
+          />
 
-          <label className="flex items-center gap-1.5 text-xs font-medium">
-            <span>Đơn vị:</span>
-            <select
-              className="px-2 py-1 border rounded text-xs dark:bg-slate-800"
-              value={filterUnitId}
-              onChange={(e) => setFilterUnitId(e.target.value)}
-            >
-              <option value="">Tất cả đơn vị</option>
-              {units.map((u) => (
-                <option key={u.id} value={u.id}>
-                  {u.name}
-                </option>
-              ))}
-            </select>
-          </label>
+          <select
+            aria-label="Đơn vị"
+            value={filterUnitId}
+            onChange={(e) => setFilterUnitId(e.target.value)}
+          >
+            <option value="">Tất cả đơn vị</option>
+            {units.map((u) => (
+              <option key={u.id} value={u.id}>
+                {u.name}
+              </option>
+            ))}
+          </select>
 
-          <label className="flex items-center gap-1.5 text-xs font-medium">
-            <span>Trạng thái:</span>
-            <select
-              className="px-2 py-1 border rounded text-xs dark:bg-slate-800"
-              value={filterStatus}
-              onChange={(e) => setFilterStatus(e.target.value)}
-            >
-              <option value="">Tất cả trạng thái</option>
-              <option value="cho_nhan">Chờ nhận ca</option>
-              <option value="da_nhan">Đã nhận ca</option>
-              <option value="co_kien_nghi">Có kiến nghị</option>
-            </select>
-          </label>
+          <select
+            aria-label="Trạng thái"
+            value={filterStatus}
+            onChange={(e) => setFilterStatus(e.target.value)}
+          >
+            <option value="">Tất cả trạng thái</option>
+            <option value="cho_nhan">Chờ nhận ca</option>
+            <option value="da_nhan">Đã nhận ca</option>
+            <option value="co_kien_nghi">Có kiến nghị</option>
+          </select>
         </div>
 
-        <div className="flex items-center gap-2">
-          <button
-            type="button"
-            className="px-3 py-1 text-xs rounded border hover:bg-slate-100 dark:hover:bg-slate-800 flex items-center gap-1"
-            onClick={() => loadData()}
-          >
+        <div className="handover-actions">
+          <button type="button" className="btn-cancel" onClick={() => loadData()}>
             <Icon name="undo" size={13} />
             <span>Làm mới</span>
           </button>
-          <button
-            type="button"
-            className="px-3 py-1 text-xs rounded bg-slate-800 hover:bg-slate-900 text-white flex items-center gap-1"
-            onClick={() => window.print()}
-          >
+          <button type="button" className="btn-create" onClick={() => window.print()}>
             <Icon name="file" size={13} />
             <span>In sổ nhật ký</span>
           </button>

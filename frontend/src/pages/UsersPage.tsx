@@ -275,7 +275,7 @@ export function UsersPage() {
 
   return (
     <section>
-      <h1 style={{paddingBottom:'20px'}}>Quản lý người dùng</h1>
+      <h1 style={{ paddingBottom: '20px' }}>Quản lý người dùng</h1>
 
       {error ? (
         <p role="alert" className="form-error">
@@ -344,7 +344,7 @@ export function UsersPage() {
                 setShowPurgeModal(true)
               }}
             >
-              <Icon name="trash" size={16} /> Dọn dẹp / Xoá toàn bộ tài khoản test
+              <Icon name="trash" size={16} /> Xóa tài khoản
             </button>
           </>
         )}
@@ -456,10 +456,10 @@ export function UsersPage() {
                             letterSpacing: '0.3px',
                             color:
                               uEchelon === 0
-                                ? '#fca5a5'
+                                ? '#ff6b6b'
                                 : uEchelon === 1
-                                  ? '#fcd34d'
-                                  : '#93c5fd',
+                                  ? '#302c2c'
+                                  : '#7ec8ff',
                           }}
                         >
                           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
@@ -469,11 +469,11 @@ export function UsersPage() {
                                 style={{
                                   fontSize: '11px',
                                   fontWeight: 500,
-                                  background: 'rgba(239, 68, 68, 0.3)',
-                                  color: '#fecaca',
+                                  background: 'rgba(239, 68, 68, 0.35)',
+                                  color: '#ffffff',
                                   padding: '3px 10px',
                                   borderRadius: '4px',
-                                  border: '1px solid rgba(239, 68, 68, 0.5)',
+                                  border: '1px solid rgba(239, 68, 68, 0.6)',
                                 }}
                               >
                                 Độc lập kỹ thuật — Toàn quyền hệ thống
@@ -705,7 +705,11 @@ export function UsersPage() {
       ) : null}
 
       {showCreate ? (
-        <Modal title="Tạo tài khoản trực tiếp" onClose={() => setShowCreate(false)}>
+        <Modal
+          title="Tạo tài khoản trực tiếp"
+          onClose={() => setShowCreate(false)}
+          closeOnOverlayClick={false}
+        >
           <form onSubmit={handleCreate} className="entity-form">
             <p className="state-note">
               Chỉ cấp cho cán bộ / QNCN có biên chế thực tế. Tài khoản tạo ở đây sẽ{' '}
@@ -839,12 +843,13 @@ export function UsersPage() {
             setImportResult(null)
             setImportError(null)
           }}
+          closeOnOverlayClick={false}
         >
           <div className="entity-form" style={{ maxWidth: '640px' }}>
             <div
               style={{
-                background: 'rgba(30, 41, 59, 0.7)',
-                border: '1px solid rgba(148, 163, 184, 0.2)',
+                background: '#f1f5f9',
+                border: '1px solid #cbd5e1',
                 borderRadius: '8px',
                 padding: '12px 16px',
                 marginBottom: '16px',
@@ -852,14 +857,14 @@ export function UsersPage() {
                 lineHeight: '1.6',
               }}
             >
-              <div style={{ fontWeight: 600, color: '#38bdf8', marginBottom: '6px' }}>
+              <div style={{ fontWeight: 600, color: '#0369a1', marginBottom: '6px' }}>
                 Hướng dẫn định dạng tệp tải lên:
               </div>
-              <ul style={{ margin: 0, paddingLeft: '18px', color: '#cbd5e1' }}>
+              <ul style={{ margin: 0, paddingLeft: '18px', color: '#334155' }}>
                 <li>Hỗ trợ file bảng tính Excel (<strong>.xlsx, .xls</strong>) hoặc văn bản Word (<strong>.docx</strong> có bảng).</li>
                 <li>Cột bắt buộc: <strong>STT | Họ và tên | Tên đăng nhập | Mật khẩu | Cấp bậc | Chức danh | Đơn vị | Vai trò</strong>.</li>
                 <li>
-                  <strong style={{ color: '#f87171' }}>Tài khoản Admin đã được tách biệt riêng</strong> về mặt kỹ thuật, không cần nhập trong danh sách này.
+                  <strong style={{ color: '#b91c1c' }}>Tài khoản Admin đã được tách biệt riêng</strong> về mặt kỹ thuật, không cần nhập trong danh sách này.
                 </li>
                 <li>Nếu cột Mật khẩu để trống, hệ thống tự động gán mật khẩu mặc định: <code>LuDoan21@2026</code>.</li>
               </ul>
@@ -871,7 +876,7 @@ export function UsersPage() {
                     display: 'inline-flex',
                     alignItems: 'center',
                     gap: '4px',
-                    color: '#86efac',
+                    color: '#15803d',
                     textDecoration: 'underline',
                     background: 'none',
                     border: 'none',
@@ -890,7 +895,7 @@ export function UsersPage() {
                     display: 'inline-flex',
                     alignItems: 'center',
                     gap: '4px',
-                    color: '#93c5fd',
+                    color: '#1d4ed8',
                     textDecoration: 'underline',
                     background: 'none',
                     border: 'none',
@@ -932,32 +937,32 @@ export function UsersPage() {
                   style={{
                     marginTop: '14px',
                     padding: '12px',
-                    background: importResult.error_count === 0 ? 'rgba(22, 101, 52, 0.25)' : 'rgba(180, 83, 9, 0.2)',
+                    background: importResult.error_count === 0 ? '#f0fdf4' : '#fffbeb',
                     border: `1px solid ${importResult.error_count === 0 ? '#16a34a' : '#d97706'}`,
                     borderRadius: '6px',
                   }}
                 >
-                  <div style={{ fontWeight: 600, color: importResult.error_count === 0 ? '#86efac' : '#fcd34d', marginBottom: '4px' }}>
+                  <div style={{ fontWeight: 600, color: importResult.error_count === 0 ? '#15803d' : '#b45309', marginBottom: '4px' }}>
                     Kết quả nhập dữ liệu:
                   </div>
-                  <div style={{ fontSize: '13px', color: '#e2e8f0' }}>
-                    Tổng số dòng: <strong>{importResult.total_rows}</strong> | Nhập thành công: <strong style={{ color: '#86efac' }}>{importResult.success_count}</strong> | Lỗi: <strong style={{ color: '#f87171' }}>{importResult.error_count}</strong>
+                  <div style={{ fontSize: '13px', color: '#334155' }}>
+                    Tổng số dòng: <strong>{importResult.total_rows}</strong> | Nhập thành công: <strong style={{ color: '#15803d' }}>{importResult.success_count}</strong> | Lỗi: <strong style={{ color: '#b91c1c' }}>{importResult.error_count}</strong>
                   </div>
 
                   {importResult.created_usernames.length > 0 && (
-                    <div style={{ marginTop: '8px', fontSize: '12px', color: '#94a3b8' }}>
+                    <div style={{ marginTop: '8px', fontSize: '12px', color: '#64748b' }}>
                       Các tài khoản đã thêm: {importResult.created_usernames.join(', ')}
                     </div>
                   )}
 
                   {importResult.errors.length > 0 && (
                     <div style={{ marginTop: '10px' }}>
-                      <div style={{ fontSize: '12px', fontWeight: 600, color: '#f87171', marginBottom: '4px' }}>
+                      <div style={{ fontSize: '12px', fontWeight: 600, color: '#b91c1c', marginBottom: '4px' }}>
                         Chi tiết dòng lỗi:
                       </div>
                       <table style={{ width: '100%', fontSize: '11px', borderCollapse: 'collapse' }}>
                         <thead>
-                          <tr style={{ background: 'rgba(0,0,0,0.3)', textAlign: 'left' }}>
+                          <tr style={{ background: 'rgba(0,0,0,0.08)', textAlign: 'left' }}>
                             <th style={{ padding: '4px 8px' }}>Dòng</th>
                             <th style={{ padding: '4px 8px' }}>Username</th>
                             <th style={{ padding: '4px 8px' }}>Lý do lỗi</th>
@@ -965,10 +970,10 @@ export function UsersPage() {
                         </thead>
                         <tbody>
                           {importResult.errors.map((err, idx) => (
-                            <tr key={idx} style={{ borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
+                            <tr key={idx} style={{ borderBottom: '1px solid rgba(0,0,0,0.08)' }}>
                               <td style={{ padding: '4px 8px' }}>{err.row_index}</td>
                               <td style={{ padding: '4px 8px' }}>{err.username || '—'}</td>
-                              <td style={{ padding: '4px 8px', color: '#fca5a5' }}>{err.error}</td>
+                              <td style={{ padding: '4px 8px', color: '#b91c1c' }}>{err.error}</td>
                             </tr>
                           ))}
                         </tbody>
@@ -1010,27 +1015,28 @@ export function UsersPage() {
             setShowPurgeModal(false)
             setPurgeInput('')
           }}
+          closeOnOverlayClick={false}
         >
           <form onSubmit={handlePurgeConfirm} className="entity-form" style={{ maxWidth: '520px' }}>
             <div
               style={{
-                background: 'rgba(127, 29, 29, 0.25)',
+                background: '#fef2f2',
                 border: '1px solid #dc2626',
                 borderRadius: '8px',
                 padding: '14px',
                 marginBottom: '16px',
                 fontSize: '13px',
                 lineHeight: '1.6',
-                color: '#fecaca',
+                color: '#7f1d1d',
               }}
             >
-              <div style={{ fontWeight: 700, fontSize: '14px', marginBottom: '6px', color: '#f87171' }}>
+              <div style={{ fontWeight: 700, fontSize: '14px', marginBottom: '6px', color: '#b91c1c' }}>
                 ⚠️ THAO TÁC NGUY HIỂM — KHÔNG THỂ HOÀN TÁC!
               </div>
               <p style={{ margin: '0 0 8px 0' }}>
                 Thao tác này sẽ <strong>xoá sạch toàn bộ tất cả tài khoản quân nhân thử nghiệm</strong> hiện có trong cơ sở dữ liệu (bao gồm cả tài khoản cấp chỉ huy thử nghiệm, phòng ban, phân đội) để làm sạch hệ thống.
               </p>
-              <p style={{ margin: 0, fontWeight: 600, color: '#86efac' }}>
+              <p style={{ margin: 0, fontWeight: 600, color: '#15803d' }}>
                 🛡️ CHỈ DUY NHẤT TÀI KHOẢN ADMIN HỆ THỐNG ĐƯỢC GIỮ LẠI (TÁCH BIỆT AN TOÀN).
               </p>
             </div>

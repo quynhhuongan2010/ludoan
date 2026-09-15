@@ -881,7 +881,11 @@ function WeekBoardTab() {
       )}
 
       {returnOpen ? (
-        <Modal title="Trả lại biểu trực — yêu cầu Tham mưu chỉnh sửa" onClose={() => setReturnOpen(false)}>
+        <Modal
+          title="Trả lại biểu trực — yêu cầu Tham mưu chỉnh sửa"
+          onClose={() => setReturnOpen(false)}
+          closeOnOverlayClick={false}
+        >
           <p className="state-note">
             Nội dung phản hồi sẽ gửi kèm về {pending.length} bảng trực đang chờ duyệt trong phạm vi{' '}
             <strong>{scope.label}</strong>.

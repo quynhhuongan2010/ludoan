@@ -144,7 +144,7 @@ function PromptDialog({
   }
 
   return (
-    <Modal title={options.title} onClose={onCancel}>
+    <Modal title={options.title} onClose={onCancel} closeOnOverlayClick={false}>
       <form onSubmit={submit} className="entity-form">
         {options.message ? <p className="state-note">{options.message}</p> : null}
         {options.fields.map((f, i) => (

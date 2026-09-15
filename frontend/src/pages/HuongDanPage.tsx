@@ -2,29 +2,31 @@ import { useState, type ReactNode } from 'react'
 
 /**
  * Trang HƯỚNG DẪN SỬ DỤNG — tài liệu tĩnh, không gọi API.
- * 4 tab: Kiến trúc phần mềm · Hạ tầng mạng LAN · Thiết lập máy trạm/người dùng · Xử lý sự cố.
- * Dùng chung cho mọi tài khoản đã đăng nhập (bộ phận kỹ thuật tiếp nhận + người dùng cuối).
+ * Trọng tâm: cách KHAI THÁC phần mềm theo từng nghiệp vụ, có hình minh hoạ giao diện
+ * cho từng bước — không trình bày công nghệ/hạ tầng dựng nên hệ thống.
+ * 4 tab theo đúng hành trình người dùng: Bắt đầu → Khai thác hằng ngày →
+ * Chỉ đạo-điều hành → Tài khoản &amp; Hỗ trợ.
  */
 
-type TabKey = 'kien-truc' | 'ha-tang' | 'may-tram' | 'su-co'
+type TabKey = 'bat-dau' | 'khai-thac' | 'chi-dao' | 'tai-khoan'
 
 const TABS: { key: TabKey; label: string }[] = [
-  { key: 'kien-truc', label: '1. Kiến trúc phần mềm' },
-  { key: 'ha-tang', label: '2. Hạ tầng mạng nội bộ (LAN)' },
-  { key: 'may-tram', label: '3. Thiết lập máy trạm & người dùng' },
-  { key: 'su-co', label: '4. Cẩm nang xử lý sự cố' },
+  { key: 'bat-dau', label: '1. Bắt đầu sử dụng' },
+  { key: 'khai-thac', label: '2. Tra cứu & khai thác hằng ngày' },
+  { key: 'chi-dao', label: '3. Chỉ đạo – điều hành' },
+  { key: 'tai-khoan', label: '4. Tài khoản của bạn' },
 ]
 
 export function HuongDanPage() {
-  const [tab, setTab] = useState<TabKey>('kien-truc')
+  const [tab, setTab] = useState<TabKey>('bat-dau')
 
   return (
     <section className="guide">
-      <h1>Hướng dẫn sử dụng &amp; tiếp nhận hệ thống</h1>
+      <h1>Hướng dẫn sử dụng Cổng thông tin nội bộ</h1>
       <p className="guide-lead">
-        Cổng thông tin nội bộ Lữ đoàn Thông tin 21 – Bộ đội Biên phòng. Tài liệu này dành cho
-        <strong> bộ phận kỹ thuật tiếp nhận</strong> (cài đặt, vận hành, xử lý sự cố) và
-        <strong> người dùng cuối</strong> (khai thác theo quyền hạn).
+        Cổng thông tin nội bộ Lữ đoàn Thông tin 21 – Bộ đội Biên phòng. Tài liệu này hướng dẫn{' '}
+        <strong>cách khai thác từng chức năng</strong> theo đúng quyền hạn tài khoản — dành cho
+        toàn thể cán bộ, sĩ quan, quân nhân chuyên nghiệp được cấp tài khoản.
       </p>
 
       <div className="guide-authorcard">
@@ -36,11 +38,11 @@ export function HuongDanPage() {
           <dd>Đồng chí Lê Văn Quỳnh – Đại đội 5, Lữ đoàn Thông tin 21, Bộ đội Biên phòng</dd>
           <dt>Thời gian nghiên cứu &amp; phát triển</dt>
           <dd>Tháng 05/2026 – Tháng 08/2026</dd>
-          <dt>Phương pháp thực hiện</dt>
+          <dt>Mục đích</dt>
           <dd>
-            Ứng dụng kỹ thuật <strong>Vibecoding</strong> kết hợp trí tuệ nhân tạo (AI-driven
-            development): thiết kế kiến trúc 3 tầng chuẩn mực, tự động hoá quy trình Contract-First
-            (đồng bộ hợp đồng API Backend ↔ Frontend) và kiểm thử toàn diện.
+            Số hoá công tác tuyên truyền, quản lý văn bản và chỉ đạo – báo cáo trong nội bộ đơn vị,
+            thay thế một phần việc trao đổi giấy tờ, điện thoại, tin nhắn rời rạc bằng một đầu mối
+            duy nhất, có phân quyền rõ ràng theo cấp bậc và vị trí công tác.
           </dd>
         </dl>
       </div>
@@ -61,10 +63,10 @@ export function HuongDanPage() {
       </div>
 
       <div className="guide-panel" role="tabpanel">
-        {tab === 'kien-truc' && <KienTruc />}
-        {tab === 'ha-tang' && <HaTang />}
-        {tab === 'may-tram' && <MayTram />}
-        {tab === 'su-co' && <SuCo />}
+        {tab === 'bat-dau' && <BatDau />}
+        {tab === 'khai-thac' && <KhaiThac />}
+        {tab === 'chi-dao' && <ChiDao />}
+        {tab === 'tai-khoan' && <TaiKhoan />}
       </div>
     </section>
   )
@@ -82,573 +84,637 @@ function Block({ title, children }: { title: string; children: ReactNode }) {
   )
 }
 
-function Code({ children }: { children: ReactNode }) {
-  return <pre className="guide-code">{children}</pre>
+/** Bố cục 2 cột: văn bản hướng dẫn bên trái, hình minh hoạ bên phải (tự xuống hàng khi màn hẹp). */
+function Split({ children }: { children: ReactNode }) {
+  return <div className="guide-split">{children}</div>
+}
+function SplitText({ children }: { children: ReactNode }) {
+  return <div className="guide-split-text">{children}</div>
 }
 
-/* ------------------------------------------------------------------ tab 1 */
-function KienTruc() {
+/** Khung "cửa sổ trình duyệt" bao quanh mọi hình minh hoạ, để trông giống một màn hình phần mềm. */
+function Frame({ children, caption }: { children: ReactNode; caption: string }) {
+  return (
+    <figure className="guide-illustration-wrap">
+      <svg className="guide-illustration" viewBox="0 0 400 234" role="img" aria-label={caption}>
+        <rect x="0.5" y="0.5" width="399" height="233" rx="10" fill="#ffffff" stroke="#d7ded8" />
+        <rect x="0.5" y="0.5" width="399" height="27" rx="10" fill="#eef4ef" />
+        <rect x="0.5" y="17.5" width="399" height="10" fill="#eef4ef" />
+        <circle cx="16" cy="14" r="4" fill="#e6a23c" />
+        <circle cx="30" cy="14" r="4" fill="#c8102e" />
+        <circle cx="44" cy="14" r="4" fill="#2c6540" />
+        <rect x="64" y="8" width="270" height="12" rx="6" fill="#ffffff" stroke="#d7ded8" />
+        {children}
+      </svg>
+      <figcaption className="guide-illustration-caption">{caption}</figcaption>
+    </figure>
+  )
+}
+
+function Badge({ x, y, w, text, tone }: { x: number; y: number; w: number; text: string; tone: 'green' | 'amber' | 'red' | 'gray' }) {
+  const fill = { green: '#2c6540', amber: '#e6a23c', red: '#c8102e', gray: '#8a94a6' }[tone]
+  return (
+    <g>
+      <rect x={x} y={y} width={w} height={16} rx={8} fill={fill} />
+      <text x={x + w / 2} y={y + 11} textAnchor="middle" fontSize="8" fill="#fff" fontWeight={700}>
+        {text}
+      </text>
+    </g>
+  )
+}
+
+/* ============================================================ hình minh hoạ */
+function ArtLogin() {
+  return (
+    <Frame caption="Màn hình đăng nhập">
+      <rect x="100" y="46" width="200" height="150" rx="8" fill="#fff" stroke="#d7ded8" />
+      <text x="200" y="68" textAnchor="middle" fontSize="11" fontWeight={700} fill="#1f4c30">
+        Đăng nhập hệ thống
+      </text>
+      <text x="122" y="86" fontSize="8" fill="#8a94a6">Tên đăng nhập</text>
+      <rect x="122" y="90" width="156" height="18" rx="4" fill="#f5f7f5" stroke="#d7ded8" />
+      <text x="122" y="118" fontSize="8" fill="#8a94a6">Mật khẩu</text>
+      <rect x="122" y="122" width="156" height="18" rx="4" fill="#f5f7f5" stroke="#d7ded8" />
+      <rect x="122" y="154" width="156" height="24" rx="5" fill="#2c6540" />
+      <text x="200" y="170" textAnchor="middle" fontSize="10" fontWeight={700} fill="#fff">
+        Đăng nhập
+      </text>
+    </Frame>
+  )
+}
+
+function ArtNav() {
+  return (
+    <Frame caption="Thanh menu điều hướng — mục hiển thị tuỳ theo quyền tài khoản">
+      <rect x="16" y="42" width="368" height="28" rx="5" fill="#fff" stroke="#d7ded8" />
+      <rect x="24" y="47" width="62" height="18" rx="9" fill="#2c6540" />
+      <text x="55" y="59" textAnchor="middle" fontSize="8" fontWeight={700} fill="#fff">Trang chủ</text>
+      <text x="122" y="59" fontSize="9" fill="#333">Tin tức</text>
+      <text x="176" y="59" fontSize="9" fill="#333">Thông báo</text>
+      <text x="242" y="59" fontSize="9" fill="#333">Lịch trực</text>
+      <circle cx="366" cy="56" r="10" fill="#eef4ef" stroke="#2c6540" />
+      <text x="366" y="59" textAnchor="middle" fontSize="8" fill="#1f4c30">CB</text>
+      <rect x="16" y="88" width="368" height="26" rx="5" fill="#fafbfa" stroke="#e5e5e5" strokeDasharray="3 3" />
+      <text x="200" y="104" textAnchor="middle" fontSize="8" fill="#8a94a6">
+        Không đủ quyền → mục tự động ẩn khỏi menu (ví dụ: Quản lý người dùng)
+      </text>
+      <text x="30" y="150" fontSize="9" fill="#333">Đăng xuất</text>
+      <rect x="20" y="140" width="90" height="20" rx="4" fill="none" stroke="#c8102e" />
+    </Frame>
+  )
+}
+
+function ArtDashboard() {
+  return (
+    <Frame caption="Trang chủ — bảng tin tổng hợp">
+      {[0, 1, 2, 3].map((i) => (
+        <g key={i} transform={`translate(${16 + (i % 2) * 188}, ${44 + Math.floor(i / 2) * 90})`}>
+          <rect width="176" height="80" rx="6" fill="#fff" stroke="#d7ded8" />
+          <rect x="10" y="10" width="60" height="8" rx="4" fill="#2c6540" />
+          <rect x="10" y="26" width="150" height="7" rx="3" fill="#e3e7e3" />
+          <rect x="10" y="38" width="130" height="7" rx="3" fill="#e3e7e3" />
+          <rect x="10" y="50" width="140" height="7" rx="3" fill="#e3e7e3" />
+        </g>
+      ))}
+    </Frame>
+  )
+}
+
+function ArtNewsFeed() {
+  const rows: [string, string, 'green' | 'amber'][] = [
+    ['Hội thao huấn luyện chuyên ngành thông tin', 'Huấn luyện · 10/09/2026', 'green'],
+    ['Đại đội 5 giúp dân sửa chữa nhà cửa', 'Dân vận · 08/09/2026', 'green'],
+    ['Bản nháp: gương người tốt việc tốt tháng 9', 'Gương người tốt · 07/09/2026', 'amber'],
+  ]
+  return (
+    <Frame caption="Tin tức – Hoạt động đơn vị">
+      {rows.map(([title, meta, tone], i) => (
+        <g key={i} transform={`translate(16, ${42 + i * 62})`}>
+          <rect width="368" height="52" rx="6" fill="#fff" stroke="#d7ded8" />
+          <rect x="8" y="8" width="56" height="36" rx="4" fill="#dfeee3" />
+          <text x="72" y="24" fontSize="9" fill="#222" fontWeight={700}>{title.slice(0, 34)}</text>
+          <text x="72" y="38" fontSize="8" fill="#8a94a6">{meta}</text>
+          <Badge x={286} y={18} w={72} text={tone === 'green' ? 'Đã duyệt' : 'Chờ duyệt'} tone={tone} />
+        </g>
+      ))}
+    </Frame>
+  )
+}
+
+function ArtAnnouncement() {
+  const rows: [string, 'red' | 'amber' | 'green', boolean][] = [
+    ['Nghỉ trực thay ca do diễn tập cuối tuần', 'red', true],
+    ['Lịch kiểm tra chính trị quý III/2026', 'amber', false],
+    ['Thông báo lịch cắt điện bảo trì', 'green', false],
+  ]
+  return (
+    <Frame caption="Thông báo nội bộ — mức ưu tiên & ghim">
+      <circle cx="30" cy="46" r="9" fill="#eef4ef" stroke="#2c6540" />
+      <path d="M30 41 q5 0 5 6 l0 3 l2 2 h-14 l2 -2 l0 -3 q0 -6 5 -6 z" fill="#2c6540" />
+      {rows.map(([text, tone, pinned], i) => (
+        <g key={i} transform={`translate(16, ${64 + i * 46})`}>
+          <rect width="368" height="38" rx="6" fill="#fff" stroke="#d7ded8" />
+          <circle cx="16" cy="19" r="5" fill={{ red: '#c8102e', amber: '#e6a23c', green: '#2c6540' }[tone]} />
+          <text x="30" y="17" fontSize="9" fill="#222">{text.slice(0, 40)}</text>
+          <text x="30" y="30" fontSize="7.5" fill="#8a94a6">Đơn vị · vừa đăng</text>
+          {pinned && <Badge x={318} y={11} w={40} text="Ghim" tone="gray" />}
+        </g>
+      ))}
+    </Frame>
+  )
+}
+
+function ArtDuty() {
+  const days = ['T2', 'T3', 'T4', 'T5', 'T6', 'T7', 'CN']
+  return (
+    <Frame caption="Lịch trực tuần — bảng tổng hợp toàn đơn vị">
+      <rect x="16" y="42" width="368" height="26" rx="4" fill="#eef4ef" />
+      <text x="46" y="59" fontSize="8" fill="#1f4c30" fontWeight={700}>Ca / Ngày</text>
+      {days.map((d, i) => (
+        <text key={d} x={112 + i * 40} y={59} textAnchor="middle" fontSize="9" fontWeight={700} fill="#1f4c30">
+          {d}
+        </text>
+      ))}
+      {['Ca ngày', 'Ca đêm'].map((label, r) => (
+        <g key={label}>
+          <rect x="16" y={68 + r * 34} width="368" height="34" fill={r % 2 ? '#fafbfa' : '#fff'} stroke="#e5e5e5" />
+          <text x="20" y={68 + r * 34 + 21} fontSize="8" fill="#333">{label}</text>
+          {days.map((_, c) => {
+            const active = r === 0 && c === 3
+            return (
+              <g key={c}>
+                <rect x={92 + c * 40} y={72 + r * 34} width="36" height="26" rx="4" fill={active ? '#2c6540' : 'none'} />
+                {active && (
+                  <text x={92 + c * 40 + 18} y={72 + r * 34 + 17} textAnchor="middle" fontSize="7.5" fill="#fff" fontWeight={700}>
+                    Bạn trực
+                  </text>
+                )}
+              </g>
+            )
+          })}
+        </g>
+      ))}
+    </Frame>
+  )
+}
+
+function ArtDocuments() {
+  const rows: [string, 'green' | 'gray'][] = [
+    ['Mẫu đơn xin nghỉ phép 2026.docx', 'green'],
+    ['Kế hoạch huấn luyện quý III.pdf', 'gray'],
+    ['Báo cáo sơ kết 6 tháng đầu năm.xlsx', 'gray'],
+  ]
+  return (
+    <Frame caption="Văn bản – Tài liệu – Biểu mẫu">
+      {rows.map(([name, tone], i) => (
+        <g key={i} transform={`translate(16, ${44 + i * 52})`}>
+          <rect width="368" height="42" rx="6" fill="#fff" stroke="#d7ded8" />
+          <rect x="10" y="10" width="22" height="22" rx="3" fill="#eef4ef" stroke="#2c6540" />
+          <path d="M15 15 h12 v12 h-12 z" fill="none" stroke="#2c6540" strokeWidth={1} />
+          <text x="42" y="25" fontSize="9" fill="#222">{name.slice(0, 38)}</text>
+          <Badge x={230} y={13} w={64} text={tone === 'green' ? 'Công khai' : 'Nội bộ'} tone={tone === 'green' ? 'green' : 'gray'} />
+          <circle cx="340" cy="21" r="11" fill="#eef4ef" stroke="#2c6540" />
+          <path d="M340 15 v9 M336 20 l4 5 l4 -5" fill="none" stroke="#2c6540" strokeWidth={1.4} />
+        </g>
+      ))}
+    </Frame>
+  )
+}
+
+function ArtEducation() {
+  return (
+    <Frame caption="Giáo dục chính trị — bài học theo tuần/tháng">
+      <path d="M40 46 h60 v70 q-30 -8 -60 0 z" fill="#eef4ef" stroke="#2c6540" />
+      <path d="M160 46 h-60 v70 q30 -8 60 0 z" fill="#eef4ef" stroke="#2c6540" />
+      <line x1="100" y1="46" x2="100" y2="116" stroke="#2c6540" />
+      {[0, 1].map((i) => (
+        <g key={i} transform={`translate(200, ${46 + i * 56})`}>
+          <rect width="184" height="46" rx="6" fill="#fff" stroke="#d7ded8" />
+          <text x="10" y="18" fontSize="9" fontWeight={700} fill="#222">
+            {i === 0 ? 'Học tập chính trị – quân sự' : 'Pháp luật biên giới'}
+          </text>
+          <Badge x={10} y={24} w={80} text={i === 0 ? 'Tuần 35/2026' : 'Tuần 34/2026'} tone="green" />
+          <text x="150" y="36" fontSize="8" fill="#8a94a6">📎</text>
+        </g>
+      ))}
+    </Frame>
+  )
+}
+
+function ArtDirective() {
+  return (
+    <Frame caption="Chỉ thị – Nhiệm vụ & xác nhận đã tiếp thu">
+      <rect x="60" y="42" width="280" height="70" rx="6" fill="#fff" stroke="#d7ded8" />
+      <rect x="76" y="54" width="140" height="9" rx="2" fill="#1f4c30" />
+      <rect x="76" y="70" width="248" height="6" rx="2" fill="#e3e7e3" />
+      <rect x="76" y="82" width="220" height="6" rx="2" fill="#e3e7e3" />
+      <rect x="76" y="94" width="180" height="6" rx="2" fill="#e3e7e3" />
+      <rect x="60" y="126" width="280" height="10" rx="5" fill="#e3e7e3" />
+      <rect x="60" y="126" width="200" height="10" rx="5" fill="#2c6540" />
+      <text x="200" y="152" textAnchor="middle" fontSize="8.5" fill="#333">8 / 10 đơn vị đã tiếp thu</text>
+      <rect x="150" y="166" width="100" height="24" rx="12" fill="#2c6540" />
+      <text x="200" y="182" textAnchor="middle" fontSize="9" fontWeight={700} fill="#fff">✓ Đã tiếp thu</text>
+    </Frame>
+  )
+}
+
+function ArtThread() {
+  return (
+    <Frame caption="Kênh Chỉ đạo – Báo cáo (trao đổi theo đơn vị)">
+      <g>
+        <rect x="20" y="44" width="180" height="34" rx="10" fill="#eef4ef" />
+        <text x="32" y="65" fontSize="8.5" fill="#222">Đại đội 5: đã nhận nhiệm vụ, triển khai ngay.</text>
+      </g>
+      <g>
+        <rect x="200" y="86" width="180" height="34" rx="10" fill="#2c6540" />
+        <text x="212" y="107" fontSize="8.5" fill="#fff">BCH: báo cáo tiến độ trước 17h.</text>
+      </g>
+      <g>
+        <rect x="20" y="128" width="200" height="30" rx="10" fill="#eef4ef" />
+        <text x="32" y="146" fontSize="8.5" fill="#222">📎 Đính kèm: bao-cao-tien-do.pdf</text>
+      </g>
+      <rect x="16" y="188" width="300" height="26" rx="6" fill="#fff" stroke="#d7ded8" />
+      <text x="26" y="205" fontSize="8" fill="#8a94a6">Nhập nội dung trao đổi…</text>
+      <rect x="326" y="188" width="58" height="26" rx="6" fill="#2c6540" />
+      <text x="355" y="205" textAnchor="middle" fontSize="8.5" fontWeight={700} fill="#fff">Gửi</text>
+    </Frame>
+  )
+}
+
+function ArtSecure() {
+  return (
+    <Frame caption="Kênh chuyên BCH & Cấp uỷ (bậc MẬT)">
+      <rect x="16" y="42" width="368" height="184" rx="6" fill="#fff" stroke="#c8102e" strokeWidth={1.5} />
+      <rect x="30" y="52" width="70" height="16" rx="8" fill="#c8102e" />
+      <text x="65" y="64" textAnchor="middle" fontSize="8" fontWeight={700} fill="#fff">MẬT</text>
+      <rect x="150" y="70" width="22" height="18" rx="3" fill="none" stroke="#1f4c30" strokeWidth={1.4} />
+      <path d="M154 70 v-6 a6 6 0 0 1 12 0 v6" fill="none" stroke="#1f4c30" strokeWidth={1.4} />
+      <text x="30" y="112" fontSize="9" fontWeight={700} fill="#1f4c30">Sổ công văn đi — đến</text>
+      {[['Đi', '17/CV-LD', 'Đã xử lý', 'green'], ['Đến', '112/BC', 'Mới', 'amber']].map(([dir, num, st, tone], i) => (
+        <g key={i} transform={`translate(30, ${122 + i * 30})`}>
+          <rect width="330" height="24" rx="4" fill="#fafbfa" stroke="#e5e5e5" />
+          <Badge x={6} y={4} w={30} text={dir as string} tone="gray" />
+          <text x={44} y={17} fontSize="8.5" fill="#222">{num}</text>
+          <Badge x={260} y={4} w={62} text={st as string} tone={tone as 'green' | 'amber'} />
+        </g>
+      ))}
+    </Frame>
+  )
+}
+
+function ArtProfile() {
+  return (
+    <Frame caption="Hồ sơ cá nhân — sửa thông tin & đổi mật khẩu">
+      <circle cx="90" cy="80" r="30" fill="#eef4ef" stroke="#2c6540" />
+      <circle cx="90" cy="70" r="10" fill="#2c6540" />
+      <path d="M70 100 q20 -18 40 0" fill="#2c6540" />
+      <text x="90" y="122" textAnchor="middle" fontSize="8" fill="#8a94a6">Họ và tên</text>
+      <rect x="150" y="52" width="220" height="16" rx="4" fill="#f5f7f5" stroke="#d7ded8" />
+      <text x="150" y="48" fontSize="8" fill="#8a94a6">Họ và tên</text>
+      <text x="150" y="84" fontSize="8" fill="#8a94a6">Mật khẩu hiện tại</text>
+      <rect x="150" y="88" width="220" height="16" rx="4" fill="#f5f7f5" stroke="#d7ded8" />
+      <text x="150" y="116" fontSize="8" fill="#8a94a6">Mật khẩu mới</text>
+      <rect x="150" y="120" width="220" height="16" rx="4" fill="#f5f7f5" stroke="#d7ded8" />
+      <rect x="150" y="148" width="110" height="22" rx="5" fill="#2c6540" />
+      <text x="205" y="163" textAnchor="middle" fontSize="8.5" fontWeight={700} fill="#fff">Lưu thay đổi</text>
+    </Frame>
+  )
+}
+
+function ArtUserManage() {
+  const rows: [string, string, 'green' | 'amber'][] = [
+    ['Nguyễn Văn A', 'Cán bộ', 'green'],
+    ['Trần Thị B', 'Chờ kích hoạt', 'amber'],
+    ['Lê Văn C', 'Chỉ huy', 'green'],
+  ]
+  return (
+    <Frame caption="Quản lý người dùng — duyệt & cấp quyền (chỉ huy/quản trị)">
+      <rect x="16" y="42" width="368" height="22" rx="4" fill="#eef4ef" />
+      <text x="26" y="57" fontSize="8" fontWeight={700} fill="#1f4c30">Họ tên</text>
+      <text x="180" y="57" fontSize="8" fontWeight={700} fill="#1f4c30">Vai trò</text>
+      <text x="300" y="57" fontSize="8" fontWeight={700} fill="#1f4c30">Kích hoạt</text>
+      {rows.map(([name, role, tone], i) => (
+        <g key={i} transform={`translate(0, ${64 + i * 32})`}>
+          <rect x="16" width="368" height="30" fill={i % 2 ? '#fafbfa' : '#fff'} stroke="#e5e5e5" />
+          <text x="26" y="20" fontSize="8.5" fill="#222">{name}</text>
+          <Badge x={172} y={7} w={80} text={role} tone={tone} />
+          <rect x="300" y="8" width="30" height="14" rx="7" fill={tone === 'green' ? '#2c6540' : '#d7ded8'} />
+          <circle cx={tone === 'green' ? 322 : 308} cy="15" r="6" fill="#fff" />
+        </g>
+      ))}
+    </Frame>
+  )
+}
+
+/* ============================================================ tab 1 */
+function BatDau() {
   return (
     <>
-      <Block title="Mô hình tổng thể">
+      <Block title="Truy cập hệ thống lần đầu">
+        <Split>
+          <SplitText>
+            <ol className="guide-list guide-ol">
+              <li>Mở trình duyệt (Chrome, Edge, Cốc Cốc…) trên máy tính đã kết nối mạng nội bộ đơn vị.</li>
+              <li>Gõ địa chỉ Cổng thông tin do bộ phận kỹ thuật cung cấp, bấm <strong>Đăng nhập</strong>.</li>
+              <li>Nhập <strong>tên đăng nhập</strong> và <strong>mật khẩu</strong> do chỉ huy/quản trị cấp.</li>
+              <li>
+                Lần đầu đăng nhập (hoặc sau khi được cấp lại mật khẩu): hệ thống{' '}
+                <strong>bắt buộc đổi mật khẩu mới</strong> trước khi vào các màn hình bên trong.
+              </li>
+            </ol>
+            <p className="guide-note">
+              Quên mật khẩu hoặc đăng nhập báo lỗi? Liên hệ trực tiếp chỉ huy đơn vị hoặc quản trị hệ
+              thống để được <strong>cấp lại mật khẩu</strong> — không tự đoán, không dùng chung tài
+              khoản với người khác.
+            </p>
+          </SplitText>
+          <ArtLogin />
+        </Split>
+      </Block>
+
+      <Block title="Tự đăng ký tài khoản mới">
         <p>
-          Hệ thống là một <strong>ứng dụng web Fullstack</strong> chạy khép kín trong mạng nội bộ đơn
-          vị, gồm 3 thành phần:
+          Nếu chưa có tài khoản, bấm <strong>Đăng ký</strong> ở màn hình đăng nhập, điền họ tên/tên
+          đăng nhập/mật khẩu. Tài khoản mới ở trạng thái <strong>chờ duyệt</strong> — chưa đăng nhập
+          được ngay.
         </p>
         <ul className="guide-list">
-          <li>
-            <strong>Backend – FastAPI (Python) + MySQL</strong>: xử lý toàn bộ nghiệp vụ, xác thực,
-            phân quyền và lưu trữ dữ liệu. Phục vụ API tại cổng <code>8000</code>. Tài liệu API tự
-            sinh tại <code>/docs</code> (Swagger) và <code>/openapi.json</code>.
-          </li>
-          <li>
-            <strong>Frontend – React + TypeScript + Vite</strong>: giao diện người dùng, đóng gói
-            tĩnh (HTML/CSS/JS) nên chạy được trên mọi trình duyệt phổ thông, không cần cài đặt thêm.
-          </li>
-          <li>
-            <strong>CSDL – MySQL</strong>: một database duy nhất (<code>ludoan_db</code>), đặt cùng
-            máy chủ hoặc máy chủ CSDL riêng trong LAN.
-          </li>
+          <li>Chỉ huy đơn vị bổ sung <strong>cấp bậc, chức danh, đơn vị công tác</strong> cho tài khoản.</li>
+          <li>Sau khi đủ thông tin, chỉ huy bấm <strong>kích hoạt</strong> — lúc này mới đăng nhập được.</li>
+          <li>Trong lúc chờ, có thể liên hệ trực tiếp chỉ huy để được xử lý nhanh hơn.</li>
         </ul>
-        <p>
-          Toàn bộ tệp đính kèm (ảnh, văn bản, công văn) lưu trên ổ đĩa máy chủ tại
-          <code> storage/uploads/</code> và phục vụ qua đường dẫn <code>/static</code>.
-        </p>
       </Block>
 
-      <Block title="Đóng gói vận hành sản xuất (Production): 1 tiến trình, 1 cổng duy nhất">
-        <p>
-          Bản build tĩnh của Frontend (<code>npm run build</code> → thư mục <code>frontend/dist</code>)
-          được chính Backend FastAPI phục vụ luôn (route dự phòng SPA đăng ký sau cùng, không che bất
-          kỳ endpoint API nào) — xem <code>app/main.py</code>. Kết quả: chỉ cần khởi động{' '}
-          <strong>một tiến trình duy nhất</strong> (Uvicorn) trên <strong>một cổng duy nhất</strong>{' '}
-          (<code>8000</code>) là có đủ cả giao diện lẫn API, thay vì phải chạy song song 2 tiến trình
-          (Frontend cổng 5173 + Backend cổng 8000) như môi trường phát triển.
-        </p>
+      <Block title="Làm quen giao diện & menu điều hướng">
+        <Split>
+          <ArtNav />
+          <SplitText>
+            <p>Sau khi đăng nhập, thanh menu ngang trên cùng là nơi di chuyển giữa các phân hệ:</p>
+            <ul className="guide-list">
+              <li>Các mục hiển thị <strong>tuỳ theo quyền tài khoản của bạn</strong> — không thấy mục nào nghĩa là tài khoản chưa được cấp quyền vào mục đó, không phải lỗi phần mềm.</li>
+              <li>Góc phải hiển thị tên/vai trò tài khoản đang đăng nhập và nút <strong>Đăng xuất</strong>.</li>
+              <li>Dùng máy dùng chung (phòng trực, máy công vụ): luôn bấm <strong>Đăng xuất</strong> sau khi xong việc.</li>
+            </ul>
+          </SplitText>
+        </Split>
+      </Block>
+
+      <Block title="Vai trò tài khoản quyết định bạn thấy & làm được gì">
         <table className="guide-table">
           <thead>
             <tr>
-              <th>Tiêu chí</th>
-              <th>Trước (2 tiến trình, dev)</th>
-              <th>Sau (1 tiến trình, production)</th>
+              <th>Nhóm tài khoản</th>
+              <th>Thường là ai</th>
+              <th>Xem được</th>
+              <th>Đăng / sửa / duyệt được</th>
             </tr>
           </thead>
           <tbody>
             <tr>
-              <td>Số tiến trình phải chạy/giám sát</td>
-              <td>2 (Vite dev server + Uvicorn)</td>
-              <td>1 (Uvicorn)</td>
+              <td>Chỉ huy các cấp</td>
+              <td>Lữ trưởng, Chính uỷ, Phó Lữ trưởng/Phó Chính uỷ, chỉ huy đơn vị</td>
+              <td>Toàn bộ nội dung, kể cả bản nháp/chưa duyệt</td>
+              <td>Ban hành Chỉ thị, duyệt bài viết/bảng trực, quản lý tài khoản, giao nhiệm vụ</td>
             </tr>
             <tr>
-              <td>Cổng cần mở trên tường lửa</td>
-              <td>2 (<code>8000</code>, <code>5173</code>)</td>
-              <td>1 (<code>8000</code>)</td>
+              <td>Cán bộ, sĩ quan/QNCN</td>
+              <td>Cán bộ các phòng ban, đại đội</td>
+              <td>Nội dung nội bộ đã duyệt + bài do mình soạn</td>
+              <td>Đăng/sửa Tin tức, Giáo dục chính trị, lập bảng trực (chờ chỉ huy duyệt)</td>
             </tr>
             <tr>
-              <td>Cấu hình địa chỉ API cho Frontend</td>
-              <td>Phải khai <code>VITE_API_BASE_URL</code> đúng IP máy chủ trước khi build</td>
-              <td>Không cần — Frontend gọi API bằng đường dẫn tương đối, tự khớp mọi địa chỉ truy cập</td>
-            </tr>
-            <tr>
-              <td>Khởi động</td>
-              <td>2 lệnh, 2 cửa sổ dòng lệnh</td>
-              <td>1 cú bấm đúp <code>Chay_He_Thong.bat</code></td>
+              <td>Người dùng mới kích hoạt</td>
+              <td>Tài khoản vừa được duyệt, chưa giao việc đăng nội dung</td>
+              <td>Toàn bộ nội dung nội bộ (chỉ xem)</td>
+              <td>Chưa đăng/sửa được nội dung nào</td>
             </tr>
           </tbody>
         </table>
         <p className="guide-note">
-          Tài nguyên máy chủ nội bộ (RAM, số handle mạng, số tiến trình Windows theo dõi) được tối ưu
-          rõ rệt so với mô hình 2 tiến trình — phù hợp máy chủ cấu hình vừa phải đặt tại đơn vị.
+          Ngoài ra, một số tài khoản được cấp thêm quyền riêng: xem nội dung <strong>bậc MẬT</strong>,
+          hoặc tham gia <strong>Kênh Chỉ đạo – Báo cáo</strong> — xem chi tiết ở tab{' '}
+          <em>3. Chỉ đạo – điều hành</em>.
         </p>
       </Block>
 
-      <Block title="Kiến trúc 3 tầng (chuẩn mực, tách bạch trách nhiệm)">
-        <table className="guide-table">
-          <thead>
-            <tr>
-              <th>Tầng</th>
-              <th>Thư mục</th>
-              <th>Trách nhiệm</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr>
-              <td>Route (API)</td>
-              <td><code>app/api/routes/</code></td>
-              <td>Khai báo đường dẫn, phương thức, mã trạng thái, kiểm tra quyền (Depends). Không chứa logic nghiệp vụ.</td>
-            </tr>
-            <tr>
-              <td>Service (nghiệp vụ)</td>
-              <td><code>app/services/</code></td>
-              <td>Quy tắc nghiệp vụ, kiểm tra sở hữu, lọc theo bậc mật, sinh lỗi 403/404/409.</td>
-            </tr>
-            <tr>
-              <td>Repository (dữ liệu)</td>
-              <td><code>app/repositories/</code></td>
-              <td>Truy vấn CSDL thuần tuý (create / list / get / update / delete).</td>
-            </tr>
-          </tbody>
-        </table>
-        <p className="guide-note">
-          Quy trình <strong>Contract-First</strong>: mỗi lần thay đổi API, backend xuất lại
-          <code> openapi.yaml</code> và ghi biên bản vào <code>openapi.CHANGELOG.md</code>; Frontend
-          sinh lại kiểu dữ liệu (<code>types/</code>) và lớp gọi API (<code>api/</code>) từ hợp đồng
-          đó — hai phía luôn khớp nhau.
-        </p>
-      </Block>
-
-      <Block title="Phân quyền RBAC đa cấp">
-        <table className="guide-table">
-          <thead>
-            <tr>
-              <th>Vai trò</th>
-              <th>Đối tượng</th>
-              <th>Quyền chính</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr>
-              <td><code>admin</code></td>
-              <td>Quản trị hệ thống (chủ đơn vị giữ)</td>
-              <td>Toàn quyền như <code>commander</code> + độc quyền: cấp cờ kênh hạn chế, cấp lại mật khẩu, quản lý đơn vị, tạo admin khác.</td>
-            </tr>
-            <tr>
-              <td><code>commander</code></td>
-              <td>Lữ trưởng, Chính uỷ, Phó Lữ trưởng, Phó Chính uỷ</td>
-              <td>Ban hành Chỉ thị – Nhiệm vụ, duyệt/đăng mọi nội dung, quản lý tài khoản.</td>
-            </tr>
-            <tr>
-              <td><code>officer</code></td>
-              <td>Cán bộ, sĩ quan/QNCN phòng ban, đại đội (mặc định khi tự đăng ký)</td>
-              <td>Đăng/biên tập Tin tức – Hoạt động và Giáo dục chính trị; chỉ xem Chỉ thị – Nhiệm vụ.</td>
-            </tr>
-          </tbody>
-        </table>
+      <Block title="Yên tâm khi đang soạn dở mà mất điện, rớt mạng">
         <p>
-          Chỉ cán bộ và quân nhân chuyên nghiệp (QNCN) có biên chế thực tế mới được cấp tài
-          khoản mạng nội bộ — không còn vai trò &quot;Chiến sĩ&quot;. Mọi tài khoản (tự đăng ký
-          hoặc chỉ huy tạo trực tiếp) đều phải có đủ <strong>Cấp bậc</strong>,{' '}
-          <strong>Chức danh</strong> và <strong>Đơn vị công tác</strong> trước khi kích hoạt được
-          (<code>POST /users/{'{id}'}/activate</code> trả về 409 nếu còn thiếu).
-        </p>
-        <p>
-          Xác thực bằng <strong>JWT</strong> (token có hạn {'24 giờ'} — cấu hình
-          <code> JWT_EXPIRE_MINUTES</code>). Quyền được <em>bắt buộc thực thi ở tầng Backend</em>;
-          giao diện chỉ ẩn/hiện nút cho gọn — không thay cho kiểm soát máy chủ.
-        </p>
-      </Block>
-
-      <Block title="Bảo mật 3 cấp độ thông tin">
-        <table className="guide-table">
-          <thead>
-            <tr>
-              <th>Bậc</th>
-              <th>Giá trị</th>
-              <th>Ai được xem</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr>
-              <td>Công khai</td>
-              <td><code>cong_khai</code></td>
-              <td>Mọi máy trong LAN, không cần đăng nhập (chỉ các mục được mở công khai).</td>
-            </tr>
-            <tr>
-              <td>Nội bộ</td>
-              <td><code>noi_bo</code></td>
-              <td>Mọi tài khoản đã kích hoạt.</td>
-            </tr>
-            <tr>
-              <td>Mật</td>
-              <td><code>mat</code></td>
-              <td><code>commander</code>/<code>admin</code> HOẶC tài khoản được cấp cờ <code>clearance = true</code>.</td>
-            </tr>
-          </tbody>
-        </table>
-        <p className="guide-note">
-          Kênh chuyên Ban Chỉ huy &amp; Cấp uỷ và Sổ công văn mật đều gắn cứng
-          bậc <code>mat</code> — không đủ quyền sẽ nhận lỗi 403 ngay tại máy chủ.
+          Các form soạn nội dung dài (ban hành Chỉ thị, trao đổi trong Kênh Chỉ đạo, giao nhiệm vụ,
+          Kênh chuyên BCH) <strong>tự động lưu bản nháp ngay trên máy đang gõ</strong>, không cần bấm
+          nút lưu riêng. Lỡ tải lại trang, mất điện hay rớt mạng trước khi kịp gửi: mở lại đúng màn
+          hình đó, nội dung sẽ <strong>tự khôi phục</strong>. Sau khi gửi thành công, bản nháp tạm tự
+          xoá.
         </p>
       </Block>
     </>
   )
 }
 
-/* ------------------------------------------------------------------ tab 2 */
-function HaTang() {
+/* ============================================================ tab 2 */
+function KhaiThac() {
   return (
     <>
-      <Block title="Nguyên tắc: hoạt động offline 100%">
-        <p>
-          Hệ thống <strong>không phụ thuộc Internet</strong>. Sau khi cài đặt, toàn bộ thư viện,
-          phông chữ, mã giao diện và dữ liệu đều nằm trên máy chủ nội bộ. Chỉ cần các máy trạm và
-          máy chủ thông nhau trong cùng mạng LAN/WAN quân sự là khai thác được đầy đủ.
-        </p>
+      <Block title="Trang chủ — bảng tin tổng hợp">
+        <Split>
+          <ArtDashboard />
+          <SplitText>
+            <p>
+              Vào hệ thống là thấy ngay <strong>Trang chủ</strong>, gộp sẵn những gì mới nhất trong
+              đơn vị để không phải mở từng mục: tin tức mới, bài Giáo dục chính trị mới, Chỉ thị mới
+              ban hành, thông báo mới — mỗi loại vài mục gần nhất, bấm vào để xem đầy đủ.
+            </p>
+          </SplitText>
+        </Split>
       </Block>
 
-      <Block title="Cấu hình IP tĩnh cho máy chủ nội bộ">
-        <p>
-          Máy chủ <strong>bắt buộc dùng IP tĩnh</strong> để các máy trạm luôn tìm thấy. Ví dụ dải
-          <code> 192.168.1.0/24</code>:
-        </p>
-        <ul className="guide-list">
-          <li>Địa chỉ IP: <code>192.168.1.10</code></li>
-          <li>Mặt nạ mạng: <code>255.255.255.0</code></li>
-          <li>Cổng mặc định (gateway): theo thiết bị định tuyến của đơn vị</li>
-          <li>DNS: để trống hoặc trỏ DNS nội bộ (không cần cho hệ thống hoạt động)</li>
-        </ul>
-        <p>Đặt IP tĩnh bằng dòng lệnh (chạy PowerShell/CMD với quyền Administrator):</p>
-        <Code>{`netsh interface ip set address name="Ethernet" static 192.168.1.10 255.255.255.0 192.168.1.1`}</Code>
-        <p>
-          Hoặc: <em>Control Panel → Network and Sharing Center → Change adapter settings → </em>
-          chuột phải card mạng → <em>Properties → Internet Protocol Version 4 (TCP/IPv4) → Properties</em>
-          → chọn <em>Use the following IP address</em>.
-        </p>
-        <p className="guide-note">
-          CORS của Backend đã mở sẵn cho <code>localhost</code>/<code>127.0.0.1</code> mọi cổng và các
-          dải LAN riêng <code>10.x</code>, <code>192.168.x</code>, <code>172.16–31.x</code>. Nếu đơn vị
-          dùng dải khác, bổ sung origin vào biến <code>EXTRA_CORS_ORIGINS</code> trong
-          <code> backend/.env</code>.
-        </p>
+      <Block title="Tin tức – Hoạt động đơn vị">
+        <Split>
+          <SplitText>
+            <p><strong>Xem:</strong> mọi tài khoản xem được tin đã duyệt; người ngoài đơn vị (khách LAN chưa đăng nhập) chỉ xem tin công khai.</p>
+            <p><strong>Đăng bài mới</strong> (cán bộ trở lên):</p>
+            <ol className="guide-list guide-ol">
+              <li>Vào mục <strong>Tin tức</strong> → bấm <strong>Đăng bài mới</strong>.</li>
+              <li>Chọn danh mục (Huấn luyện, Dân vận, Khen thưởng, Gương người tốt…), nhập tiêu đề, nội dung, có thể tải ảnh bìa.</li>
+              <li>Cán bộ đăng → bài vào trạng thái <strong>Chờ duyệt</strong>; chỉ huy đăng → hiển thị ngay.</li>
+              <li>Chỉ huy vào xem danh sách chờ duyệt, bấm <strong>Duyệt</strong> hoặc <strong>Trả lại</strong> kèm ghi chú lý do.</li>
+              <li>Bài bị trả lại/đã duyệt mà cán bộ sửa lại → tự quay về trạng thái Chờ duyệt.</li>
+            </ol>
+          </SplitText>
+          <ArtNewsFeed />
+        </Split>
       </Block>
 
-      <Block title="Thông tuyến tường lửa (Firewall): mở cổng 8000 và 5173">
-        <table className="guide-table">
-          <thead>
-            <tr>
-              <th>Cổng</th>
-              <th>Dịch vụ</th>
-              <th>Khi nào cần mở</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr>
-              <td><code>8000</code> (TCP)</td>
-              <td>API Backend (FastAPI/Uvicorn)</td>
-              <td>Luôn cần — mọi máy trạm gọi vào cổng này.</td>
-            </tr>
-            <tr>
-              <td><code>5173</code> (TCP)</td>
-              <td>Máy chủ giao diện Vite (chế độ phát triển)</td>
-              <td>Khi phục vụ Frontend trực tiếp bằng <code>npm run dev</code>. Nếu đã build tĩnh và đưa lên IIS/Nginx cổng 80 thì không cần.</td>
-            </tr>
-          </tbody>
-        </table>
-        <p>Mở cổng trên Windows Firewall (chạy với quyền Administrator):</p>
-        <Code>{`netsh advfirewall firewall add rule name="LuDoan21 API 8000" dir=in action=allow protocol=TCP localport=8000
-netsh advfirewall firewall add rule name="LuDoan21 Web 5173" dir=in action=allow protocol=TCP localport=5173`}</Code>
-        <p>Kiểm tra từ máy trạm (thay IP máy chủ):</p>
-        <Code>{`# Trình duyệt máy trạm:
-http://192.168.1.10:8000/docs      -> phải mở được trang Swagger
-http://192.168.1.10:5173           -> phải mở được giao diện Cổng thông tin`}</Code>
+      <Block title="Thông báo nội bộ">
+        <Split>
+          <ArtAnnouncement />
+          <SplitText>
+            <p>
+              Danh sách thông báo sắp xếp theo thứ tự: <strong>ghim</strong> lên đầu → mức{' '}
+              <strong>ưu tiên</strong> (khẩn → cao → bình thường → thấp) → mới nhất. Một số thông báo
+              được đánh dấu <strong>công khai</strong>, xem được cả khi chưa đăng nhập.
+            </p>
+            <p>Cán bộ trở lên đăng thông báo mới, chọn mức ưu tiên, có thể ghim và đặt ngày hết hiệu lực để tự ẩn khi qua hạn.</p>
+          </SplitText>
+        </Split>
       </Block>
 
-      <Block title="Địa chỉ máy chủ để Frontend gọi API">
-        <p>
-          <strong>Chế độ Production (khuyến nghị — 1 cổng duy nhất):</strong> bản build tại
-          <code> frontend/.env.production</code> đã đặt sẵn <code>VITE_API_BASE_URL</code> rỗng →
-          Frontend gọi API bằng đường dẫn <em>tương đối</em>, luôn trùng gốc (origin) với địa chỉ
-          đang mở trên trình duyệt. Không cần sửa gì thêm dù máy trạm truy cập qua
-          <code> localhost</code> hay qua bất kỳ IP LAN nào của máy chủ — không phải build lại riêng
-          cho từng địa chỉ.
-        </p>
-        <p>
-          <strong>Chế độ phát triển (2 tiến trình, Frontend cổng 5173 riêng):</strong> Frontend đọc
-          địa chỉ API từ biến môi trường <code>VITE_API_BASE_URL</code> (tệp <code>frontend/.env</code>).
-          Khi cần chạy tách rời, đặt bằng IP tĩnh của máy chủ:
-        </p>
-        <Code>{`# frontend/.env
-VITE_API_BASE_URL=http://192.168.1.10:8000`}</Code>
-        <p>Sau khi sửa, khởi động lại <code>npm run dev</code> (chế độ production dùng file <code>.env.production</code> riêng, không bị ảnh hưởng).</p>
+      <Block title="Lịch trực – Trực ban – Bàn giao ca">
+        <Split>
+          <SplitText>
+            <ul className="guide-list">
+              <li><strong>Xem lịch trực</strong>: mọi tài khoản xem được bảng trực tuần/ngày tổng hợp toàn đơn vị.</li>
+              <li><strong>Lập bảng trực</strong> (cán bộ trở lên): tạo bảng trực theo tuần cho đơn vị mình, thêm từng ca trực (chỉ huy, tác chiến, nội vụ, chuyên môn, canh gác…) kèm người trực, số điện thoại liên hệ.</li>
+              <li><strong>Duyệt bảng trực</strong>: chỉ chỉ huy được duyệt; bảng đã duyệt mới lên bảng tổng hợp toàn Lữ đoàn.</li>
+              <li><strong>Bàn giao ca điện tử</strong>: kíp trực trước ghi lại quân số, tình trạng trang bị, sự việc trong ca, việc còn tồn; kíp sau xác nhận đã nhận hoặc nêu kiến nghị.</li>
+            </ul>
+          </SplitText>
+          <ArtDuty />
+        </Split>
       </Block>
 
-      <Block title="Khởi động máy chủ sản xuất 1-Click bằng Chay_He_Thong.bat (khuyến nghị)">
-        <p>
-          Ở thư mục gốc dự án có sẵn file <code>Chay_He_Thong.bat</code>. Bộ phận kỹ thuật chỉ cần
-          <strong> bấm đúp chuột</strong> vào file này để khởi động toàn bộ hệ thống — không cần gõ
-          lệnh, không cần nhớ đường dẫn <code>venv</code>.
-        </p>
-        <p>File này tự động thực hiện tuần tự:</p>
-        <ol className="guide-list guide-ol">
-          <li>Chuyển vào thư mục <code>backend/</code> và kiểm tra đã có môi trường ảo <code>venv</code> và file <code>.env</code> chưa (báo lỗi rõ ràng và dừng lại nếu thiếu, thay vì treo im lặng).</li>
-          <li>Kích hoạt <code>venv</code> (tự động, không cần thao tác tay).</li>
-          <li>Kiểm tra đã build giao diện (<code>frontend/dist</code>) chưa — nếu chưa, cảnh báo nhưng vẫn cho chạy ở chế độ API-only.</li>
-          <li>Khởi động máy chủ Production: <code>uvicorn app.main:app --host 0.0.0.0 --port 8000</code> — <strong>không bật cờ <code>--reload</code></strong> của môi trường phát triển (tắt tự khởi động lại khi sửa file, tránh gián đoạn dịch vụ đang có người dùng).</li>
-        </ol>
-        <p>
-          Sau khi cửa sổ hiện dòng <code>Uvicorn running on http://0.0.0.0:8000</code>, hệ thống đã
-          sẵn sàng phục vụ. Truy cập <code>http://localhost:8000</code> tại máy chủ, hoặc
-          <code> http://&lt;IP máy chủ&gt;:8000</code> từ bất kỳ máy trạm nào trong LAN.
-        </p>
-        <p className="guide-note">
-          <strong>Dừng hệ thống:</strong> đóng cửa sổ dòng lệnh đó (hoặc bấm tổ hợp <code>Ctrl+C</code>
-          bên trong cửa sổ). Muốn hệ thống tự khởi động lại cùng máy chủ (vd sau khi cúp điện, máy tự
-          bật lại): đặt lối tắt tới <code>Chay_He_Thong.bat</code> vào thư mục Startup của Windows
-          (<code>shell:startup</code>) hoặc tạo Scheduled Task chạy lúc đăng nhập.
-        </p>
+      <Block title="Văn bản – Tài liệu – Biểu mẫu">
+        <Split>
+          <ArtDocuments />
+          <SplitText>
+            <p>Tìm tài liệu theo danh mục: biểu mẫu, hướng dẫn, quy chế/quy định, kế hoạch, báo cáo, văn bản chỉ đạo.</p>
+            <p>Bấm biểu tượng tải xuống để lưu file về máy. Tài liệu đánh dấu <strong>Công khai</strong> xem/tải được cả khi chưa đăng nhập; còn lại cần đăng nhập.</p>
+            <p>Cán bộ trở lên đăng tài liệu mới bằng cách tải file lên (.pdf/.doc/.docx/.xls/.xlsx/.ppt/.pptx), chọn danh mục và mức công khai/nội bộ.</p>
+          </SplitText>
+        </Split>
       </Block>
 
-      <Block title="Sao lưu & phục hồi dữ liệu định kỳ (dành cho bộ phận kỹ thuật)">
-        <p>
-          Script <code>backend/scripts/backup_db.py</code> sao lưu toàn bộ CSDL MySQL
-          (<code>ludoan_db</code>) ra file <strong>nén gzip</strong> (<code>.sql.gz</code>), đặt tại
-          <code> backend/storage/backups/</code>. Thông tin kết nối CSDL đọc từ <code>backend/.env</code>{' '}
-          — không hỏi/hiện mật khẩu trên màn hình hay dòng lệnh.
-        </p>
-        <p><strong>Sao lưu thủ công (chạy khi cần):</strong></p>
-        <Code>{`cd backend
-venv\\Scripts\\activate
-python scripts\\backup_db.py`}</Code>
-        <p>
-          Mỗi lần chạy tạo 1 file mới dạng <code>ludoan_db_20260830_231800.sql.gz</code> (theo thời
-          điểm sao lưu) và <strong>tự động xoá bớt bản cũ</strong>, chỉ giữ lại 14 bản gần nhất (đổi
-          số lượng giữ lại bằng <code>--retention</code>, ví dụ <code>--retention 30</code>).
-        </p>
-        <p><strong>Đặt lịch sao lưu tự động hằng ngày (khuyến nghị — Windows Task Scheduler):</strong></p>
-        <ol className="guide-list guide-ol">
-          <li>Mở <em>Task Scheduler</em> → <em>Create Basic Task</em>.</li>
-          <li>Đặt tên: <em>Sao luu CSDL Cong thong tin Lu doan 21</em>; chọn chạy <strong>Daily</strong>, giờ thấp điểm (vd 23:00).</li>
-          <li>
-            Action: <em>Start a program</em> — Program/script trỏ tới
-            <code> &lt;đường dẫn dự án&gt;\backend\venv\Scripts\python.exe</code>, Add arguments:
-            <code> scripts\backup_db.py</code>, Start in: <code>&lt;đường dẫn dự án&gt;\backend</code>.
-          </li>
-          <li>Chạy thử ngay (chuột phải task vừa tạo → <em>Run</em>) và kiểm tra có file mới trong <code>backend/storage/backups/</code>.</li>
-        </ol>
-        <p><strong>Phục hồi dữ liệu từ bản sao lưu (thận trọng — ghi đè dữ liệu hiện tại):</strong></p>
-        <Code>{`cd backend
-venv\\Scripts\\activate
-python scripts\\backup_db.py --restore storage\\backups\\ludoan_db_20260830_231800.sql.gz
-# Script se hoi xac nhan go "YES" truoc khi ghi de - danh thoi gian doc ky ten file truoc khi go`}</Code>
-        <p className="guide-note">
-          Khuyến nghị: định kỳ copy thư mục <code>backend/storage/backups/</code> (và
-          <code> backend/storage/uploads/</code> — nơi lưu file đính kèm/công văn) sang một ổ đĩa hoặc
-          máy khác ngoài máy chủ chính, để vẫn còn dữ liệu nếu máy chủ hỏng hoàn toàn (cháy nổ, hỏng ổ
-          cứng...) — sao lưu tại chỗ không thay thế được sao lưu ngoài máy chủ.
-        </p>
+      <Block title="Giáo dục chính trị">
+        <Split>
+          <SplitText>
+            <p>Mọi tài khoản đã đăng nhập xem được toàn bộ bài Giáo dục chính trị, phân theo chủ đề: học tập chính trị – quân sự, tuyên truyền, pháp luật biên giới, lịch sử truyền thống.</p>
+            <p>Bài định kỳ theo tuần/tháng có nhãn kèm theo (ví dụ "Tuần 35/2026") để dễ theo dõi tiến độ học tập; một số bài có tài liệu đính kèm để tải về.</p>
+            <p>Cán bộ trở lên đăng/biên tập bài học mới cho mục này.</p>
+          </SplitText>
+          <ArtEducation />
+        </Split>
       </Block>
     </>
   )
 }
 
-/* ------------------------------------------------------------------ tab 3 */
-function MayTram() {
+/* ============================================================ tab 3 */
+function ChiDao() {
   return (
     <>
-      <Block title="Yêu cầu máy trạm">
-        <ul className="guide-list">
-          <li>Trình duyệt: <strong>Google Chrome</strong>, <strong>Cốc Cốc</strong>, <strong>Microsoft Edge</strong> (bản trong 2–3 năm gần đây).</li>
-          <li>Cùng mạng LAN với máy chủ; ping thông tới IP máy chủ.</li>
-          <li>Không cần cài đặt phần mềm gì thêm trên máy trạm.</li>
-        </ul>
+      <Block title="Chỉ thị – Nhiệm vụ">
+        <Split>
+          <ArtDirective />
+          <SplitText>
+            <p>Chỉ huy ban hành Chỉ thị; mọi tài khoản xem được bản đã ban hành (chỉ huy còn xem được cả bản nháp chưa ban hành).</p>
+            <p>Đọc xong, bấm <strong>Đã tiếp thu</strong> để xác nhận đã quán triệt nội dung — mỗi người chỉ cần bấm một lần.</p>
+            <p>Chỉ huy theo dõi số đơn vị/cá nhân đã tiếp thu và danh sách còn chưa tiếp thu để đôn đốc kịp thời.</p>
+          </SplitText>
+        </Split>
       </Block>
 
-      <Block title="Truy cập và đăng nhập">
-        <ol className="guide-list guide-ol">
-          <li>Mở trình duyệt, gõ địa chỉ Cổng thông tin, ví dụ <code>http://192.168.1.10:5173</code> (hoặc cổng 80 nếu đã dựng web tĩnh).</li>
-          <li>Trang công khai hiển thị Tin tức, Thông báo, Văn bản ở mức <em>Công khai</em> — xem được ngay không cần đăng nhập.</li>
-          <li>Bấm <strong>Đăng nhập</strong>, nhập tên đăng nhập và mật khẩu do quản trị cấp.</li>
-          <li>Lần đầu đăng nhập (hoặc sau khi được cấp lại mật khẩu): hệ thống <strong>bắt buộc đổi mật khẩu</strong> trước khi vào các màn hình nội bộ.</li>
-          <li>Tài khoản tự đăng ký (<code>POST /users/register</code>) ở trạng thái chờ — chỉ đăng nhập được sau khi chỉ huy <strong>kích hoạt</strong>.</li>
-        </ol>
-        <p className="guide-note">
-          Tài khoản quản trị khởi tạo sẵn: <code>admin</code> / <code>admin</code> (đổi trong
-          <code> backend/.env</code>: <code>SYSTEM_ADMIN_USERNAME</code>, <code>SYSTEM_ADMIN_PASSWORD</code>).
-          Bắt buộc đổi mật khẩu ngay lần đăng nhập đầu.
-        </p>
-      </Block>
-
-      <Block title="Tự động lưu bản nháp & an toàn dữ liệu khi mất điện / mất mạng">
+      <Block title="Kênh Chỉ đạo – Báo cáo">
         <p>
-          Các form soạn thảo nội dung dài — <strong>ban hành Chỉ thị</strong>, trao đổi/báo cáo trong{' '}
-          <strong>Kênh Chỉ đạo – Báo cáo</strong>, <strong>Giao nhiệm vụ</strong> (tạo nhiệm vụ + nộp
-          báo cáo tiến độ) và <strong>Kênh chuyên BCH &amp; Cấp uỷ</strong> — đều{' '}
-          <strong>tự động lưu bản nháp</strong> ngay trên trình duyệt
-          của máy trạm trong lúc đang gõ (không cần bấm nút lưu riêng).
+          Dành cho tài khoản được cấp quyền vào kênh chỉ đạo (thường là chỉ huy đơn vị). Đây là nơi
+          Ban chỉ huy Lữ đoàn trao đổi công việc trực tiếp với từng đơn vị, tách riêng theo từng luồng.
         </p>
-        <ul className="guide-list">
-          <li>Nội dung đang soạn được lưu tạm sau mỗi lần ngừng gõ khoảng dưới 1 giây.</li>
-          <li>
-            <strong>Lỡ tải lại trang, mất điện đột ngột hoặc rớt mạng LAN</strong> trước khi kịp bấm
-            "Gửi"/"Ban hành"/"Lưu biên bản": mở lại đúng luồng/mục đó, nội dung đang soạn sẽ{' '}
-            <strong>tự khôi phục lại</strong> vào đúng ô soạn thảo.
-          </li>
-          <li>Sau khi gửi/lưu <strong>thành công</strong>, bản nháp tạm được xoá — không bị bung lại nội dung cũ ở lần soạn sau.</li>
-          <li>
-            Bản nháp chỉ lưu <strong>trên trình duyệt của máy trạm đang gõ</strong> (không đồng bộ lên
-            máy chủ, không chia sẻ giữa các máy) — đây là lưới an toàn tạm thời, <strong>không thay
-            thế</strong> việc bấm gửi/lưu khi soạn xong.
-          </li>
-        </ul>
-        <p className="guide-note">
-          Nếu đổi sang máy trạm khác hoặc xoá dữ liệu duyệt web (Clear browsing data) của trình duyệt,
-          bản nháp tạm trên máy cũ sẽ mất — hãy hoàn tất và gửi nội dung quan trọng trước khi rời máy.
-        </p>
+        <Split>
+          <SplitText>
+            <ul className="guide-list">
+              <li>Ban chỉ huy Lữ đoàn thấy tất cả các luồng; mỗi đơn vị chỉ thấy luồng của đơn vị mình.</li>
+              <li>Nhắn tin qua lại, gửi kèm tệp đính kèm (báo cáo, hình ảnh…) trong luồng.</li>
+              <li>Hệ thống đánh dấu tin đã đọc/chưa đọc để biết còn nội dung cần xem.</li>
+              <li>Ban chỉ huy có thể <strong>đóng luồng</strong> khi công việc đã xử lý xong.</li>
+            </ul>
+          </SplitText>
+          <ArtThread />
+        </Split>
       </Block>
 
-      <Block title="Khai thác phân hệ theo quyền hạn">
-        <table className="guide-table">
-          <thead>
-            <tr>
-              <th>Phân hệ</th>
-              <th>Xem</th>
-              <th>Đăng / Sửa</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr><td>Bảng tin (trang chủ tổng hợp)</td><td>Mọi tài khoản đã đăng nhập</td><td>—</td></tr>
-            <tr><td>Tin tức – Hoạt động đơn vị</td><td>Công khai (bài đã duyệt)</td><td><code>officer</code>, <code>commander</code> (duyệt: chỉ <code>commander</code>)</td></tr>
-            <tr><td>Thông báo – Lịch trực kíp</td><td>Công khai khi được đánh dấu công khai</td><td><code>officer</code>, <code>commander</code></td></tr>
-            <tr><td>Văn bản – Tài liệu – Biểu mẫu</td><td>Công khai khi được đánh dấu công khai</td><td><code>officer</code>, <code>commander</code></td></tr>
-            <tr><td>Giáo dục chính trị</td><td>Mọi tài khoản đã đăng nhập</td><td><code>officer</code>, <code>commander</code></td></tr>
-            <tr><td>Chỉ thị – Nhiệm vụ</td><td>Mọi tài khoản (bản đã ban hành)</td><td>Chỉ <code>commander</code></td></tr>
-            <tr><td>Kênh Chỉ đạo – Báo cáo / Giao nhiệm vụ</td><td>Tài khoản có cờ kênh chỉ đạo (+ <code>commander</code>/<code>admin</code>)</td><td>Giao/duyệt: <code>commander</code>/<code>admin</code>; nộp báo cáo: đơn vị được giao</td></tr>
-            <tr><td>Kênh chỉ huy (MẬT)</td><td>Có <code>clearance</code> hoặc <code>commander</code>/<code>admin</code></td><td>Vào sổ/đóng luồng: <code>commander</code>/<code>admin</code></td></tr>
-            <tr><td>Quản lý người dùng</td><td><code>commander</code>/<code>admin</code></td><td><code>commander</code>/<code>admin</code></td></tr>
-            <tr><td>Quản lý đơn vị</td><td><code>admin</code></td><td><code>admin</code></td></tr>
-            <tr><td>Hồ sơ cá nhân</td><td>Chủ tài khoản</td><td>Chủ tài khoản (đổi họ tên, đổi mật khẩu)</td></tr>
-          </tbody>
-        </table>
-        <p className="guide-note">
-          Thanh menu ngang tự ẩn những mục vượt quyền — người dùng chỉ nhìn thấy phần việc của mình.
-        </p>
+      <Block title="Giao nhiệm vụ & nộp báo cáo tiến độ">
+        <ul className="guide-list">
+          <li><strong>Giao việc</strong> (chỉ huy): tạo nhiệm vụ, chọn đơn vị hoặc cá nhân thực hiện, đặt hạn hoàn thành; có thể gắn với một Chỉ thị đã ban hành.</li>
+          <li><strong>Nộp báo cáo</strong> (đơn vị/cá nhân được giao): viết nội dung báo cáo tiến độ, đính kèm tệp minh chứng nếu cần.</li>
+          <li><strong>Duyệt báo cáo</strong> (chỉ huy): xem báo cáo, đánh giá <strong>Đạt</strong> hoặc <strong>Trả lại</strong> kèm ghi chú; báo cáo bị trả lại phải nộp lại.</li>
+          <li>Trạng thái nhiệm vụ tự cập nhật theo tiến độ: <strong>Chưa giao</strong> → <strong>Đang thực hiện</strong> → <strong>Hoàn thành</strong>; nhiệm vụ trễ hạn được đánh dấu <strong>Quá hạn</strong> để dễ nhận biết.</li>
+        </ul>
       </Block>
 
-      <Block title="Quy trình quản trị tài khoản (dành cho chỉ huy / quản trị)">
-        <ul className="guide-list">
-          <li>Xem danh sách chờ duyệt: <em>Quản lý người dùng</em> → lọc tài khoản chưa kích hoạt.</li>
-          <li>Bổ sung Cấp bậc, Chức danh và Đơn vị công tác cho tài khoản chờ duyệt (bắt buộc).</li>
-          <li>Kích hoạt / khoá tài khoản; đổi vai trò (officer → commander).</li>
-          <li>Cấp/thu quyền xem <strong>MẬT</strong> (<code>clearance</code>); cấp cờ vào <strong>Kênh Chỉ đạo – Báo cáo</strong>.</li>
-          <li>Gán <strong>đơn vị</strong> cho tài khoản để phục vụ giao nhiệm vụ / nhận báo cáo theo đầu mối.</li>
-          <li>Cấp lại mật khẩu (tài khoản đó sẽ bị buộc đổi ở lần đăng nhập kế tiếp).</li>
-          <li>Ràng buộc an toàn: không tự hạ quyền/khoá chính mình; luôn giữ ≥ 1 <code>commander</code> đang hoạt động.</li>
-        </ul>
+      <Block title="Kênh chuyên Ban Chỉ huy & Cấp uỷ (bậc MẬT)">
+        <Split>
+          <ArtSecure />
+          <SplitText>
+            <p>
+              Chỉ tài khoản <strong>chỉ huy/quản trị</strong> hoặc được cấp riêng <strong>quyền xem
+              MẬT</strong> mới vào được kênh này — tài khoản khác bấm vào sẽ báo không đủ quyền.
+            </p>
+            <ul className="guide-list">
+              <li>Trao đổi nội bộ dành riêng cho Ban chỉ huy và Cấp uỷ, không phân theo đơn vị.</li>
+              <li><strong>Sổ công văn đi/đến</strong>: ghi số hiệu, đơn vị gửi/nhận, ngày ban hành/nhận, tệp đính kèm.</li>
+              <li>Người nhận <strong>ký nhận</strong> công văn (kèm ghi chú nếu có ý kiến).</li>
+              <li>Vào sổ, sửa, xoá công văn hoặc đóng luồng: chỉ chỉ huy/quản trị được thực hiện.</li>
+            </ul>
+          </SplitText>
+        </Split>
       </Block>
     </>
   )
 }
 
-/* ------------------------------------------------------------------ tab 4 */
-function SuCo() {
+/* ============================================================ tab 4 */
+function TaiKhoan() {
   return (
     <>
-      <Block title="4.1 — Mất kết nối MySQL (sai mật khẩu / chưa bật dịch vụ)">
-        <p><strong>Triệu chứng:</strong> Backend không khởi động, log báo <code>Can't connect to MySQL server</code>, <code>Access denied for user</code>, hoặc <code>Unknown database</code>.</p>
-        <p><strong>Xử lý:</strong></p>
-        <ol className="guide-list guide-ol">
-          <li>Kiểm tra dịch vụ MySQL đã chạy chưa: <Code>{`net start | findstr /I mysql
-# nếu chưa chạy:
-net start MySQL        # (hoặc MySQL80 tùy tên dịch vụ)`}</Code></li>
-          <li>Đối chiếu thông tin trong <code>backend/.env</code>: <code>MYSQL_HOST</code>, <code>MYSQL_PORT</code>, <code>MYSQL_USER</code>, <code>MYSQL_PASSWORD</code>, <code>MYSQL_DB</code>.</li>
-          <li>Kiểm tra chuỗi <code>DATABASE_URL</code>: ký tự đặc biệt trong mật khẩu phải mã hoá URL (ví dụ <code>@</code> → <code>%40</code>).</li>
-          <li>Thử đăng nhập tay để cô lập lỗi tài khoản CSDL: <Code>{`mysql -u quynh_user -p -h localhost ludoan_db`}</Code></li>
-          <li>Nếu chưa có database/bảng: tạo database rồi để Backend tự tạo bảng khi khởi động; chạy các script migration trong <code>backend/scripts/</code> theo đúng thứ tự nếu nâng cấp từ bản cũ.</li>
-        </ol>
+      <Block title="Hồ sơ cá nhân">
+        <Split>
+          <ArtProfile />
+          <SplitText>
+            <p>Vào mục <strong>Hồ sơ cá nhân</strong> (thường ở menu góc phải, dưới tên tài khoản) để:</p>
+            <ul className="guide-list">
+              <li>Sửa lại họ và tên hiển thị.</li>
+              <li>Đổi mật khẩu: nhập mật khẩu hiện tại + mật khẩu mới. Mật khẩu cũ nhập sai sẽ báo lỗi ngay, không đổi được.</li>
+            </ul>
+            <p className="guide-note">
+              Cấp bậc, chức danh, đơn vị công tác do chỉ huy/quản trị chỉnh sửa — không tự sửa được ở
+              mục này; nếu thông tin sai, báo lại chỉ huy đơn vị.
+            </p>
+          </SplitText>
+        </Split>
       </Block>
 
-      <Block title="4.2 — Xung đột cổng (port in use)">
-        <p><strong>Triệu chứng:</strong> <code>[Errno 10048]</code> / <code>address already in use</code> khi chạy Backend (8000) hoặc Frontend (5173).</p>
-        <p><strong>Xử lý:</strong></p>
-        <Code>{`# Tìm tiến trình đang giữ cổng 8000:
-netstat -ano | findstr :8000
-# Cột cuối là PID, kết thúc tiến trình đó:
-taskkill /PID <PID> /F`}</Code>
-        <p>Hoặc đổi cổng khi chạy: <code>uvicorn app.main:app --host 0.0.0.0 --port 8080</code> (nhớ cập nhật <code>VITE_API_BASE_URL</code> và mở cổng mới trên tường lửa).</p>
+      <Block title="Quản lý người dùng (dành cho chỉ huy/quản trị)">
+        <Split>
+          <ArtUserManage />
+          <SplitText>
+            <ul className="guide-list">
+              <li>Xem danh sách tài khoản <strong>chờ kích hoạt</strong>, bổ sung cấp bậc/chức danh/đơn vị công tác còn thiếu, rồi bấm <strong>kích hoạt</strong>.</li>
+              <li>Đổi vai trò tài khoản (ví dụ cán bộ ↔ chỉ huy) khi có quyết định điều động, bổ nhiệm.</li>
+              <li>Cấp hoặc thu quyền xem nội dung <strong>MẬT</strong>, cấp quyền vào <strong>Kênh Chỉ đạo – Báo cáo</strong> cho từng tài khoản.</li>
+              <li>Gán tài khoản vào đúng <strong>đơn vị công tác</strong> để nhận nhiệm vụ, xem báo cáo theo đúng đầu mối.</li>
+              <li>Khoá/mở tài khoản, cấp lại mật khẩu khi cán bộ quên.</li>
+            </ul>
+            <p className="guide-note">
+              Hệ thống luôn giữ lại tối thiểu một tài khoản chỉ huy đang hoạt động — không thể tự hạ
+              quyền hoặc khoá chính mình nếu đó là tài khoản chỉ huy cuối cùng.
+            </p>
+          </SplitText>
+        </Split>
       </Block>
 
-      <Block title="4.3 — Token hết hạn (lỗi 401)">
-        <p><strong>Triệu chứng:</strong> Đang thao tác thì bị đẩy về trang đăng nhập; API trả <code>401 Unauthorized</code> / <code>Could not validate credentials</code>.</p>
-        <p><strong>Nguyên nhân:</strong> JWT có hạn (mặc định <code>JWT_EXPIRE_MINUTES=1440</code> — 24 giờ), hoặc đồng hồ máy chủ sai lệch, hoặc <code>JWT_SECRET_KEY</code> bị đổi khiến token cũ vô hiệu.</p>
-        <p><strong>Xử lý:</strong> Đăng nhập lại để lấy token mới. Nếu muốn phiên dài hơn, tăng <code>JWT_EXPIRE_MINUTES</code> trong <code>backend/.env</code> rồi khởi động lại Backend. Đồng bộ giờ máy chủ (<code>w32tm /resync</code> hoặc theo giờ chuẩn đơn vị).</p>
-      </Block>
-
-      <Block title="4.4 — Phân quyền không khớp (lỗi 403)">
-        <p><strong>Triệu chứng:</strong> API trả <code>403 Forbidden</code>; nút thao tác không hiện hoặc bấm vào báo không đủ quyền.</p>
-        <p><strong>Kiểm tra theo thứ tự:</strong></p>
-        <ul className="guide-list">
-          <li>Vai trò tài khoản có đúng không (officer/commander/admin)? Sửa tại <em>Quản lý người dùng → đổi vai trò</em>.</li>
-          <li>Nội dung/kênh ở bậc <strong>MẬT</strong>? Tài khoản cần cờ <code>clearance = true</code> hoặc là <code>commander</code>/<code>admin</code>.</li>
-          <li>Kênh Chỉ đạo – Báo cáo: tài khoản cần cờ <code>directive_channel_access</code>.</li>
-          <li>Sửa/xoá nội dung của người khác: chỉ tác giả hoặc <code>commander</code> mới được phép.</li>
-          <li>Sau khi đổi quyền, tài khoản phải <strong>đăng xuất và đăng nhập lại</strong> để token mang quyền mới.</li>
-        </ul>
-      </Block>
-
-      <Block title="4.5 — Lỗi tải file dung lượng lớn">
-        <p><strong>Triệu chứng:</strong> Upload ảnh/văn bản/công văn thất bại, báo <code>413</code> hoặc <code>File quá lớn</code>.</p>
-        <p><strong>Xử lý:</strong></p>
-        <ul className="guide-list">
-          <li>Giới hạn mặc định <code>MAX_UPLOAD_MB=50</code> (trong <code>backend/.env</code>). Tăng giá trị này rồi khởi động lại Backend nếu cần.</li>
-          <li>Kiểm tra định dạng cho phép: tài liệu <code>.pdf/.doc/.docx/.xls/.xlsx/.ppt/.pptx</code>; ảnh bìa tin tức là tệp ảnh.</li>
-          <li>Nếu đặt sau reverse proxy (Nginx/IIS): nới giới hạn thân yêu cầu (<code>client_max_body_size</code> của Nginx, hoặc <code>maxAllowedContentLength</code> của IIS).</li>
-          <li>Kiểm tra dung lượng trống của ổ đĩa chứa <code>storage/uploads/</code>.</li>
-          <li>Giải pháp nhanh: nén tệp hoặc tách nhỏ trước khi tải lên.</li>
-        </ul>
-      </Block>
-
-      <Block title="4.6 — Máy trạm không mở được Cổng thông tin">
-        <ul className="guide-list">
-          <li>Ping thử IP máy chủ; nếu không thông là vấn đề mạng/định tuyến, không phải phần mềm.</li>
-          <li>Mở <code>http://&lt;IP máy chủ&gt;:8000/docs</code> từ máy trạm — nếu lỗi thì Backend chưa chạy hoặc tường lửa chặn cổng 8000.</li>
-          <li>Giao diện mở được nhưng đăng nhập/không tải dữ liệu: kiểm tra <code>VITE_API_BASE_URL</code> có trỏ đúng IP máy chủ (không phải <code>localhost</code>) — chỉ áp dụng khi còn chạy Frontend tách rời ở cổng 5173; chế độ 1 cổng production không cần kiểm tra mục này.</li>
-          <li>Lỗi CORS trong Console trình duyệt: thêm origin của máy trạm vào <code>EXTRA_CORS_ORIGINS</code>.</li>
-        </ul>
-      </Block>
-
-      <Block title="4.7 — Mất điện / mất mạng LAN đột ngột giữa buổi làm việc">
-        <p><strong>Nguy cơ:</strong> đang soạn Chỉ thị, báo cáo, nội dung trao đổi trong kênh... thì mất điện hoặc rớt mạng trước khi kịp gửi/lưu.</p>
-        <p><strong>Đã được bảo vệ sẵn:</strong></p>
-        <ul className="guide-list">
-          <li>
-            Nội dung đang gõ ở các form Chỉ thị, Kênh Chỉ đạo – Báo cáo, Giao nhiệm vụ, Kênh chuyên BCH
-            &amp; Cấp uỷ đã được <strong>tự động lưu bản nháp</strong> trên trình
-            duyệt máy trạm (xem tab 3 — mục "Tự động lưu bản nháp"). Bật lại máy/mạng, mở lại đúng
-            trang đó, nội dung sẽ tự khôi phục.
-          </li>
-          <li>
-            Dữ liệu <strong>đã gửi/lưu thành công</strong> trước đó không mất — CSDL MySQL ghi ngay khi
-            máy chủ nhận được yêu cầu, không phụ thuộc trạng thái máy trạm.
-          </li>
-        </ul>
-        <p><strong>Về phía máy chủ:</strong></p>
-        <ul className="guide-list">
-          <li>
-            Nếu máy chủ mất điện đột ngột: kiểm tra dịch vụ MySQL đã tự khởi động lại cùng Windows
-            chưa (<Code>{`net start | findstr /I mysql`}</Code>); nếu chưa, khởi động tay rồi chạy lại{' '}
-            <code>Chay_He_Thong.bat</code>.
-          </li>
-          <li>
-            Nếu nghi ngờ dữ liệu bị hỏng do tắt đột ngột giữa lúc ghi: phục hồi từ bản sao lưu gần nhất
-            trong <code>backend/storage/backups/</code> (xem tab 2 — mục "Sao lưu &amp; phục hồi dữ
-            liệu định kỳ"). Đây là lý do cần đặt lịch sao lưu tự động hằng ngày thay vì chỉ sao lưu khi
-            nhớ ra.
-          </li>
-          <li>
-            Máy chủ nội bộ đơn vị nên trang bị UPS (bộ lưu điện) tối thiểu đủ thời gian tắt máy an toàn
-            khi mất điện lưới — giảm nguy cơ hỏng CSDL do ngắt điện đột ngột giữa lúc đang ghi.
-          </li>
-        </ul>
-      </Block>
-
-      <Block title="Lệnh khởi động nhanh (bộ phận kỹ thuật)">
-        <p>
-          <strong>Khuyến nghị:</strong> bấm đúp <code>Chay_He_Thong.bat</code> ở thư mục gốc dự án —
-          xem chi tiết ở tab 2, mục "Khởi động máy chủ sản xuất 1-Click". Các lệnh dưới đây dành cho
-          trường hợp cần chạy tay/gỡ lỗi.
-        </p>
-        <Code>{`# 1) Backend
-cd backend
-venv\\Scripts\\activate
-uvicorn app.main:app --host 0.0.0.0 --port 8000
-
-# 2) Frontend (chế độ phát triển)
-cd frontend
-npm install
-npm run dev -- --host 0.0.0.0 --port 5173
-
-# 3) Frontend (bản phát hành tĩnh)
-npm run build      # kết quả trong frontend/dist -> đưa lên web server nội bộ`}</Code>
+      <Block title="Câu hỏi thường gặp">
+        <dl className="guide-authorcard" style={{ marginBottom: 0 }}>
+          <dt>Tôi không thấy một mục trên menu mà đồng nghiệp có?</dt>
+          <dd>Mục đó cần quyền riêng (ví dụ quyền xem MẬT, quyền vào Kênh Chỉ đạo). Liên hệ chỉ huy/quản trị để được cấp nếu công việc yêu cầu.</dd>
+          <dt>Đăng bài xong mà không thấy hiển thị ở danh sách chung?</dt>
+          <dd>Bài đang ở trạng thái <strong>Chờ duyệt</strong> — vẫn thấy được trong mục của riêng mình, chờ chỉ huy duyệt mới hiển thị công khai.</dd>
+          <dt>Đăng ký xong không đăng nhập được, báo tài khoản chưa kích hoạt?</dt>
+          <dd>Bình thường — chờ chỉ huy bổ sung cấp bậc/chức danh/đơn vị rồi kích hoạt. Có thể báo trực tiếp chỉ huy để xử lý nhanh hơn.</dd>
+          <dt>Đang thao tác bỗng bị đẩy về trang đăng nhập?</dt>
+          <dd>Phiên đăng nhập có thời hạn nên tự hết hạn sau một thời gian. Đăng nhập lại là dùng tiếp bình thường; nội dung đang soạn dở đã tự lưu nháp và sẽ tự khôi phục khi mở lại đúng màn hình.</dd>
+          <dt>Vừa được đổi quyền/vai trò nhưng menu chưa cập nhật?</dt>
+          <dd>Đăng xuất rồi đăng nhập lại để hệ thống nạp lại đúng quyền mới.</dd>
+          <dt>Không mở được trang, hoặc trang báo lỗi liên tục?</dt>
+          <dd>Có thể do sự cố mạng nội bộ hoặc máy chủ — liên hệ bộ phận kỹ thuật của đơn vị để được kiểm tra, không phải lỗi thao tác của bạn.</dd>
+        </dl>
       </Block>
     </>
   )

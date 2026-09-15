@@ -2951,6 +2951,42 @@ td.right,
   }
 }
 
+.guide-split {
+  display: flex;
+  gap: 20px;
+  align-items: flex-start;
+  flex-wrap: wrap;
+  margin: 8px 0;
+}
+.guide-split-text {
+  flex: 1 1 280px;
+  min-width: 240px;
+}
+.guide-illustration-wrap {
+  flex: 0 0 auto;
+  width: 300px;
+  max-width: 100%;
+  margin: 0;
+}
+.guide-illustration {
+  width: 100%;
+  height: auto;
+  display: block;
+  border-radius: 10px;
+  box-shadow: 0 1px 5px rgba(0, 0, 0, 0.1);
+}
+.guide-illustration-caption {
+  font-size: 12px;
+  color: var(--text-muted);
+  text-align: center;
+  margin: 6px 0 0;
+}
+@media (max-width: 720px) {
+  .guide-illustration-wrap {
+    width: 100%;
+  }
+}
+
 /* ===== Dung chung: breadcrumb + danh sach + phan trang ===== */
 .crumb-bar {
   display: flex;
@@ -4748,6 +4784,101 @@ td.right,
   display: inline-flex;
   align-items: center;
   gap: 6px;
+}
+
+/* ---- So ban giao ca truc: thanh cong cu ---- */
+.handover-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px;
+  margin: 14px 0;
+  background: var(--bg-white);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+}
+.handover-filters {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow-x: auto;
+  padding-bottom: 2px;
+}
+.handover-filters > * {
+  flex-shrink: 0;
+}
+.handover-filters select {
+  padding: 7px 10px;
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  font-size: 13px;
+  background: var(--bg-white);
+  color: var(--text-main);
+  min-width: 160px;
+}
+.handover-date-wrap {
+  display: inline-flex;
+}
+.handover-date-field {
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  font-size: 13px;
+  background: var(--bg-white);
+  color: var(--text-main);
+  width: 150px;
+}
+.handover-date-field::placeholder {
+  color: var(--text-muted);
+}
+/* Nut xoa (x) cua react-datepicker la <button>, se bi luat "button:hover" toan cuc
+   (nen do dam) de len tren vi co do dac hieu cao hon .react-datepicker__close-icon
+   goc (nen trong suot) -> phai reset tuong minh ca trang thai hover. */
+.handover-filters .react-datepicker__close-icon,
+.handover-filters .react-datepicker__close-icon:hover,
+.handover-filters .react-datepicker__close-icon:focus {
+  background: transparent;
+  border: 0;
+  border-radius: 0;
+  padding: 0 6px 0 0;
+  outline: none;
+}
+.handover-filters .react-datepicker__close-icon::after {
+  background-color: var(--text-muted);
+  color: var(--bg-white);
+  width: 14px;
+  height: 14px;
+  font-size: 10px;
+}
+.handover-filters .react-datepicker__close-icon:hover::after {
+  background-color: var(--primary-red);
+}
+.handover-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-shrink: 0;
+  margin-left: auto;
+}
+.handover-actions .btn-cancel,
+.handover-actions .btn-create {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+@media (max-width: 720px) {
+  .handover-toolbar {
+    flex-wrap: wrap;
+  }
+  .handover-filters {
+    flex-basis: 100%;
+  }
+  .handover-actions {
+    margin-left: 0;
+    flex-basis: 100%;
+    justify-content: flex-end;
+  }
 }
 
 /* ---- Bo chon pham vi (scope) ---- */

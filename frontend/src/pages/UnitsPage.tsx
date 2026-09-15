@@ -127,7 +127,7 @@ export function UnitsPage() {
       </div>
 
       {showAdd ? (
-        <Modal title="Thêm đơn vị" onClose={() => setShowAdd(false)}>
+        <Modal title="Thêm đơn vị" onClose={() => setShowAdd(false)} closeOnOverlayClick={false}>
           <form onSubmit={handleCreate} className="entity-form">
             <Field label="Tên đơn vị" required req={req} name="name">
               <input

@@ -333,7 +333,7 @@ export function DanhBaPage() {
       )}
 
       {showImport ? (
-        <Modal title="Nhập file danh bạ" onClose={() => setShowImport(false)}>
+        <Modal title="Nhập file danh bạ" onClose={() => setShowImport(false)} closeOnOverlayClick={false}>
           <form onSubmit={handleImport} className="entity-form">
             <label>
               Tên bộ danh bạ (bỏ trống = lấy tên file)
